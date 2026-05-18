@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "ai_dev_os": {
+    "0.1.x": {
+      "compatible_adapters": ["aituber", "cat_simulator", "scientific", "unity"],
+      "compatible_extensions": ["scientific", "embodiment", "unity", "mujoco"],
+      "python_versions": ["3.11", "3.12"],
+      "stability": "alpha"
+    }
+  }
+}

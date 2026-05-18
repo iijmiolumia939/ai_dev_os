@@ -1,0 +1,11 @@
+{
+  "project_name": "AITuber",
+  "adapter": "aituber",
+  "extensions": ["embodiment", "unity"],
+  "bindings": {
+    "retrieval": "retrieval.select_context",
+    "governance": "governance.budget_runtime",
+    "telemetry": "telemetry.runtime",
+    "integrations": "integrations.runtime"
+  }
+}

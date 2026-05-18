@@ -1,0 +1,5 @@
+{
+  "version": 1,
+  "policy": "immutable references; retrieve by ID; no repeated paper injection",
+  "registries": ["formulas", "datasets", "experiments", "parameters"]
+}
