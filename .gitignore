@@ -16,6 +16,14 @@ _tmp_bootstrap_check/
 tmp_bootstrap*/
 .ai-dev-os/
 telemetry-artifacts/
+audit_reports/
+telemetry_output/
+runtime_snapshots/
+stress_outputs/
+runtime_audit_report*.json
+runtime_enforcement_report*.json
+*_audit_report.json
+*_runtime_snapshot.json
 usage*.jsonl
 bandit_log.jsonl
 *.log
