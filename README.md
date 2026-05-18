@@ -8,7 +8,7 @@ This repository is not tied to AITuber, CatSimulator, Unity, MuJoCo, or any sing
 
 ## Release Status
 
-`0.1.0-alpha.1` is the first alpha release line. Public APIs are intentionally small, extension interfaces are still evolving, and governance runtime policies are experimental. Treat this release as suitable for pilot consumer repositories, not as a stable long-term API contract.
+`0.1.0-alpha.2` is the current alpha release line. Public APIs are intentionally small, extension interfaces are still evolving, and governance runtime policies are experimental. Runtime enforcement audit now runs as release governance, but this release is still suitable for pilot consumer repositories rather than a stable long-term API contract.
 
 ## Vision
 
