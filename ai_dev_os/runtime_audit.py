@@ -3,6 +3,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from ai_dev_os.copilot_usage.agent_mode_budget import AgentLoopState, AgentModeBudgetGuard
+from ai_dev_os.copilot_usage.atomic_prompting import AtomicPromptPolicy
+from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
+from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
+from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
+from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
@@ -151,6 +157,19 @@ class ProviderSimulationAuditReport:
 
 
 @dataclass(frozen=True)
+class CopilotUsageAuditReport:
+    atomic_prompting_active: bool
+    context_diet_active: bool
+    skill_compaction_active: bool
+    agent_mode_budget_active: bool
+    cache_aware_session_policy_active: bool
+    inline_first_recommendation_active: bool
+    usage_dashboard_review_workflow_active: bool
+    estimated_avoided_tokens: int
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -163,6 +182,7 @@ class RuntimeEnforcementAuditReport:
     stress: RuntimeStressReport
     retrieval_scaling: RetrievalScalingAuditReport
     provider_simulation: ProviderSimulationAuditReport
+    copilot_usage: CopilotUsageAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -479,6 +499,97 @@ def audit_provider_simulation() -> ProviderSimulationAuditReport:
     )
 
 
+def audit_copilot_usage() -> CopilotUsageAuditReport:
+    atomic = AtomicPromptPolicy().evaluate(
+        "Review the whole repo, decide architecture, implement changes, and review everything."
+    )
+    context = ContextDietPolicy().evaluate(
+        (
+            ContextItem("ai_dev_os/runtime_audit.py", 900),
+            ContextItem(".", 80_000, reason="full_repo"),
+            ContextItem("docs/stale-sprint-history.md", 9_000, related=False, age_days=60),
+            ContextItem("build/generated.json", 3_000, related=False),
+        )
+    )
+    skill = SkillCompactionPolicy().evaluate(
+        (
+            SkillInstruction(
+                "python-runtime",
+                "Python runtime implementation",
+                "Use deterministic runtime policies." * 80,
+                "Use for Python runtime policy implementation.",
+            ),
+            SkillInstruction(
+                "always-on-large-skill",
+                "General purpose full instruction dump",
+                "Full instruction dump. " * 1_200,
+                "",
+                always_loaded=True,
+            ),
+            SkillInstruction(
+                "duplicate-python-runtime",
+                "Python runtime implementation",
+                "Duplicate details." * 100,
+                "Use for Python runtime policy implementation.",
+            ),
+        ),
+        active_task="Python runtime policy implementation",
+    )
+    agent = AgentModeBudgetGuard().evaluate(
+        AgentLoopState(
+            tool_calls=24,
+            repair_loops=3,
+            validation_retries=2,
+            context_refreshes=2,
+            architecture_escalations=1,
+            pressure="HIGH",
+        )
+    )
+    session = SessionCostPolicy().evaluate(
+        SessionState(
+            context_tokens=18_000,
+            repeated_instruction_tokens=4_000,
+            task_continuity_score=0.8,
+            cache_reuse_likelihood=0.8,
+            completed_objectives=0,
+            new_objectives=1,
+        )
+    )
+    inline = InlineFirstPolicy().evaluate("rename this local helper variable", touched_files=1)
+    estimated_avoided_tokens = sum(
+        (
+            atomic.estimated_avoided_tokens,
+            context.token_reduction_estimate,
+            skill.estimated_avoided_tokens,
+            session.estimated_avoided_tokens,
+            inline.estimated_avoided_tokens,
+        )
+    )
+    warnings = tuple(
+        dict.fromkeys(
+            atomic.detected_patterns
+            + context.warnings
+            + skill.blocked_patterns
+            + agent.warnings
+            + session.warnings
+            + inline.warnings
+            + ("review_copilot_usage_dashboard_weekly",)
+        )
+    )
+    return CopilotUsageAuditReport(
+        atomic_prompting_active=atomic.needs_split or atomic.blocked,
+        context_diet_active=context.token_reduction_estimate > 0,
+        skill_compaction_active=bool(skill.compact_skill_index)
+        and bool(skill.excluded_instructions),
+        agent_mode_budget_active=agent.stop_required and agent.patch_only_mode,
+        cache_aware_session_policy_active=session.compact_before_continue,
+        inline_first_recommendation_active=inline.use_inline_completion,
+        usage_dashboard_review_workflow_active=True,
+        estimated_avoided_tokens=estimated_avoided_tokens,
+        warnings=warnings,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -492,6 +603,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         stress=audit_runtime_stress(),
         retrieval_scaling=audit_retrieval_scaling(),
         provider_simulation=audit_provider_simulation(),
+        copilot_usage=audit_copilot_usage(),
     )
 
 
