@@ -1,0 +1,62 @@
+{
+  "name": "ai-dev-os-vscode",
+  "displayName": "AI DEV OS Session Boundary",
+  "description": "Human-confirmed session boundary enforcement for AI_DEV_OS.",
+  "version": "0.1.0",
+  "publisher": "iijmiolumia939",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onCommand:aiDevOs.sessionAudit",
+    "onCommand:aiDevOs.generateHandoff",
+    "onCommand:aiDevOs.copyContinuityBundle",
+    "onCommand:aiDevOs.openNewSessionPrompt",
+    "onCommand:aiDevOs.confirmSessionRollover",
+    "onCommand:aiDevOs.showSessionBoundaryState",
+    "onCommand:aiDevOs.compactCurrentSession",
+    "onCommand:aiDevOs.showStaleSessionWarning",
+    "onView:aiDevOsSessionBoundary"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {"command": "aiDevOs.sessionAudit", "title": "AI_DEV_OS: Session Audit"},
+      {"command": "aiDevOs.generateHandoff", "title": "AI_DEV_OS: Generate Handoff"},
+      {"command": "aiDevOs.copyContinuityBundle", "title": "AI_DEV_OS: Copy Continuity Bundle"},
+      {"command": "aiDevOs.openNewSessionPrompt", "title": "AI_DEV_OS: Open New Session Prompt"},
+      {"command": "aiDevOs.confirmSessionRollover", "title": "AI_DEV_OS: Confirm Session Rollover"},
+      {"command": "aiDevOs.showSessionBoundaryState", "title": "AI_DEV_OS: Show Session Boundary State"},
+      {"command": "aiDevOs.compactCurrentSession", "title": "AI_DEV_OS: Compact Current Session"},
+      {"command": "aiDevOs.showStaleSessionWarning", "title": "AI_DEV_OS: Show Stale Session Warning"}
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "aiDevOsSessionBoundary",
+          "name": "AI_DEV_OS Session Boundary"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "AI_DEV_OS Session Boundary",
+      "properties": {
+        "aiDevOs.pythonCommand": {
+          "type": "string",
+          "default": "python",
+          "description": "Python command used to invoke local AI_DEV_OS CLI."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./ --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5"
+  }
+}

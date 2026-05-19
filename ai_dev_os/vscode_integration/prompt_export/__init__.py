@@ -12,6 +12,7 @@ class PromptExportFrame:
     continuation_md_path: str
     compact_bundle_json_path: str
     copy_ready_plain_text: str
+    compact_bundle: dict[str, Any]
     summary_only: bool
     bounded: bool
     files_written: bool
@@ -53,6 +54,7 @@ class PromptExportPolicy:
             continuation_md_path=continuation_path,
             compact_bundle_json_path=bundle_path,
             copy_ready_plain_text=bounded_prompt,
+            compact_bundle=bundle,
             summary_only=True,
             bounded=True,
             files_written=files_written,
@@ -73,6 +75,11 @@ class PromptExportPolicy:
             "continuity_scope",
             "stale_topics",
             "rollover_required",
+            "session_generation_metadata",
+            "boundary_enforcement",
+            "rollover_state",
+            "stale_warning",
+            "new_session_seed",
         }
         return {key: value for key, value in bundle.items() if key in allowed}
 

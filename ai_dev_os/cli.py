@@ -21,6 +21,11 @@ from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
 from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPolicy
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
+from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
+from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
+from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
+from ai_dev_os.session_boundary.session_generation import SessionGenerationPolicy
+from ai_dev_os.session_boundary.stale_session_detection import StaleSessionDetectionPolicy
 from ai_dev_os.session_lifecycle.architecture_isolation import ArchitectureIsolationPolicy
 from ai_dev_os.session_lifecycle.cache_aware_session import CacheAwareSessionPolicy
 from ai_dev_os.session_lifecycle.session_rollover import SessionRolloverPolicy
@@ -129,6 +134,18 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _vscode_notifications(args.workspace, args.sprint)
     if command == "vscode-state":
         return _vscode_state(args.workspace, args.sprint)
+    if command == "session-generation":
+        return _session_boundary(args.workspace, args.sprint)["session_generation"]
+    if command == "stale-session":
+        return _session_boundary(args.workspace, args.sprint)["stale_session"]
+    if command == "session-boundary":
+        return _session_boundary(args.workspace, args.sprint)["boundary_enforcement"]
+    if command == "rollover-state":
+        return _session_boundary(args.workspace, args.sprint)["rollover_state"]
+    if command == "handoff-confirmation":
+        return _session_boundary(args.workspace, args.sprint)["handoff_confirmation"]
+    if command == "session-boundary-handoff":
+        return _session_boundary_handoff(args.workspace, args.sprint)
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -461,6 +478,87 @@ def _vscode_handoff(workspace: str, sprint: str):
         continuity_scope=subset["continuity_scope"],
         prompt_text=prompt_pack.copy_ready_text,
     )
+
+
+def _session_boundary(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    generation = SessionGenerationPolicy().generate(
+        session_id=f"{Path(workspace).resolve().name}:{sprint}",
+        session_generation=1,
+        rollover_recommended=handoff.recommended_new_session,
+        parent_session="current-human-confirmed-session",
+    )
+    continuity_tokens = max(12_000, len(handoff.copy_ready_prompt) // 2)
+    stale = StaleSessionDetectionPolicy().detect(
+        generation=generation,
+        rollover_recommended=handoff.rollover_required,
+        handoff_generated=True,
+        new_session_started=False,
+        continuity_generation=generation.continuity_generation,
+        architecture_topic_count=3 if modes["session_mode"].isolation_required else 2,
+        continuity_token_estimate=continuity_tokens,
+        session_age=6,
+        stale_continuity_reuse=handoff.stale_context_detected,
+    )
+    enforcement = BoundaryEnforcementPolicy().enforce(
+        stale_session=stale,
+        architecture_isolation_signal=modes["session_mode"].isolation_required,
+    )
+    export = _vscode_prompt_export(workspace, sprint)
+    clipboard = ClipboardRuntimePolicy().copy(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=handoff.continuity_bundle,
+        clipboard_command="ai-dev-os-missing-clipboard",
+    )
+    rollover = RolloverStatePolicy().evaluate(
+        rollover_required=stale.rollover_required,
+        handoff_generated=bool(handoff.continuity_bundle),
+        clipboard_ready=clipboard.clipboard_copy_success or clipboard.export_fallback,
+        export_ready=export.bounded,
+        confirmed=False,
+        new_session_started=False,
+        stale_session_active=stale.stale_session_detected,
+    )
+    confirmation = HandoffConfirmationPolicy().confirm(
+        export_consumed=False,
+        prompt_copied=clipboard.clipboard_copy_success,
+        new_session_acknowledged=False,
+        stale_session_closed=False,
+    )
+    return {
+        "session_generation": generation,
+        "stale_session": stale,
+        "boundary_enforcement": enforcement,
+        "rollover_state": rollover,
+        "handoff_confirmation": confirmation,
+    }
+
+
+def _session_boundary_handoff(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    boundary = _session_boundary(workspace, sprint)
+    bundle = {
+        **handoff.continuity_bundle,
+        "session_generation_metadata": boundary["session_generation"],
+        "boundary_enforcement": boundary["boundary_enforcement"],
+        "rollover_state": boundary["rollover_state"],
+        "stale_warning": boundary["stale_session"].boundary_violation_risk,
+        "new_session_seed": handoff.copy_ready_prompt,
+    }
+    export = PromptExportPolicy().export(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=_to_data(bundle),
+    )
+    return {
+        "copy_ready_prompt": handoff.copy_ready_prompt,
+        "compact_continuity_bundle": export,
+        "session_generation": boundary["session_generation"],
+        "stale_session": boundary["stale_session"],
+        "boundary_enforcement": boundary["boundary_enforcement"],
+        "rollover_state": boundary["rollover_state"],
+        "handoff_confirmation": boundary["handoff_confirmation"],
+    }
 
 
 def _prompt_pack_for_handoff(workspace: str, sprint: str):

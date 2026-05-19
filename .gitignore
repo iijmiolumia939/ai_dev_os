@@ -10,6 +10,9 @@ htmlcov/
 .env.*
 dist/
 build/
+node_modules/
+extensions/*/out/
+extensions/*/*.vsix
 *.egg-info/
 generated-projects/
 _tmp_bootstrap_check/

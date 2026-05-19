@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from pathlib import Path
 
 from ai_dev_os.context_subset.continuity_scope import ContinuityScopePolicy
 from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
@@ -31,6 +32,11 @@ from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPoli
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
+from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
+from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
+from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
+from ai_dev_os.session_boundary.session_generation import SessionGenerationPolicy
+from ai_dev_os.session_boundary.stale_session_detection import StaleSessionDetectionPolicy
 from ai_dev_os.session_lifecycle.architecture_isolation import ArchitectureIsolationPolicy
 from ai_dev_os.session_lifecycle.cache_aware_session import CacheAwareSessionPolicy
 from ai_dev_os.session_lifecycle.continuity_bundle import (
@@ -292,6 +298,17 @@ class VSCodeIntegrationAuditReport:
 
 
 @dataclass(frozen=True)
+class SessionBoundaryAuditReport:
+    session_boundary_active: bool
+    stale_session_detection_active: bool
+    rollover_state_active: bool
+    handoff_confirmation_active: bool
+    vscode_extension_active: bool
+    estimated_avoided_stale_continuation_tokens: int
+    estimated_avoided_hidden_context_drift: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -312,6 +329,7 @@ class RuntimeEnforcementAuditReport:
     context_subset: ContextSubsetAuditReport
     prompt_modes: PromptModesAuditReport
     vscode_integration: VSCodeIntegrationAuditReport
+    session_boundary: SessionBoundaryAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1213,6 +1231,60 @@ def audit_vscode_integration() -> VSCodeIntegrationAuditReport:
     )
 
 
+def audit_session_boundary() -> SessionBoundaryAuditReport:
+    generation = SessionGenerationPolicy().generate(
+        session_id="audit-session",
+        session_generation=3,
+        rollover_recommended=True,
+        parent_session="audit-parent",
+    )
+    stale = StaleSessionDetectionPolicy().detect(
+        generation=generation,
+        rollover_recommended=True,
+        handoff_generated=True,
+        new_session_started=False,
+        continuity_generation=2,
+        architecture_topic_count=4,
+        continuity_token_estimate=18_000,
+        session_age=7,
+        stale_continuity_reuse=True,
+    )
+    enforcement = BoundaryEnforcementPolicy().enforce(
+        stale_session=stale,
+        architecture_isolation_signal=True,
+    )
+    rollover = RolloverStatePolicy().evaluate(
+        rollover_required=stale.rollover_required,
+        handoff_generated=True,
+        clipboard_ready=True,
+        export_ready=True,
+        confirmed=False,
+        new_session_started=False,
+        stale_session_active=stale.stale_session_detected,
+    )
+    confirmation = HandoffConfirmationPolicy().confirm(
+        export_consumed=True,
+        prompt_copied=True,
+        new_session_acknowledged=False,
+        stale_session_closed=False,
+    )
+    extension_root = Path("extensions/ai-dev-os-vscode")
+    stale_savings = 18_000 if stale.forced_compaction_recommended else 0
+    drift_savings = 2_400 if enforcement.architecture_isolation_required else 900
+    return SessionBoundaryAuditReport(
+        session_boundary_active=enforcement.enforcement_state == "STALE_BLOCKED"
+        and not enforcement.ai_response_blocking_enforced,
+        stale_session_detection_active=stale.stale_session_detected
+        and stale.stale_generation_mismatch,
+        rollover_state_active=rollover.rollover_pending and rollover.confirmation_pending,
+        handoff_confirmation_active=not confirmation.ui_automation_used,
+        vscode_extension_active=(extension_root / "package.json").exists()
+        and (extension_root / "src" / "extension.ts").exists(),
+        estimated_avoided_stale_continuation_tokens=stale_savings,
+        estimated_avoided_hidden_context_drift=drift_savings,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1234,6 +1306,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         context_subset=audit_context_subset(),
         prompt_modes=audit_prompt_modes(),
         vscode_integration=audit_vscode_integration(),
+        session_boundary=audit_session_boundary(),
     )
 
 

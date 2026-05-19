@@ -17,6 +17,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
       - name: Install package
         run: python -m pip install -e .[dev]
       - name: Format check
@@ -35,7 +38,7 @@ jobs:
       - name: Bootstrap validation
         run: python -m ai_dev_os.bootstrap.init_project --type scientific --name ci-scientific-project --runtime-type scientific --scientific-mode --output-dir _tmp_bootstrap_check
       - name: Installed namespace smoke
-        run: python -c "import ai_dev_os, ai_dev_os.bootstrap, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
+        run: python -c "import ai_dev_os, ai_dev_os.bootstrap, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
       - name: Tests
         run: python -m pytest
       - name: Retrieval scaling validation
@@ -58,6 +61,15 @@ jobs:
         run: python -m pytest tests/prompt_modes
       - name: VSCode integration validation
         run: python -m pytest tests/vscode_integration
+      - name: Session boundary validation
+        run: python -m pytest tests/session_boundary
+      - name: VSCode extension validation
+        run: python -m pytest tests/vscode_extension
+      - name: VSCode extension compile check
+        working-directory: extensions/ai-dev-os-vscode
+        run: |
+          npm ci
+          npm run compile
       - name: Runtime enforcement audit
         run: python -m ai_dev_os.runtime_audit
       - name: Build validation
@@ -78,4 +90,4 @@ jobs:
           python -m pip install -e .[scientific]
           python -m pip install -e .[routing]
       - name: Import smoke
-        run: python -c "import ai_dev_os, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.providers, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
+        run: python -c "import ai_dev_os, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.providers, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
