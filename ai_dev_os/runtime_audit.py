@@ -27,6 +27,11 @@ from ai_dev_os.session_lifecycle.stale_context_detection import (
     ContextSignal,
     StaleContextDetectionPolicy,
 )
+from ai_dev_os.session_orchestrator.continuity_export import ContinuityExportPolicy
+from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
+from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
+from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
+from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
 from governance.autonomous_budget import within_limits
 from governance.budget_runtime import (
     BudgetState,
@@ -195,6 +200,18 @@ class SessionLifecycleAuditReport:
 
 
 @dataclass(frozen=True)
+class SessionOrchestratorAuditReport:
+    sprint_start_automation_active: bool
+    sprint_close_automation_active: bool
+    prompt_pack_generation_active: bool
+    continuity_export_active: bool
+    session_decision_active: bool
+    estimated_avoided_manual_context_tokens: int
+    recommended_next_action: str
+    copy_ready_output_generated: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -209,6 +226,7 @@ class RuntimeEnforcementAuditReport:
     provider_simulation: ProviderSimulationAuditReport
     copilot_usage: CopilotUsageAuditReport
     session_lifecycle: SessionLifecycleAuditReport
+    session_orchestrator: SessionOrchestratorAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -716,6 +734,97 @@ def audit_session_lifecycle() -> SessionLifecycleAuditReport:
     )
 
 
+def audit_session_orchestrator() -> SessionOrchestratorAuditReport:
+    sprint_start = SprintStartPolicy().build(
+        SprintStartInput(
+            sprint_id="42",
+            project_name="aituber",
+            active_fr_tc=("FR-SESSION-CLI-01", "TC-SESSION-CLI-01"),
+            affected_runtimes=("session_orchestrator", "session_lifecycle"),
+            previous_sprint_summary="Session lifecycle governance is complete.",
+            active_risks=("manual rollover drift", "hidden token burn"),
+            current_roadmap=("CLI automation", "copy-ready prompt", "remote verification"),
+            architecture_flags=("bounded continuity",),
+        )
+    )
+    sprint_close = SprintClosePolicy().close(
+        SprintCloseInput(
+            validation_summary="local validation pass; remote CI pending",
+            git_status_summary="clean; ahead 1",
+            changed_paths=("ai_dev_os/session_orchestrator",),
+            test_results=("tests/session_orchestrator pass",),
+            remaining_risks=("remote verification required",),
+            next_roadmap=("release governance",),
+        )
+    )
+    prompt = PromptPackPolicy().build(
+        prompt_type="sprint_start",
+        project_name="aituber",
+        sprint_id="42",
+        objective="automate session orchestration",
+        context_lines=("Use compact continuity only.", "Exclude full sprint history."),
+        excluded_context=("full_history", "generated_artifacts"),
+        plain_text=True,
+    )
+    export = ContinuityExportPolicy().export(
+        active_requirements=("FR-SESSION-CLI-01",),
+        active_tests=("TC-SESSION-CLI-01",),
+        current_sprint_boundary="Sprint 42 start",
+        affected_runtimes=("session_orchestrator",),
+        current_architecture_constraints=("no UI automation", "bounded continuity"),
+        active_risks=("manual copy remains",),
+        next_prompt_seed="Paste this compact bundle into a new session.",
+        output_format="plain",
+        extra_context={"full_history": "excluded", "old_sprint_logs": "excluded"},
+    )
+    lifecycle = audit_session_lifecycle()
+    rollover = SessionRolloverPolicy().evaluate(
+        session_age=6,
+        estimated_context_tokens=28_000,
+        stale_context_ratio=lifecycle.stale_context_ratio,
+        retrieval_pressure="HIGH",
+        cache_reuse_probability=0.72,
+        sprint_boundary=True,
+    )
+    stale = StaleContextDetectionPolicy().evaluate(
+        (ContextSignal("old-sprint", 12_000, "old sprint", 0.2, age_days=45),)
+    )
+    cache = CacheAwareSessionPolicy().evaluate(
+        cache_reuse_probability=0.72,
+        repeated_instruction_stability=0.8,
+        context_freshness=0.35,
+        retrieval_overlap=0.25,
+        prompt_compactness=0.8,
+        pressure="HIGH",
+    )
+    architecture = ArchitectureIsolationPolicy().evaluate("routine sprint session")
+    decision = SessionDecisionPolicy().decide(
+        rollover=rollover,
+        stale=stale,
+        cache=cache,
+        architecture=architecture,
+    )
+    avoided = (
+        sprint_start.continuity_bundle.token_reduction_estimate
+        + sprint_close.next_sprint_context_seed.count(" ")
+        + prompt.estimated_tokens
+        + export.estimated_tokens
+        + decision.estimated_avoided_tokens
+    )
+    return SessionOrchestratorAuditReport(
+        sprint_start_automation_active=sprint_start.context_budget_estimate > 0,
+        sprint_close_automation_active=sprint_close.next_session_bundle_required,
+        prompt_pack_generation_active=prompt.estimated_tokens > 0,
+        continuity_export_active=export.estimated_tokens > 0,
+        session_decision_active=decision.stop_and_close_session,
+        estimated_avoided_manual_context_tokens=avoided,
+        recommended_next_action=decision.recommended_next_action,
+        copy_ready_output_generated=bool(
+            sprint_start.copy_ready_prompt and prompt.copy_ready_text
+        ),
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -731,6 +840,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_simulation=audit_provider_simulation(),
         copilot_usage=audit_copilot_usage(),
         session_lifecycle=audit_session_lifecycle(),
+        session_orchestrator=audit_session_orchestrator(),
     )
 
 
