@@ -16,6 +16,17 @@ from ai_dev_os.providers.provider_contracts import ProviderRequest
 from ai_dev_os.providers.provider_telemetry import aggregate_provider_telemetry
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
+from ai_dev_os.session_lifecycle.architecture_isolation import ArchitectureIsolationPolicy
+from ai_dev_os.session_lifecycle.cache_aware_session import CacheAwareSessionPolicy
+from ai_dev_os.session_lifecycle.continuity_bundle import (
+    ContinuityBundlePolicy,
+    ContinuityBundleSource,
+)
+from ai_dev_os.session_lifecycle.session_rollover import SessionRolloverPolicy
+from ai_dev_os.session_lifecycle.stale_context_detection import (
+    ContextSignal,
+    StaleContextDetectionPolicy,
+)
 from governance.autonomous_budget import within_limits
 from governance.budget_runtime import (
     BudgetState,
@@ -170,6 +181,20 @@ class CopilotUsageAuditReport:
 
 
 @dataclass(frozen=True)
+class SessionLifecycleAuditReport:
+    session_lifecycle_active: bool
+    rollover_recommendation: bool
+    stale_context_ratio: float
+    continuity_bundle_generated: bool
+    architecture_isolation_recommendation: bool
+    estimated_avoided_tokens: int
+    recommended_session_action: str
+    compact_bundle_required: bool
+    summary_only_continuity: bool
+    warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -183,6 +208,7 @@ class RuntimeEnforcementAuditReport:
     retrieval_scaling: RetrievalScalingAuditReport
     provider_simulation: ProviderSimulationAuditReport
     copilot_usage: CopilotUsageAuditReport
+    session_lifecycle: SessionLifecycleAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -590,6 +616,106 @@ def audit_copilot_usage() -> CopilotUsageAuditReport:
     )
 
 
+def audit_session_lifecycle() -> SessionLifecycleAuditReport:
+    pressure = audit_budget_runtime().pressure_sequence[-1]
+    stale = StaleContextDetectionPolicy().evaluate(
+        (
+            ContextSignal("active-session-runtime", 900, "active sprint runtime", 0.95),
+            ContextSignal("old-sprint-notes", 14_000, "old sprint", 0.2, age_days=45),
+            ContextSignal(
+                "obsolete-architecture-thread",
+                8_000,
+                "obsolete architecture discussion",
+                0.15,
+                age_days=30,
+            ),
+            ContextSignal("repeated-summary", 6_000, "summary", 0.3, repeated=True),
+            ContextSignal("retrieval-drift", 4_000, "retrieval drift", 0.1, age_days=12),
+        )
+    )
+    rollover = SessionRolloverPolicy().evaluate(
+        session_age=6,
+        estimated_context_tokens=32_000,
+        stale_context_ratio=stale.stale_context_ratio,
+        retrieval_pressure=pressure,
+        cache_reuse_probability=0.72,
+        sprint_boundary=True,
+        architecture_escalation=True,
+    )
+    bundle = ContinuityBundlePolicy(token_budget=2_400).build(
+        ContinuityBundleSource(
+            active_fr_tc=("FR-SESSION-01", "FR-SESSION-02", "TC-SESSION-01"),
+            current_sprint_summary="Session lifecycle governance runtime with bounded continuity.",
+            affected_runtimes=("session_lifecycle", "retrieval", "governance", "runtime_audit"),
+            active_risks=("hidden token burn", "stale retrieval drift", "architecture mixing"),
+            current_roadmap=("session rollover", "continuity bundle", "audit integration"),
+            current_architectural_constraints=(
+                "retrieval-first continuity",
+                "no full session replay",
+                "architecture isolation for redesign",
+            ),
+            current_governance_state={
+                "pressure": pressure,
+                "tier2": "disabled",
+                "context": "summary-only",
+            },
+            extra_context={
+                "full_sprint_history": "history " * 10_000,
+                "full_repository_tree": "tree " * 8_000,
+                "giant_markdown": "markdown " * 6_000,
+            },
+        ),
+        summary_only=True,
+    )
+    cache = CacheAwareSessionPolicy().evaluate(
+        cache_reuse_probability=0.72,
+        repeated_instruction_stability=0.8,
+        context_freshness=0.35,
+        retrieval_overlap=0.25,
+        prompt_compactness=0.7,
+        pressure=pressure,
+        architecture_scope=True,
+    )
+    architecture = ArchitectureIsolationPolicy().evaluate(
+        "Architecture redesign for retrieval and runtime contract redesign.",
+        affected_runtimes=("retrieval", "runtime_contracts", "governance"),
+        routine_patch=True,
+    )
+    estimated_avoided_tokens = sum(
+        (
+            rollover.estimated_avoided_tokens,
+            bundle.token_reduction_estimate,
+            int(stale.stale_context_ratio * 10_000),
+        )
+    )
+    warnings = tuple(
+        dict.fromkeys(
+            rollover.triggers
+            + stale.stale_reasons
+            + cache.warnings
+            + architecture.warnings
+            + ("no_full_session_continuation",)
+        )
+    )
+    recommended_action = (
+        "isolate_architecture_session"
+        if architecture.isolated_session_required
+        else rollover.recommended_session_action
+    )
+    return SessionLifecycleAuditReport(
+        session_lifecycle_active=True,
+        rollover_recommendation=rollover.rollover_recommended,
+        stale_context_ratio=stale.stale_context_ratio,
+        continuity_bundle_generated=bundle.bundle_token_estimate > 0,
+        architecture_isolation_recommendation=architecture.isolated_session_required,
+        estimated_avoided_tokens=estimated_avoided_tokens,
+        recommended_session_action=recommended_action,
+        compact_bundle_required=rollover.compact_bundle_required,
+        summary_only_continuity=bundle.summary_only,
+        warnings=warnings,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -604,6 +730,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         retrieval_scaling=audit_retrieval_scaling(),
         provider_simulation=audit_provider_simulation(),
         copilot_usage=audit_copilot_usage(),
+        session_lifecycle=audit_session_lifecycle(),
     )
 
 
