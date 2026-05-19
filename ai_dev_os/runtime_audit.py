@@ -3,6 +3,11 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from ai_dev_os.context_subset.continuity_scope import ContinuityScopePolicy
+from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
+from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
+from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
+from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
 from ai_dev_os.copilot_usage.agent_mode_budget import AgentLoopState, AgentModeBudgetGuard
 from ai_dev_os.copilot_usage.atomic_prompting import AtomicPromptPolicy
 from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
@@ -244,6 +249,17 @@ class WorkspaceSnapshotAuditReport:
 
 
 @dataclass(frozen=True)
+class ContextSubsetAuditReport:
+    repository_subset_active: bool
+    topic_isolation_active: bool
+    continuity_scope_active: bool
+    stale_topic_eviction_active: bool
+    session_focus_governance_active: bool
+    estimated_avoided_stale_context_tokens: int
+    estimated_avoided_architecture_drift_tokens: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -261,6 +277,7 @@ class RuntimeEnforcementAuditReport:
     session_orchestrator: SessionOrchestratorAuditReport
     repository_intelligence: RepositoryIntelligenceAuditReport
     workspace_snapshot: WorkspaceSnapshotAuditReport
+    context_subset: ContextSubsetAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -941,6 +958,67 @@ def audit_workspace_snapshot() -> WorkspaceSnapshotAuditReport:
     )
 
 
+def audit_context_subset() -> ContextSubsetAuditReport:
+    state = WorkspaceStatePolicy().snapshot(".", current_sprint="42")
+    multi = MultiRepositoryPolicy().map(".")
+    rollout = RolloutTrackingPolicy().track(".")
+    failures = KnownFailurePolicy().from_workspace(".")
+    hotspots = ArchitectureHotspotPolicy().detect(".", state=state)
+    metadata = SprintMetadataPolicy().default(sprint_id="42", project_name="workspace")
+    discovery = RuntimeDiscoveryPolicy().discover(".")
+    repository_subset = RepositorySubsetPolicy().select(
+        workspace_state=state,
+        multi_repository=multi,
+        sprint_metadata=metadata,
+        architecture_hotspots=hotspots,
+        runtime_discovery=discovery,
+    )
+    topics = (
+        metadata.roadmap_stage,
+        rollout.rollout_stage,
+        hotspots.review_recommendation,
+        *failures.baseline_failures,
+        "old sprint review",
+        "duplicate continuity",
+        "inactive governance debate",
+    )
+    stale = StaleTopicEvictionPolicy().evict(topics)
+    isolation = TopicIsolationPolicy().isolate(
+        stale.retained_topics,
+        session_type="implementation",
+        architecture_severity=hotspots.risk_severity,
+    )
+    continuity = ContinuityScopePolicy().scope(
+        repository_subset=repository_subset,
+        topic_isolation=isolation,
+        active_tests=metadata.active_fr_tc,
+        rollout_required=bool(repository_subset.rollout_related_repositories),
+    )
+    focus = SessionFocusPolicy().focus(
+        requested_focus="implementation",
+        topic_isolation=isolation,
+        architecture_hotspots=hotspots,
+    )
+    stale_saved = stale.estimated_saved_tokens + len(continuity.excluded_context) * 140
+    drift_saved = (
+        len(isolation.isolated_topics) * 650
+        + len(repository_subset.excluded_repositories) * 300
+        + (900 if focus.escalation_required else 0)
+    )
+    return ContextSubsetAuditReport(
+        repository_subset_active=repository_subset.summary_only
+        and bool(repository_subset.active_repositories),
+        topic_isolation_active=isolation.summary_only,
+        continuity_scope_active=continuity.summary_only_required
+        and "full_workspace_continuation" in continuity.excluded_context,
+        stale_topic_eviction_active=stale.deterministic,
+        session_focus_governance_active=bool(focus.primary_focus)
+        and bool(focus.recommended_session_type),
+        estimated_avoided_stale_context_tokens=stale_saved,
+        estimated_avoided_architecture_drift_tokens=drift_saved,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -959,6 +1037,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         session_orchestrator=audit_session_orchestrator(),
         repository_intelligence=audit_repository_intelligence(),
         workspace_snapshot=audit_workspace_snapshot(),
+        context_subset=audit_context_subset(),
     )
 
 

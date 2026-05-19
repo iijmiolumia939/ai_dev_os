@@ -6,6 +6,11 @@ from dataclasses import asdict, is_dataclass
 from pathlib import Path
 from typing import Any
 
+from ai_dev_os.context_subset.continuity_scope import ContinuityScopePolicy
+from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
+from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
+from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
+from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
 from ai_dev_os.repository_intelligence.ci_context import CIContextPolicy
 from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
@@ -84,6 +89,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return ArchitectureHotspotPolicy().detect(args.workspace)
     if command == "multi-repo-map":
         return MultiRepositoryPolicy().map(args.workspace)
+    if command == "context-subset":
+        return _context_subset(args.workspace, args.sprint, requested_focus="implementation")
+    if command == "topic-isolation":
+        return _context_subset(args.workspace, args.sprint)["topic_isolation"]
+    if command == "session-focus":
+        return _context_subset(args.workspace, args.sprint)["session_focus"]
+    if command == "stale-topics":
+        return _context_subset(args.workspace, args.sprint)["stale_topic_eviction"]
+    if command == "continuity-scope":
+        return _context_subset(args.workspace, args.sprint)["continuity_scope"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -91,6 +106,7 @@ def _sprint_start(sprint: str, project: str):
     metadata = SprintMetadataPolicy().default(sprint_id=sprint, project_name=project)
     discovery = RuntimeDiscoveryPolicy().discover(".")
     workspace = _workspace_snapshot(".", sprint)
+    subset = _context_subset(".", sprint)
     rollout = workspace["rollout_tracking"]
     hotspots = workspace["architecture_hotspots"]
     affected = metadata.affected_runtimes or discovery.runtime_packages[:3]
@@ -104,10 +120,16 @@ def _sprint_start(sprint: str, project: str):
                 "Workspace snapshot collected: "
                 + "; ".join(workspace["workspace_state"].bounded_summary)
             ),
-            active_risks=metadata.active_risks + hotspots.hotspot_summary,
+            active_risks=metadata.active_risks
+            + hotspots.hotspot_summary
+            + (subset["session_focus"].focus_drift_risk,),
             current_roadmap=(metadata.roadmap_stage, rollout.rollout_stage),
             architecture_flags=metadata.architecture_flags
-            + (hotspots.review_recommendation, hotspots.isolation_recommendation),
+            + (
+                hotspots.review_recommendation,
+                hotspots.isolation_recommendation,
+                subset["session_focus"].recommended_session_type,
+            ),
         )
     )
 
@@ -115,6 +137,7 @@ def _sprint_start(sprint: str, project: str):
 def _sprint_close(sprint: str, project: str):
     git = GitCollector().collect(".")
     workspace = _workspace_snapshot(".", sprint)
+    subset = _context_subset(".", sprint)
     validation = ValidationCollectorPolicy().collect(
         pytest_summary="local pytest status unknown",
         scoped_pytest=("repository intelligence scoped tests pending",),
@@ -144,14 +167,20 @@ def _sprint_close(sprint: str, project: str):
                 "remote verification required",
                 *workspace["known_failures"].baseline_failures,
                 workspace["architecture_hotspots"].risk_severity,
+                subset["session_focus"].focus_drift_risk,
             ),
-            next_roadmap=("release governance", workspace["rollout_tracking"].rollout_stage),
+            next_roadmap=(
+                "release governance",
+                workspace["rollout_tracking"].rollout_stage,
+                subset["session_focus"].recommended_session_type,
+            ),
         )
     )
 
 
 def _prompt_pack(prompt_type: str, project: str, sprint: str):
     workspace = _workspace_snapshot(".", sprint)
+    subset = _context_subset(".", sprint)
     return PromptPackPolicy().build(
         prompt_type=prompt_type,
         project_name=project,
@@ -164,9 +193,20 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
             "Workspace: " + "; ".join(workspace["workspace_state"].bounded_summary),
             "Rollout: " + workspace["rollout_tracking"].rollout_stage,
             "Architecture: " + workspace["architecture_hotspots"].risk_severity,
+            "Repository subset: " + ", ".join(subset["repository_subset"].active_repositories),
+            "Session focus: " + subset["session_focus"].recommended_session_type,
         ),
-        required_context=("continuity_bundle", "active_fr_tc", "workspace_snapshot"),
-        excluded_context=("full_history", "generated_artifacts"),
+        required_context=(
+            "continuity_bundle",
+            "active_fr_tc",
+            "workspace_snapshot",
+            "context_subset",
+        ),
+        excluded_context=(
+            "full_history",
+            "generated_artifacts",
+            *subset["continuity_scope"].excluded_context,
+        ),
         affected_runtimes=("session_orchestrator",),
         plain_text=True,
     )
@@ -176,6 +216,7 @@ def _continuity_export(project: str, *, output_format: str):
     metadata = SprintMetadataPolicy().default(project_name=project)
     discovery = RuntimeDiscoveryPolicy().discover(".")
     workspace = _workspace_snapshot(".", "next")
+    subset = _context_subset(".", "next")
     return ContinuityExportPolicy().export(
         active_requirements=tuple(
             item for item in metadata.active_fr_tc if item.startswith("FR-")
@@ -187,11 +228,14 @@ def _continuity_export(project: str, *, output_format: str):
         active_risks=(
             "manual copy step remains",
             workspace["architecture_hotspots"].risk_severity,
+            subset["session_focus"].focus_drift_risk,
         ),
         next_prompt_seed=(
             "Start the next sprint from this compact bundle only. "
             "Workspace repositories: "
             f"{', '.join(workspace['workspace_state'].active_repositories)}. "
+            "Active subset: "
+            f"{', '.join(subset['repository_subset'].active_repositories)}. "
             f"Rollout: {workspace['rollout_tracking'].rollout_stage}."
         ),
         output_format=output_format,
@@ -200,6 +244,9 @@ def _continuity_export(project: str, *, output_format: str):
             "generated_artifacts": "excluded",
             "workspace_snapshot": workspace["workspace_state"].bounded_summary,
             "known_failures": workspace["known_failures"].baseline_failures,
+            "repository_subset": subset["repository_subset"].active_repositories,
+            "continuity_scope": subset["continuity_scope"].included_context,
+            "stale_topic_eviction": subset["stale_topic_eviction"].evicted_topics,
         },
     )
 
@@ -218,6 +265,7 @@ def _rollover(project: str):
 
 def _session_decision(project: str):
     workspace = _workspace_snapshot(".", "next")
+    subset = _context_subset(".", "next")
     rollover = _rollover(project)
     stale = StaleContextDetectionPolicy().evaluate(
         (
@@ -237,6 +285,7 @@ def _session_decision(project: str):
     architecture_prompt = (
         "architecture redesign for workspace snapshot"
         if hotspot_severity in {"high", "critical"}
+        or subset["topic_isolation"].architecture_session_required
         else "routine sprint session"
     )
     architecture = ArchitectureIsolationPolicy().evaluate(
@@ -268,6 +317,56 @@ def _workspace_snapshot(workspace: str, sprint: str):
         "rollout_tracking": RolloutTrackingPolicy().track(workspace),
         "known_failures": KnownFailurePolicy().from_workspace(workspace),
         "architecture_hotspots": ArchitectureHotspotPolicy().detect(workspace, state=state),
+    }
+
+
+def _context_subset(
+    workspace: str,
+    sprint: str,
+    *,
+    requested_focus: str = "implementation",
+):
+    workspace_frame = _workspace_snapshot(workspace, sprint)
+    sprint_metadata = SprintMetadataPolicy().default(sprint_id=sprint, project_name="workspace")
+    runtime_discovery = RuntimeDiscoveryPolicy().discover(workspace)
+    repository_subset = RepositorySubsetPolicy().select(
+        workspace_state=workspace_frame["workspace_state"],
+        multi_repository=workspace_frame["multi_repository"],
+        sprint_metadata=sprint_metadata,
+        architecture_hotspots=workspace_frame["architecture_hotspots"],
+        runtime_discovery=runtime_discovery,
+    )
+    topics = (
+        sprint_metadata.roadmap_stage,
+        workspace_frame["rollout_tracking"].rollout_stage,
+        workspace_frame["architecture_hotspots"].review_recommendation,
+        *workspace_frame["known_failures"].baseline_failures,
+        "old sprint review",
+        "duplicate continuity",
+    )
+    stale = StaleTopicEvictionPolicy().evict(topics)
+    topic_isolation = TopicIsolationPolicy().isolate(
+        stale.retained_topics,
+        session_type=requested_focus,
+        architecture_severity=workspace_frame["architecture_hotspots"].risk_severity,
+    )
+    continuity_scope = ContinuityScopePolicy().scope(
+        repository_subset=repository_subset,
+        topic_isolation=topic_isolation,
+        active_tests=sprint_metadata.active_fr_tc,
+        rollout_required=bool(repository_subset.rollout_related_repositories),
+    )
+    session_focus = SessionFocusPolicy().focus(
+        requested_focus=requested_focus,
+        topic_isolation=topic_isolation,
+        architecture_hotspots=workspace_frame["architecture_hotspots"],
+    )
+    return {
+        "repository_subset": repository_subset,
+        "topic_isolation": topic_isolation,
+        "continuity_scope": continuity_scope,
+        "stale_topic_eviction": stale,
+        "session_focus": session_focus,
     }
 
 
