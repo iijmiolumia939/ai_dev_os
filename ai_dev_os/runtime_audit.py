@@ -14,6 +14,11 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.prompt_modes.context_depth import ContextDepthPolicy
+from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
+from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
+from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
+from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
@@ -260,6 +265,17 @@ class ContextSubsetAuditReport:
 
 
 @dataclass(frozen=True)
+class PromptModesAuditReport:
+    reasoning_profile_active: bool
+    prompt_shape_active: bool
+    review_intensity_active: bool
+    context_depth_active: bool
+    session_mode_router_active: bool
+    estimated_avoided_reasoning_token_burn: int
+    estimated_avoided_architecture_escalation: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -278,6 +294,7 @@ class RuntimeEnforcementAuditReport:
     repository_intelligence: RepositoryIntelligenceAuditReport
     workspace_snapshot: WorkspaceSnapshotAuditReport
     context_subset: ContextSubsetAuditReport
+    prompt_modes: PromptModesAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1019,6 +1036,73 @@ def audit_context_subset() -> ContextSubsetAuditReport:
     )
 
 
+def audit_prompt_modes() -> PromptModesAuditReport:
+    state = WorkspaceStatePolicy().snapshot(".", current_sprint="42")
+    multi = MultiRepositoryPolicy().map(".")
+    failures = KnownFailurePolicy().from_workspace(".")
+    hotspots = ArchitectureHotspotPolicy().detect(".", state=state)
+    metadata = SprintMetadataPolicy().default(sprint_id="42", project_name="workspace")
+    discovery = RuntimeDiscoveryPolicy().discover(".")
+    repository_subset = RepositorySubsetPolicy().select(
+        workspace_state=state,
+        multi_repository=multi,
+        sprint_metadata=metadata,
+        architecture_hotspots=hotspots,
+        runtime_discovery=discovery,
+    )
+    stale = StaleTopicEvictionPolicy().evict(
+        (
+            metadata.roadmap_stage,
+            hotspots.review_recommendation,
+            *failures.baseline_failures,
+            "old sprint review",
+        )
+    )
+    isolation = TopicIsolationPolicy().isolate(
+        stale.retained_topics,
+        session_type="implementation",
+        architecture_severity=hotspots.risk_severity,
+    )
+    continuity = ContinuityScopePolicy().scope(
+        repository_subset=repository_subset,
+        topic_isolation=isolation,
+        active_tests=metadata.active_fr_tc,
+        rollout_required=bool(repository_subset.rollout_related_repositories),
+    )
+    focus = SessionFocusPolicy().focus(
+        requested_focus="implementation",
+        topic_isolation=isolation,
+        architecture_hotspots=hotspots,
+    )
+    validation = ValidationCollectorPolicy().collect(remote_ci_summary="not_checked")
+    router = SessionModeRouterPolicy().route(
+        session_focus=focus,
+        topic_isolation=isolation,
+        continuity_scope=continuity,
+        repository_subset=repository_subset,
+        architecture_hotspots=hotspots,
+        validation=validation,
+    )
+    profile = ReasoningProfilePolicy().profile(focus, mode=router.recommended_mode)
+    shape = PromptShapePolicy().shape(profile)
+    review = ReviewIntensityPolicy().intensity(profile)
+    depth = ContextDepthPolicy().depth(profile, continuity)
+    avoided_burn = max(0, 2_400 - profile.retrieval_budget) + len(depth.excluded_depth) * 120
+    avoided_escalation = 0 if review.council_required else 900
+    return PromptModesAuditReport(
+        reasoning_profile_active=profile.bounded and profile.mode != "",
+        prompt_shape_active=shape.compact_mode and shape.summary_only_mode,
+        review_intensity_active=not (
+            profile.mode == "bounded_implementation" and review.council_required
+        ),
+        context_depth_active=depth.compact_required
+        and "full_historical_continuity" in depth.excluded_depth,
+        session_mode_router_active=router.compact_mode and bool(router.recommended_mode),
+        estimated_avoided_reasoning_token_burn=avoided_burn,
+        estimated_avoided_architecture_escalation=avoided_escalation,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1038,6 +1122,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         repository_intelligence=audit_repository_intelligence(),
         workspace_snapshot=audit_workspace_snapshot(),
         context_subset=audit_context_subset(),
+        prompt_modes=audit_prompt_modes(),
     )
 
 

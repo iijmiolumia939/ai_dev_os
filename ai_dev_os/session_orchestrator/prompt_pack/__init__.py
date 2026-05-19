@@ -80,11 +80,23 @@ class PromptPackPolicy:
         required_context: tuple[str, ...] = (),
         excluded_context: tuple[str, ...] = (),
         affected_runtimes: tuple[str, ...] = (),
+        prompt_shape: str = "compact_patch_prompt",
+        continuity_depth: str = "minimal",
+        review_checklist: tuple[str, ...] = (),
+        architecture_allowance: str = "none",
+        retrieval_budget: int = 900,
         plain_text: bool = True,
     ) -> PromptPackFrame:
         if prompt_type not in PROMPT_TEMPLATES:
             raise ValueError(f"unsupported prompt type: {prompt_type}")
-        context = "\n".join(f"- {line}" for line in context_lines if line) or "- none"
+        mode_lines = (
+            f"Prompt shape: {prompt_shape}",
+            f"Continuity depth: {continuity_depth}",
+            f"Architecture allowance: {architecture_allowance}",
+            f"Retrieval budget: {retrieval_budget}",
+            "Review checklist: " + ", ".join(review_checklist or ("bounded validation",)),
+        )
+        context = "\n".join(f"- {line}" for line in (*mode_lines, *context_lines) if line)
         text = PROMPT_TEMPLATES[prompt_type].format(
             sprint_id=sprint_id or "next",
             project_name=project_name,

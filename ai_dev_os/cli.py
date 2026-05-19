@@ -11,6 +11,11 @@ from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
 from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
 from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
 from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
+from ai_dev_os.prompt_modes.context_depth import ContextDepthPolicy
+from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
+from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
+from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
+from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
 from ai_dev_os.repository_intelligence.ci_context import CIContextPolicy
 from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
@@ -99,6 +104,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _context_subset(args.workspace, args.sprint)["stale_topic_eviction"]
     if command == "continuity-scope":
         return _context_subset(args.workspace, args.sprint)["continuity_scope"]
+    if command == "reasoning-profile":
+        return _prompt_modes(args.workspace, args.sprint)["reasoning_profile"]
+    if command == "prompt-shape":
+        return _prompt_modes(args.workspace, args.sprint)["prompt_shape"]
+    if command == "review-intensity":
+        return _prompt_modes(args.workspace, args.sprint)["review_intensity"]
+    if command == "context-depth":
+        return _prompt_modes(args.workspace, args.sprint)["context_depth"]
+    if command == "session-mode":
+        return _prompt_modes(args.workspace, args.sprint)["session_mode"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -181,8 +196,13 @@ def _sprint_close(sprint: str, project: str):
 def _prompt_pack(prompt_type: str, project: str, sprint: str):
     workspace = _workspace_snapshot(".", sprint)
     subset = _context_subset(".", sprint)
+    modes = _prompt_modes(".", sprint)
+    prompt_shape = modes["prompt_shape"]
+    context_depth = modes["context_depth"]
+    review = modes["review_intensity"]
+    session_mode = modes["session_mode"]
     return PromptPackPolicy().build(
-        prompt_type=prompt_type,
+        prompt_type=prompt_type or session_mode.recommended_prompt_type,
         project_name=project,
         sprint_id=sprint,
         objective="automate bounded session orchestration",
@@ -195,6 +215,7 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
             "Architecture: " + workspace["architecture_hotspots"].risk_severity,
             "Repository subset: " + ", ".join(subset["repository_subset"].active_repositories),
             "Session focus: " + subset["session_focus"].recommended_session_type,
+            "Reasoning mode: " + modes["reasoning_profile"].mode,
         ),
         required_context=(
             "continuity_bundle",
@@ -206,8 +227,14 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
             "full_history",
             "generated_artifacts",
             *subset["continuity_scope"].excluded_context,
+            *context_depth.excluded_depth,
         ),
         affected_runtimes=("session_orchestrator",),
+        prompt_shape=prompt_shape.recommended_prompt_shape,
+        continuity_depth=context_depth.included_depth[-1],
+        review_checklist=review.required_review_domains,
+        architecture_allowance=modes["reasoning_profile"].architecture_allowance,
+        retrieval_budget=modes["reasoning_profile"].retrieval_budget,
         plain_text=True,
     )
 
@@ -367,6 +394,32 @@ def _context_subset(
         "continuity_scope": continuity_scope,
         "stale_topic_eviction": stale,
         "session_focus": session_focus,
+    }
+
+
+def _prompt_modes(workspace: str, sprint: str):
+    subset = _context_subset(workspace, sprint)
+    validation = ValidationCollectorPolicy().collect(remote_ci_summary="not_checked")
+    session_mode = SessionModeRouterPolicy().route(
+        session_focus=subset["session_focus"],
+        topic_isolation=subset["topic_isolation"],
+        continuity_scope=subset["continuity_scope"],
+        repository_subset=subset["repository_subset"],
+        architecture_hotspots=_workspace_snapshot(workspace, sprint)["architecture_hotspots"],
+        validation=validation,
+    )
+    profile = ReasoningProfilePolicy().profile(
+        subset["session_focus"], mode=session_mode.recommended_mode
+    )
+    shape = PromptShapePolicy().shape(profile)
+    review = ReviewIntensityPolicy().intensity(profile)
+    depth = ContextDepthPolicy().depth(profile, subset["continuity_scope"])
+    return {
+        "session_mode": session_mode,
+        "reasoning_profile": profile,
+        "prompt_shape": shape,
+        "review_intensity": review,
+        "context_depth": depth,
     }
 
 
