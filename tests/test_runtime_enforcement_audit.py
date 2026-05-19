@@ -48,3 +48,8 @@ def test_runtime_telemetry_and_stress_audit_are_bounded() -> None:
     assert report.stress.no_unbounded_escalation is True
     assert report.stress.runtime_stability is True
     assert report.stress.bounded_enforcement is True
+    assert report.retrieval_scaling.retrieval_pressure in {"HIGH", "CRITICAL"}
+    assert report.retrieval_scaling.tier_downgrade is True
+    assert report.retrieval_scaling.additional_compaction is True
+    assert report.retrieval_scaling.token_explosion_prevented is True
+    assert report.retrieval_scaling.after_tokens < report.retrieval_scaling.before_tokens

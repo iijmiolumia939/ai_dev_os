@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
+from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from governance.autonomous_budget import within_limits
 from governance.budget_runtime import (
     BudgetState,
@@ -116,6 +118,18 @@ class RuntimeStressReport:
 
 
 @dataclass(frozen=True)
+class RetrievalScalingAuditReport:
+    retrieval_pressure: str
+    tier_downgrade: bool
+    additional_compaction: bool
+    summary_only_mode: bool
+    retrieval_fallback_mode: bool
+    token_explosion_prevented: bool
+    before_tokens: int
+    after_tokens: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -126,6 +140,7 @@ class RuntimeEnforcementAuditReport:
     diff_only: DiffOnlyEnforcementReport
     telemetry: TelemetryAuditReport
     stress: RuntimeStressReport
+    retrieval_scaling: RetrievalScalingAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -342,6 +357,53 @@ def audit_runtime_stress() -> RuntimeStressReport:
     )
 
 
+def audit_retrieval_scaling() -> RetrievalScalingAuditReport:
+    bundle = {
+        "active_requirements": ["FR-RETRIEVAL-01", "NFR-COST-02"],
+        "changed_files": ["ai_dev_os/retrieval/retrieval_scaling/__init__.py"],
+        "active_artifacts": ["hierarchical-memory-design"],
+        "entries": [{"path": f"docs/context-{index}.md", "score": 1} for index in range(30)],
+        "policy": {"mode": "retrieval-first"},
+        "stale_sprint_history": "stale " * 16_000,
+        "inactive_adr": "inactive " * 8_000,
+        "obsolete_open_questions": "obsolete " * 8_000,
+        "giant_markdown": "markdown " * 16_000,
+        "duplicate_contexts": ["docs/context-1.md", "docs/context-1.md"],
+    }
+    nodes = (
+        MemoryTreeNode(
+            kind="architecture_summary",
+            title="retrieval architecture",
+            summary="retrieval-first bounded context with local summaries",
+            priority=10,
+            continuity_weight=0.9,
+        ),
+        MemoryTreeNode(
+            kind="checkpoint_summary",
+            title="latest checkpoint",
+            summary="active retrieval scaling work continues from deterministic audit",
+            priority=8,
+            continuity_weight=0.7,
+        ),
+    )
+    frame: RetrievalScalingFrame = scale_retrieval(
+        bundle,
+        nodes,
+        budget_state=BudgetState(100.0, 500.0, 1500.0, daily_spend=95.0),
+        max_context_tokens=4_000,
+    )
+    return RetrievalScalingAuditReport(
+        retrieval_pressure=frame.retrieval_pressure,
+        tier_downgrade=frame.tier_downgrade,
+        additional_compaction=frame.additional_compaction,
+        summary_only_mode=frame.summary_only_mode,
+        retrieval_fallback_mode=frame.retrieval_fallback_mode,
+        token_explosion_prevented=frame.token_explosion_prevented,
+        before_tokens=frame.before_tokens,
+        after_tokens=frame.after_tokens,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -353,6 +415,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         diff_only=audit_diff_only_enforcement(),
         telemetry=audit_telemetry_runtime(),
         stress=audit_runtime_stress(),
+        retrieval_scaling=audit_retrieval_scaling(),
     )
 
 
