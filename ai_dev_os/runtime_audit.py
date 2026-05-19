@@ -14,6 +14,11 @@ from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
 from ai_dev_os.providers.provider_contracts import ProviderRequest
 from ai_dev_os.providers.provider_telemetry import aggregate_provider_telemetry
+from ai_dev_os.repository_intelligence.ci_context import CIContextPolicy
+from ai_dev_os.repository_intelligence.git_collector import GitCollector
+from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
+from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPolicy
+from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.session_lifecycle.architecture_isolation import ArchitectureIsolationPolicy
@@ -212,6 +217,17 @@ class SessionOrchestratorAuditReport:
 
 
 @dataclass(frozen=True)
+class RepositoryIntelligenceAuditReport:
+    repository_intelligence_active: bool
+    git_collector_active: bool
+    runtime_discovery_active: bool
+    validation_collector_active: bool
+    ci_context_active: bool
+    estimated_avoided_manual_context_tokens: int
+    automated_sprint_metadata_coverage: float
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -227,6 +243,7 @@ class RuntimeEnforcementAuditReport:
     copilot_usage: CopilotUsageAuditReport
     session_lifecycle: SessionLifecycleAuditReport
     session_orchestrator: SessionOrchestratorAuditReport
+    repository_intelligence: RepositoryIntelligenceAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -825,6 +842,59 @@ def audit_session_orchestrator() -> SessionOrchestratorAuditReport:
     )
 
 
+def audit_repository_intelligence() -> RepositoryIntelligenceAuditReport:
+    git = GitCollector().collect(".")
+    metadata = SprintMetadataPolicy().default(sprint_id="42", project_name="aituber")
+    discovery = RuntimeDiscoveryPolicy().discover(".")
+    validation = ValidationCollectorPolicy().collect(
+        pytest_summary="63 passed",
+        scoped_pytest=("tests/repository_intelligence passed",),
+        ruff_status="pass",
+        black_status="pass",
+        architecture_gates=("gates pass",),
+        runtime_isolation_gates=("runtime isolation pass",),
+        diff_check="clean",
+        remote_ci_summary="success",
+    )
+    ci_context = CIContextPolicy().from_summary(
+        latest_ci_status="success",
+        latest_workflow_name="CI",
+        platform_matrix_summary=("ubuntu", "macos", "windows"),
+        optional_dependency_status="success",
+        release_verification_status="not_required",
+    )
+    metadata_fields = (
+        metadata.sprint_id,
+        metadata.active_fr_tc,
+        metadata.affected_runtimes,
+        metadata.roadmap_stage,
+        metadata.active_risks,
+        metadata.architecture_flags,
+        metadata.continuity_state,
+        metadata.validation_status,
+    )
+    covered = sum(bool(value) for value in metadata_fields)
+    coverage = covered / len(metadata_fields)
+    changed_paths = (
+        git.changed_runtime_paths + git.changed_test_paths + git.changed_governance_paths
+    )
+    avoided_tokens = (
+        len(changed_paths) * 120
+        + len(discovery.runtime_packages) * 40
+        + len(validation.scoped_pytest) * 80
+        + int(coverage * 1_000)
+    )
+    return RepositoryIntelligenceAuditReport(
+        repository_intelligence_active=True,
+        git_collector_active=git.read_only and bool(git.local_head),
+        runtime_discovery_active=bool(discovery.runtime_packages),
+        validation_collector_active=validation.all_passed,
+        ci_context_active=ci_context.latest_workflow_name == "CI",
+        estimated_avoided_manual_context_tokens=avoided_tokens,
+        automated_sprint_metadata_coverage=round(coverage, 4),
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -841,6 +911,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         copilot_usage=audit_copilot_usage(),
         session_lifecycle=audit_session_lifecycle(),
         session_orchestrator=audit_session_orchestrator(),
+        repository_intelligence=audit_repository_intelligence(),
     )
 
 
