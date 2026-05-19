@@ -3,6 +3,11 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 
+from ai_dev_os.providers.cost_simulation import simulate_cost
+from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
+from ai_dev_os.providers.mock_provider import simulate_provider_request
+from ai_dev_os.providers.provider_contracts import ProviderRequest
+from ai_dev_os.providers.provider_telemetry import aggregate_provider_telemetry
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from governance.autonomous_budget import within_limits
@@ -127,6 +132,22 @@ class RetrievalScalingAuditReport:
     token_explosion_prevented: bool
     before_tokens: int
     after_tokens: int
+    provider_token_estimate: int
+    provider_cost_estimate: float
+    fallback_mode_estimate: bool
+    summary_only_savings_estimate: float
+    token_burn_avoided: int
+
+
+@dataclass(frozen=True)
+class ProviderSimulationAuditReport:
+    provider_simulation_active: bool
+    mock_provider_fallback_verified: bool
+    retrieval_cost_estimate: float
+    estimated_savings_ratio: float
+    fallback_frequency: int
+    token_burn_avoided: int
+    no_real_provider_call: bool
 
 
 @dataclass(frozen=True)
@@ -141,6 +162,7 @@ class RuntimeEnforcementAuditReport:
     telemetry: TelemetryAuditReport
     stress: RuntimeStressReport
     retrieval_scaling: RetrievalScalingAuditReport
+    provider_simulation: ProviderSimulationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -392,6 +414,16 @@ def audit_retrieval_scaling() -> RetrievalScalingAuditReport:
         budget_state=BudgetState(100.0, 500.0, 1500.0, daily_spend=95.0),
         max_context_tokens=4_000,
     )
+    provider_request = ProviderRequest(
+        provider_name="mock-router",
+        model_tier=frame.selected_tier,
+        prompt_tokens=900,
+        completion_tokens=240,
+        retrieval_context_tokens=frame.before_tokens,
+        compressed_context_tokens=frame.after_tokens,
+        scenario="rate_limit" if frame.retrieval_fallback_mode else "success",
+    )
+    cost = simulate_cost(provider_request, fallback_used=frame.retrieval_fallback_mode)
     return RetrievalScalingAuditReport(
         retrieval_pressure=frame.retrieval_pressure,
         tier_downgrade=frame.tier_downgrade,
@@ -401,6 +433,49 @@ def audit_retrieval_scaling() -> RetrievalScalingAuditReport:
         token_explosion_prevented=frame.token_explosion_prevented,
         before_tokens=frame.before_tokens,
         after_tokens=frame.after_tokens,
+        provider_token_estimate=cost.after_retrieval_scaling,
+        provider_cost_estimate=cost.estimated_after_cost,
+        fallback_mode_estimate=frame.retrieval_fallback_mode,
+        summary_only_savings_estimate=cost.estimated_savings_ratio,
+        token_burn_avoided=cost.token_burn_avoided,
+    )
+
+
+def audit_provider_simulation() -> ProviderSimulationAuditReport:
+    success_request = ProviderRequest(
+        provider_name="mock-router",
+        model_tier="tier0",
+        prompt_tokens=240,
+        completion_tokens=80,
+        retrieval_context_tokens=4_000,
+        compressed_context_tokens=480,
+        scenario="success",
+    )
+    failure_request = ProviderRequest(
+        provider_name="mock-router",
+        model_tier="tier2",
+        prompt_tokens=900,
+        completion_tokens=220,
+        retrieval_context_tokens=24_000,
+        compressed_context_tokens=700,
+        scenario="timeout",
+    )
+    success = simulate_provider_request(success_request)
+    fallback = simulate_fallback_chain(
+        failure_request,
+        budget_state=BudgetState(100.0, 500.0, 1500.0, daily_spend=99.0),
+    )
+    telemetry = aggregate_provider_telemetry((success, fallback.provider_frame))
+    cost = simulate_cost(failure_request, fallback_used=fallback.local_fallback)
+    return ProviderSimulationAuditReport(
+        provider_simulation_active=success.no_real_provider_call
+        and fallback.provider_frame.no_real_provider_call,
+        mock_provider_fallback_verified=fallback.local_fallback and fallback.summary_only_fallback,
+        retrieval_cost_estimate=telemetry.retrieval_related_cost,
+        estimated_savings_ratio=cost.estimated_savings_ratio,
+        fallback_frequency=telemetry.fallback_frequency,
+        token_burn_avoided=cost.token_burn_avoided,
+        no_real_provider_call=True,
     )
 
 
@@ -416,6 +491,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         telemetry=audit_telemetry_runtime(),
         stress=audit_runtime_stress(),
         retrieval_scaling=audit_retrieval_scaling(),
+        provider_simulation=audit_provider_simulation(),
     )
 
 

@@ -22,6 +22,10 @@ runtime_snapshots/
 stress_outputs/
 runtime_audit_report*.json
 runtime_enforcement_report*.json
+provider_telemetry*.json
+retrieval_cost_telemetry*.json
+cost_telemetry*.json
+fallback_simulation*.json
 *_audit_report.json
 *_runtime_snapshot.json
 usage*.jsonl
