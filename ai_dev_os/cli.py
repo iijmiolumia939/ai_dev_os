@@ -23,6 +23,11 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
+from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
+from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
+from ai_dev_os.workspace_snapshot.rollout_tracking import RolloutTrackingPolicy
+from ai_dev_os.workspace_snapshot.workspace_state import WorkspaceStatePolicy
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -31,6 +36,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--sprint", default="next")
     parser.add_argument("--project", default="project")
     parser.add_argument("--repo-path", default=".")
+    parser.add_argument("--workspace", default=".")
     parser.add_argument("--from-file", default="")
     parser.add_argument("--type", default="sprint-start")
     parser.add_argument("--json", action="store_true")
@@ -68,12 +74,25 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return RuntimeDiscoveryPolicy().discover(args.repo_path)
     if command == "ci-context":
         return CIContextPolicy().default_local()
+    if command == "workspace-snapshot":
+        return _workspace_snapshot(args.workspace, args.sprint)
+    if command == "rollout-status":
+        return RolloutTrackingPolicy().track(args.workspace)
+    if command == "known-failures":
+        return KnownFailurePolicy().from_workspace(args.workspace)
+    if command == "architecture-hotspots":
+        return ArchitectureHotspotPolicy().detect(args.workspace)
+    if command == "multi-repo-map":
+        return MultiRepositoryPolicy().map(args.workspace)
     raise SystemExit(f"unsupported command: {command}")
 
 
 def _sprint_start(sprint: str, project: str):
     metadata = SprintMetadataPolicy().default(sprint_id=sprint, project_name=project)
     discovery = RuntimeDiscoveryPolicy().discover(".")
+    workspace = _workspace_snapshot(".", sprint)
+    rollout = workspace["rollout_tracking"]
+    hotspots = workspace["architecture_hotspots"]
     affected = metadata.affected_runtimes or discovery.runtime_packages[:3]
     return SprintStartPolicy().build(
         SprintStartInput(
@@ -81,16 +100,21 @@ def _sprint_start(sprint: str, project: str):
             project_name=project,
             active_fr_tc=("FR-SESSION-CLI-01", "TC-SESSION-CLI-01"),
             affected_runtimes=affected,
-            previous_sprint_summary="Workspace metadata collected for bounded sprint start.",
-            active_risks=metadata.active_risks,
-            current_roadmap=(metadata.roadmap_stage,),
-            architecture_flags=metadata.architecture_flags,
+            previous_sprint_summary=(
+                "Workspace snapshot collected: "
+                + "; ".join(workspace["workspace_state"].bounded_summary)
+            ),
+            active_risks=metadata.active_risks + hotspots.hotspot_summary,
+            current_roadmap=(metadata.roadmap_stage, rollout.rollout_stage),
+            architecture_flags=metadata.architecture_flags
+            + (hotspots.review_recommendation, hotspots.isolation_recommendation),
         )
     )
 
 
 def _sprint_close(sprint: str, project: str):
     git = GitCollector().collect(".")
+    workspace = _workspace_snapshot(".", sprint)
     validation = ValidationCollectorPolicy().collect(
         pytest_summary="local pytest status unknown",
         scoped_pytest=("repository intelligence scoped tests pending",),
@@ -109,17 +133,25 @@ def _sprint_close(sprint: str, project: str):
     )
     return SprintClosePolicy().close(
         SprintCloseInput(
-            validation_summary=f"Sprint {sprint} for {project}: {validation.remote_ci_summary}",
+            validation_summary=(
+                f"Sprint {sprint} for {project}: {validation.remote_ci_summary}; "
+                f"workspace={workspace['workspace_state'].continuity_state}"
+            ),
             git_status_summary=status,
             changed_paths=git.changed_runtime_paths + git.changed_test_paths,
             test_results=validation.scoped_pytest,
-            remaining_risks=("remote verification required",),
-            next_roadmap=("release governance", "consumer workflow"),
+            remaining_risks=(
+                "remote verification required",
+                *workspace["known_failures"].baseline_failures,
+                workspace["architecture_hotspots"].risk_severity,
+            ),
+            next_roadmap=("release governance", workspace["rollout_tracking"].rollout_stage),
         )
     )
 
 
 def _prompt_pack(prompt_type: str, project: str, sprint: str):
+    workspace = _workspace_snapshot(".", sprint)
     return PromptPackPolicy().build(
         prompt_type=prompt_type,
         project_name=project,
@@ -129,8 +161,11 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
             "Use compact continuity bundle only.",
             "Do not replay full sprint history.",
             "Return validation and remote verification summary.",
+            "Workspace: " + "; ".join(workspace["workspace_state"].bounded_summary),
+            "Rollout: " + workspace["rollout_tracking"].rollout_stage,
+            "Architecture: " + workspace["architecture_hotspots"].risk_severity,
         ),
-        required_context=("continuity_bundle", "active_fr_tc"),
+        required_context=("continuity_bundle", "active_fr_tc", "workspace_snapshot"),
         excluded_context=("full_history", "generated_artifacts"),
         affected_runtimes=("session_orchestrator",),
         plain_text=True,
@@ -140,6 +175,7 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
 def _continuity_export(project: str, *, output_format: str):
     metadata = SprintMetadataPolicy().default(project_name=project)
     discovery = RuntimeDiscoveryPolicy().discover(".")
+    workspace = _workspace_snapshot(".", "next")
     return ContinuityExportPolicy().export(
         active_requirements=tuple(
             item for item in metadata.active_fr_tc if item.startswith("FR-")
@@ -148,10 +184,23 @@ def _continuity_export(project: str, *, output_format: str):
         current_sprint_boundary=f"{project}: next bounded session",
         affected_runtimes=metadata.affected_runtimes or discovery.runtime_packages[:3],
         current_architecture_constraints=("no UI automation", "no full history replay"),
-        active_risks=("manual copy step remains",),
-        next_prompt_seed="Start the next sprint from this compact bundle only.",
+        active_risks=(
+            "manual copy step remains",
+            workspace["architecture_hotspots"].risk_severity,
+        ),
+        next_prompt_seed=(
+            "Start the next sprint from this compact bundle only. "
+            "Workspace repositories: "
+            f"{', '.join(workspace['workspace_state'].active_repositories)}. "
+            f"Rollout: {workspace['rollout_tracking'].rollout_stage}."
+        ),
         output_format=output_format,
-        extra_context={"full_history": "excluded", "generated_artifacts": "excluded"},
+        extra_context={
+            "full_history": "excluded",
+            "generated_artifacts": "excluded",
+            "workspace_snapshot": workspace["workspace_state"].bounded_summary,
+            "known_failures": workspace["known_failures"].baseline_failures,
+        },
     )
 
 
@@ -168,6 +217,7 @@ def _rollover(project: str):
 
 
 def _session_decision(project: str):
+    workspace = _workspace_snapshot(".", "next")
     rollover = _rollover(project)
     stale = StaleContextDetectionPolicy().evaluate(
         (
@@ -183,9 +233,15 @@ def _session_decision(project: str):
         prompt_compactness=0.8,
         pressure="HIGH",
     )
+    hotspot_severity = workspace["architecture_hotspots"].risk_severity
+    architecture_prompt = (
+        "architecture redesign for workspace snapshot"
+        if hotspot_severity in {"high", "critical"}
+        else "routine sprint session"
+    )
     architecture = ArchitectureIsolationPolicy().evaluate(
-        "routine sprint session",
-        affected_runtimes=("session_orchestrator",),
+        architecture_prompt,
+        affected_runtimes=("session_orchestrator", "workspace_snapshot"),
     )
     return SessionDecisionPolicy().decide(
         rollover=rollover,
@@ -201,6 +257,17 @@ def _repo_intel(repo_path: str):
         "runtime_discovery": RuntimeDiscoveryPolicy().discover(repo_path),
         "validation": _validation_summary(repo_path),
         "ci_context": CIContextPolicy().default_local(),
+    }
+
+
+def _workspace_snapshot(workspace: str, sprint: str):
+    state = WorkspaceStatePolicy().snapshot(workspace, current_sprint=sprint)
+    return {
+        "workspace_state": state,
+        "multi_repository": MultiRepositoryPolicy().map(workspace),
+        "rollout_tracking": RolloutTrackingPolicy().track(workspace),
+        "known_failures": KnownFailurePolicy().from_workspace(workspace),
+        "architecture_hotspots": ArchitectureHotspotPolicy().detect(workspace, state=state),
     }
 
 
@@ -230,6 +297,10 @@ def _print_result(result: Any, *, json_mode: bool, copy_ready: bool) -> None:
     data = _to_data(result)
     if copy_ready and isinstance(data, dict) and "copy_ready_text" in data:
         print(data["copy_ready_text"])
+        return
+    if copy_ready and isinstance(data, dict):
+        for key, value in data.items():
+            print(f"{key}: {value}")
         return
     if json_mode:
         print(json.dumps(data, indent=2, sort_keys=True))

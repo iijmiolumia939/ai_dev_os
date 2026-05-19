@@ -37,6 +37,11 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
+from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
+from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
+from ai_dev_os.workspace_snapshot.rollout_tracking import RolloutTrackingPolicy
+from ai_dev_os.workspace_snapshot.workspace_state import WorkspaceStatePolicy
 from governance.autonomous_budget import within_limits
 from governance.budget_runtime import (
     BudgetState,
@@ -228,6 +233,17 @@ class RepositoryIntelligenceAuditReport:
 
 
 @dataclass(frozen=True)
+class WorkspaceSnapshotAuditReport:
+    workspace_snapshot_active: bool
+    multi_repository_continuity_active: bool
+    rollout_tracking_active: bool
+    known_failure_baseline_active: bool
+    architecture_hotspot_detection_active: bool
+    estimated_avoided_manual_workspace_context: int
+    consumer_repository_coverage: float
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -244,6 +260,7 @@ class RuntimeEnforcementAuditReport:
     session_lifecycle: SessionLifecycleAuditReport
     session_orchestrator: SessionOrchestratorAuditReport
     repository_intelligence: RepositoryIntelligenceAuditReport
+    workspace_snapshot: WorkspaceSnapshotAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -895,6 +912,35 @@ def audit_repository_intelligence() -> RepositoryIntelligenceAuditReport:
     )
 
 
+def audit_workspace_snapshot() -> WorkspaceSnapshotAuditReport:
+    state = WorkspaceStatePolicy().snapshot(".", current_sprint="42")
+    multi = MultiRepositoryPolicy().map(".")
+    rollout = RolloutTrackingPolicy().track(".")
+    failures = KnownFailurePolicy().from_workspace(".")
+    hotspots = ArchitectureHotspotPolicy().detect(".", state=state)
+    repository_count = max(1, len(state.active_repositories))
+    consumer_coverage = round(
+        len(multi.ai_dev_os_consumer_repos) / repository_count,
+        4,
+    )
+    avoided = (
+        len(state.active_repositories) * 400
+        + len(state.bounded_summary) * 120
+        + len(multi.repository_dependency_graph_summary) * 180
+        + len(failures.baseline_failures) * 90
+        + len(hotspots.hotspot_summary) * 160
+    )
+    return WorkspaceSnapshotAuditReport(
+        workspace_snapshot_active=state.read_only and bool(state.active_repositories),
+        multi_repository_continuity_active=multi.bounded and multi.read_only,
+        rollout_tracking_active=rollout.read_only and bool(rollout.rollout_stage),
+        known_failure_baseline_active=failures.read_only and bool(failures.baseline_failures),
+        architecture_hotspot_detection_active=hotspots.read_only and bool(hotspots.risk_severity),
+        estimated_avoided_manual_workspace_context=avoided,
+        consumer_repository_coverage=consumer_coverage,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -912,6 +958,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         session_lifecycle=audit_session_lifecycle(),
         session_orchestrator=audit_session_orchestrator(),
         repository_intelligence=audit_repository_intelligence(),
+        workspace_snapshot=audit_workspace_snapshot(),
     )
 
 
