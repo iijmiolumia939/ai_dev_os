@@ -1,0 +1,41 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AI_DEV_OS: Session Audit",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli session-audit --workspace . --json",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI_DEV_OS: Generate Handoff",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli handoff-session --workspace . --copy-ready",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI_DEV_OS: Export Prompt",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli export-prompt --workspace . --copy-ready",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI_DEV_OS: Copy Prompt",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli copy-prompt --workspace . --json",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI_DEV_OS: Sprint Start",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli sprint-start --workspace . --copy-ready",
+      "problemMatcher": []
+    },
+    {
+      "label": "AI_DEV_OS: Sprint Close",
+      "type": "shell",
+      "command": "python -m ai_dev_os.cli sprint-close --workspace . --json",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "AI_DEV_OS bounded implementation prompt": {
+    "scope": "markdown,plaintext",
+    "prefix": "ai-dev-os-bounded-implementation",
+    "body": [
+      "Mode: bounded_implementation",
+      "Use only active repository subset and compact continuity.",
+      "Do not replay full history.",
+      "Return patch, validation, and handoff summary."
+    ],
+    "description": "Bounded implementation prompt"
+  },
+  "AI_DEV_OS isolated architecture prompt": {
+    "scope": "markdown,plaintext",
+    "prefix": "ai-dev-os-isolated-architecture",
+    "body": [
+      "Mode: isolated_architecture",
+      "Scope only architecture-sensitive runtimes.",
+      "Do not mix routine patch context.",
+      "Return decision, risks, tests, and continuation boundary."
+    ],
+    "description": "Isolated architecture prompt"
+  },
+  "AI_DEV_OS rollout review prompt": {
+    "scope": "markdown,plaintext",
+    "prefix": "ai-dev-os-rollout-review",
+    "body": [
+      "Mode: rollout_review",
+      "Review rollout status, CI, package state, and consumer adoption.",
+      "Keep continuity summary-only.",
+      "Return readiness and remaining gates."
+    ],
+    "description": "Rollout review prompt"
+  },
+  "AI_DEV_OS session rollover prompt": {
+    "scope": "markdown,plaintext",
+    "prefix": "ai-dev-os-session-rollover",
+    "body": [
+      "Mode: session_rollover",
+      "Use this compact handoff only.",
+      "Exclude stale topics and full transcript history.",
+      "Start with active repository subset and current session focus."
+    ],
+    "description": "Session rollover prompt"
+  },
+  "AI_DEV_OS compact continuity prompt": {
+    "scope": "markdown,plaintext",
+    "prefix": "ai-dev-os-compact-continuity",
+    "body": [
+      "Continuity: compact",
+      "Required context only:",
+      "- active requirements/tests",
+      "- repository subset",
+      "- prompt mode",
+      "- validation summary",
+      "Excluded context:",
+      "- full history",
+      "- stale roadmap",
+      "- unrelated architecture topics"
+    ],
+    "description": "Compact continuity prompt"
+  }
+}

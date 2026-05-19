@@ -33,6 +33,11 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
+from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
+from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
+from ai_dev_os.vscode_integration.prompt_export import PromptExportPolicy
+from ai_dev_os.vscode_integration.session_handoff import SessionHandoffPolicy
 from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
 from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
 from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
@@ -114,6 +119,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _prompt_modes(args.workspace, args.sprint)["context_depth"]
     if command == "session-mode":
         return _prompt_modes(args.workspace, args.sprint)["session_mode"]
+    if command == "handoff-session":
+        return _vscode_handoff(args.workspace, args.sprint)
+    if command == "export-prompt":
+        return _vscode_prompt_export(args.workspace, args.sprint)
+    if command == "copy-prompt":
+        return _vscode_copy_prompt(args.workspace, args.sprint)
+    if command == "session-pressure":
+        return _vscode_notifications(args.workspace, args.sprint)
+    if command == "vscode-state":
+        return _vscode_state(args.workspace, args.sprint)
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -125,6 +140,7 @@ def _sprint_start(sprint: str, project: str):
     rollout = workspace["rollout_tracking"]
     hotspots = workspace["architecture_hotspots"]
     affected = metadata.affected_runtimes or discovery.runtime_packages[:3]
+    handoff = _vscode_handoff(".", sprint)
     return SprintStartPolicy().build(
         SprintStartInput(
             sprint_id=sprint,
@@ -134,6 +150,7 @@ def _sprint_start(sprint: str, project: str):
             previous_sprint_summary=(
                 "Workspace snapshot collected: "
                 + "; ".join(workspace["workspace_state"].bounded_summary)
+                + f"; handoff={handoff.handoff_summary}"
             ),
             active_risks=metadata.active_risks
             + hotspots.hotspot_summary
@@ -153,6 +170,7 @@ def _sprint_close(sprint: str, project: str):
     git = GitCollector().collect(".")
     workspace = _workspace_snapshot(".", sprint)
     subset = _context_subset(".", sprint)
+    handoff = _vscode_handoff(".", sprint)
     validation = ValidationCollectorPolicy().collect(
         pytest_summary="local pytest status unknown",
         scoped_pytest=("repository intelligence scoped tests pending",),
@@ -173,7 +191,8 @@ def _sprint_close(sprint: str, project: str):
         SprintCloseInput(
             validation_summary=(
                 f"Sprint {sprint} for {project}: {validation.remote_ci_summary}; "
-                f"workspace={workspace['workspace_state'].continuity_state}"
+                f"workspace={workspace['workspace_state'].continuity_state}; "
+                f"handoff={handoff.recommended_new_session}"
             ),
             git_status_summary=status,
             changed_paths=git.changed_runtime_paths + git.changed_test_paths,
@@ -216,6 +235,7 @@ def _prompt_pack(prompt_type: str, project: str, sprint: str):
             "Repository subset: " + ", ".join(subset["repository_subset"].active_repositories),
             "Session focus: " + subset["session_focus"].recommended_session_type,
             "Reasoning mode: " + modes["reasoning_profile"].mode,
+            "VSCode handoff: human confirmed; no autonomous UI control.",
         ),
         required_context=(
             "continuity_bundle",
@@ -244,6 +264,7 @@ def _continuity_export(project: str, *, output_format: str):
     discovery = RuntimeDiscoveryPolicy().discover(".")
     workspace = _workspace_snapshot(".", "next")
     subset = _context_subset(".", "next")
+    handoff = _vscode_handoff(".", "next")
     return ContinuityExportPolicy().export(
         active_requirements=tuple(
             item for item in metadata.active_fr_tc if item.startswith("FR-")
@@ -274,6 +295,7 @@ def _continuity_export(project: str, *, output_format: str):
             "repository_subset": subset["repository_subset"].active_repositories,
             "continuity_scope": subset["continuity_scope"].included_context,
             "stale_topic_eviction": subset["stale_topic_eviction"].evicted_topics,
+            "vscode_handoff": handoff.handoff_summary,
         },
     )
 
@@ -293,6 +315,7 @@ def _rollover(project: str):
 def _session_decision(project: str):
     workspace = _workspace_snapshot(".", "next")
     subset = _context_subset(".", "next")
+    _vscode_handoff(".", "next")
     rollover = _rollover(project)
     stale = StaleContextDetectionPolicy().evaluate(
         (
@@ -423,6 +446,91 @@ def _prompt_modes(workspace: str, sprint: str):
     }
 
 
+def _vscode_handoff(workspace: str, sprint: str):
+    subset = _context_subset(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    prompt_pack = _prompt_pack_for_handoff(workspace, sprint)
+    rollover = _rollover("workspace")
+    stale_detected = subset["stale_topic_eviction"].estimated_saved_tokens > 0
+    return SessionHandoffPolicy().build(
+        rollover_required=rollover.rollover_recommended,
+        stale_context_detected=stale_detected,
+        session_mode=modes["session_mode"],
+        repository_subset=subset["repository_subset"],
+        session_focus=subset["session_focus"],
+        continuity_scope=subset["continuity_scope"],
+        prompt_text=prompt_pack.copy_ready_text,
+    )
+
+
+def _prompt_pack_for_handoff(workspace: str, sprint: str):
+    subset = _context_subset(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    return PromptPackPolicy().build(
+        prompt_type=modes["session_mode"].recommended_prompt_type,
+        project_name="workspace",
+        sprint_id=sprint,
+        objective="human-confirmed bounded session handoff",
+        context_lines=(
+            "Use compact continuity only.",
+            "Do not operate the Chat UI automatically.",
+            "Repository subset: " + ", ".join(subset["repository_subset"].active_repositories),
+            "Session focus: " + subset["session_focus"].recommended_session_type,
+        ),
+        required_context=("context_subset", "prompt_modes", "vscode_handoff"),
+        excluded_context=("full_history", "chat_ui_automation"),
+        affected_runtimes=("vscode_integration", "session_orchestrator"),
+        prompt_shape=modes["prompt_shape"].recommended_prompt_shape,
+        continuity_depth=modes["context_depth"].included_depth[-1],
+        review_checklist=modes["review_intensity"].required_review_domains,
+        architecture_allowance=modes["reasoning_profile"].architecture_allowance,
+        retrieval_budget=modes["reasoning_profile"].retrieval_budget,
+        plain_text=True,
+    )
+
+
+def _vscode_prompt_export(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    return PromptExportPolicy().export(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=handoff.continuity_bundle,
+    )
+
+
+def _vscode_copy_prompt(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    return ClipboardRuntimePolicy().copy(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=handoff.continuity_bundle,
+    )
+
+
+def _vscode_notifications(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    export = _vscode_prompt_export(workspace, sprint)
+    return HandoffNotificationPolicy().notify(
+        stale_context_detected=handoff.stale_context_detected,
+        rollover_required=handoff.rollover_required,
+        architecture_isolation_recommended=modes["session_mode"].isolation_required,
+        continuity_generated=bool(handoff.continuity_bundle),
+        prompt_export_ready=export.bounded,
+    )
+
+
+def _vscode_state(workspace: str, sprint: str):
+    handoff = _vscode_handoff(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    return IDEStatePolicy().snapshot(
+        workspace,
+        active_sprint=sprint,
+        active_prompt_mode=modes["reasoning_profile"].mode,
+        current_session_focus=handoff.session_focus,
+        pending_rollover=handoff.recommended_new_session,
+        export_availability=True,
+    )
+
+
 def _sprint_import(path: str):
     if not path:
         raise SystemExit("--from-file is required for sprint-import")
@@ -449,6 +557,9 @@ def _print_result(result: Any, *, json_mode: bool, copy_ready: bool) -> None:
     data = _to_data(result)
     if copy_ready and isinstance(data, dict) and "copy_ready_text" in data:
         print(data["copy_ready_text"])
+        return
+    if copy_ready and isinstance(data, dict) and "copy_ready_plain_text" in data:
+        print(data["copy_ready_plain_text"])
         return
     if copy_ready and isinstance(data, dict):
         for key, value in data.items():

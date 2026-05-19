@@ -1,0 +1,6 @@
+{
+  "aiDevOs.sessionHandoff.humanConfirmed": true,
+  "aiDevOs.sessionHandoff.autonomousUiControl": false,
+  "aiDevOs.sessionHandoff.defaultWorkspace": ".",
+  "aiDevOs.sessionHandoff.summaryOnly": true
+}

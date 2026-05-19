@@ -47,6 +47,11 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
+from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
+from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
+from ai_dev_os.vscode_integration.prompt_export import PromptExportPolicy
+from ai_dev_os.vscode_integration.session_handoff import SessionHandoffPolicy
 from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
 from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
 from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
@@ -276,6 +281,17 @@ class PromptModesAuditReport:
 
 
 @dataclass(frozen=True)
+class VSCodeIntegrationAuditReport:
+    session_handoff_active: bool
+    prompt_export_active: bool
+    clipboard_runtime_active: bool
+    handoff_notifications_active: bool
+    ide_state_runtime_active: bool
+    estimated_avoided_manual_rollover_tokens: int
+    estimated_avoided_stale_continuation_tokens: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -295,6 +311,7 @@ class RuntimeEnforcementAuditReport:
     workspace_snapshot: WorkspaceSnapshotAuditReport
     context_subset: ContextSubsetAuditReport
     prompt_modes: PromptModesAuditReport
+    vscode_integration: VSCodeIntegrationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1103,6 +1120,99 @@ def audit_prompt_modes() -> PromptModesAuditReport:
     )
 
 
+def audit_vscode_integration() -> VSCodeIntegrationAuditReport:
+    state = WorkspaceStatePolicy().snapshot(".", current_sprint="42")
+    multi = MultiRepositoryPolicy().map(".")
+    hotspots = ArchitectureHotspotPolicy().detect(".", state=state)
+    metadata = SprintMetadataPolicy().default(sprint_id="42", project_name="workspace")
+    discovery = RuntimeDiscoveryPolicy().discover(".")
+    repository_subset = RepositorySubsetPolicy().select(
+        workspace_state=state,
+        multi_repository=multi,
+        sprint_metadata=metadata,
+        architecture_hotspots=hotspots,
+        runtime_discovery=discovery,
+    )
+    stale = StaleTopicEvictionPolicy().evict(("old sprint review", "duplicate continuity"))
+    isolation = TopicIsolationPolicy().isolate(
+        stale.retained_topics or ("ci debt review",),
+        session_type="implementation",
+        architecture_severity=hotspots.risk_severity,
+    )
+    continuity = ContinuityScopePolicy().scope(
+        repository_subset=repository_subset,
+        topic_isolation=isolation,
+        active_tests=metadata.active_fr_tc,
+        rollout_required=bool(repository_subset.rollout_related_repositories),
+    )
+    focus = SessionFocusPolicy().focus(
+        requested_focus="implementation",
+        topic_isolation=isolation,
+        architecture_hotspots=hotspots,
+    )
+    validation = ValidationCollectorPolicy().collect(remote_ci_summary="not_checked")
+    router = SessionModeRouterPolicy().route(
+        session_focus=focus,
+        topic_isolation=isolation,
+        continuity_scope=continuity,
+        repository_subset=repository_subset,
+        architecture_hotspots=hotspots,
+        validation=validation,
+    )
+    prompt = PromptPackPolicy().build(
+        prompt_type=router.recommended_prompt_type,
+        project_name="workspace",
+        sprint_id="42",
+        objective="human-confirmed bounded handoff",
+        context_lines=("no autonomous UI control", "summary-only continuity"),
+        excluded_context=("full_history", "chat_ui_automation"),
+    )
+    handoff = SessionHandoffPolicy().build(
+        rollover_required=True,
+        stale_context_detected=bool(stale.evicted_topics),
+        session_mode=router,
+        repository_subset=repository_subset,
+        session_focus=focus,
+        continuity_scope=continuity,
+        prompt_text=prompt.copy_ready_text,
+    )
+    export = PromptExportPolicy().export(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=handoff.continuity_bundle,
+    )
+    clipboard = ClipboardRuntimePolicy().copy(
+        copy_ready_prompt=handoff.copy_ready_prompt,
+        compact_bundle=handoff.continuity_bundle,
+        clipboard_command="ai-dev-os-missing-clipboard",
+    )
+    notifications = HandoffNotificationPolicy().notify(
+        stale_context_detected=handoff.stale_context_detected,
+        rollover_required=handoff.rollover_required,
+        architecture_isolation_recommended=router.isolation_required,
+        continuity_generated=bool(handoff.continuity_bundle),
+        prompt_export_ready=export.bounded,
+    )
+    ide_state = IDEStatePolicy().snapshot(
+        ".",
+        active_sprint="42",
+        active_prompt_mode=router.recommended_mode,
+        current_session_focus=focus.recommended_session_type,
+        pending_rollover=handoff.recommended_new_session,
+    )
+    return VSCodeIntegrationAuditReport(
+        session_handoff_active=handoff.recommended_new_session
+        and not handoff.full_history_included,
+        prompt_export_active=export.bounded and export.summary_only,
+        clipboard_runtime_active=clipboard.compact_export_mode and clipboard.export_fallback,
+        handoff_notifications_active=notifications.emitted_count > 0
+        and notifications.emitted_count <= 3,
+        ide_state_runtime_active=not ide_state.telemetry_collected and not ide_state.network_used,
+        estimated_avoided_manual_rollover_tokens=len(handoff.copy_ready_prompt) // 2,
+        estimated_avoided_stale_continuation_tokens=stale.estimated_saved_tokens
+        + len(continuity.excluded_context) * 160,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1123,6 +1233,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         workspace_snapshot=audit_workspace_snapshot(),
         context_subset=audit_context_subset(),
         prompt_modes=audit_prompt_modes(),
+        vscode_integration=audit_vscode_integration(),
     )
 
 
