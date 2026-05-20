@@ -82,6 +82,11 @@
     "onCommand:aiDevOs.showGovernanceReadiness",
     "onCommand:aiDevOs.showRollbackRehearsal",
     "onCommand:aiDevOs.refreshRolloutRehearsal",
+    "onCommand:aiDevOs.showReasoningTier",
+    "onCommand:aiDevOs.showCostBudget",
+    "onCommand:aiDevOs.showEscalationPolicy",
+    "onCommand:aiDevOs.showSprintReasoningMap",
+    "onCommand:aiDevOs.compactReasoningScope",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -168,7 +173,12 @@
       {"command": "aiDevOs.showMigrationFriction", "title": "AI_DEV_OS: Show Migration Friction"},
       {"command": "aiDevOs.showGovernanceReadiness", "title": "AI_DEV_OS: Show Governance Readiness"},
       {"command": "aiDevOs.showRollbackRehearsal", "title": "AI_DEV_OS: Show Rollback Rehearsal"},
-      {"command": "aiDevOs.refreshRolloutRehearsal", "title": "AI_DEV_OS: Refresh Rollout Rehearsal"}
+      {"command": "aiDevOs.refreshRolloutRehearsal", "title": "AI_DEV_OS: Refresh Rollout Rehearsal"},
+      {"command": "aiDevOs.showReasoningTier", "title": "AI_DEV_OS: Show Reasoning Tier"},
+      {"command": "aiDevOs.showCostBudget", "title": "AI_DEV_OS: Show Cost Budget"},
+      {"command": "aiDevOs.showEscalationPolicy", "title": "AI_DEV_OS: Show Escalation Policy"},
+      {"command": "aiDevOs.showSprintReasoningMap", "title": "AI_DEV_OS: Show Sprint Reasoning Map"},
+      {"command": "aiDevOs.compactReasoningScope", "title": "AI_DEV_OS: Compact Reasoning Scope"}
     ],
     "views": {
       "explorer": [

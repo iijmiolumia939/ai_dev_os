@@ -19,6 +19,11 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showSessionBoundaryState",
         "aiDevOs.compactCurrentSession",
         "aiDevOs.showStaleSessionWarning",
+        "aiDevOs.showReasoningTier",
+        "aiDevOs.showCostBudget",
+        "aiDevOs.showEscalationPolicy",
+        "aiDevOs.showSprintReasoningMap",
+        "aiDevOs.compactReasoningScope",
     }.issubset(commands)
 
 

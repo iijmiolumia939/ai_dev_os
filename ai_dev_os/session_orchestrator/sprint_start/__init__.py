@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.reasoning_routing import SprintReasoningRouter, SprintReasoningTask
 from ai_dev_os.session_lifecycle.architecture_isolation import ArchitectureIsolationPolicy
 from ai_dev_os.session_lifecycle.continuity_bundle import (
     ContinuityBundleFrame,
@@ -33,6 +34,11 @@ class SprintStartFrame:
     architecture_isolation_required: bool
     copy_ready_prompt: str
     excluded_context: tuple[str, ...]
+    recommended_reasoning_tier: str
+    sprint_reasoning_map: dict[str, str]
+    escalation_paths: dict[str, str]
+    downgrade_possibility: dict[str, bool]
+    compaction_recommendations: dict[str, bool]
 
 
 class SprintStartPolicy:
@@ -92,6 +98,29 @@ class SprintStartPolicy:
             affected_runtimes=data.affected_runtimes,
             plain_text=True,
         )
+        reasoning_map = SprintReasoningRouter().map(
+            data.sprint_id,
+            (
+                SprintReasoningTask(
+                    "architecture",
+                    "architecture rollout strategy runtime boundary design",
+                    data.affected_runtimes,
+                    architecture_sensitive=bool(data.architecture_flags),
+                    governance_sensitive=True,
+                ),
+                SprintReasoningTask(
+                    "runtime tests",
+                    "repetitive tests deterministic snapshots",
+                    ("tests",),
+                ),
+                SprintReasoningTask("docs", "markdown checklist generation", ("docs",)),
+                SprintReasoningTask(
+                    "adapter wiring",
+                    "runtime integration adapters orchestration wiring",
+                    data.affected_runtimes,
+                ),
+            ),
+        )
         return SprintStartFrame(
             recommended_session_action=rollover.recommended_session_action,
             continuity_bundle=bundle,
@@ -100,4 +129,9 @@ class SprintStartPolicy:
             architecture_isolation_required=architecture.isolated_session_required,
             copy_ready_prompt=prompt.copy_ready_text,
             excluded_context=bundle.excluded_context,
+            recommended_reasoning_tier=reasoning_map.task_tiers["architecture"],
+            sprint_reasoning_map=reasoning_map.task_tiers,
+            escalation_paths=reasoning_map.escalation_paths,
+            downgrade_possibility=reasoning_map.downgrade_possibility,
+            compaction_recommendations=reasoning_map.compaction_recommendations,
         )

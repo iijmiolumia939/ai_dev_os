@@ -25,6 +25,12 @@ def test_sprint_start_generates_compact_copy_ready_prompt() -> None:
     assert "full_sprint_history" in frame.excluded_context
     assert "giant_markdown" in frame.excluded_context
     assert "Session lifecycle governance completed" in frame.copy_ready_prompt
+    assert frame.recommended_reasoning_tier == "HIGH"
+    assert frame.sprint_reasoning_map["architecture"] == "HIGH"
+    assert frame.sprint_reasoning_map["runtime tests"] == "LOW"
+    assert frame.sprint_reasoning_map["docs"] == "LOW"
+    assert frame.sprint_reasoning_map["adapter wiring"] == "MEDIUM"
+    assert frame.compaction_recommendations["architecture"] is True
 
 
 def test_sprint_close_recommends_next_session_bundle_and_remote_verification() -> None:

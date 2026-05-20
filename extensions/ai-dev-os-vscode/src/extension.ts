@@ -4,6 +4,7 @@ import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
+import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
@@ -24,6 +25,7 @@ import {
   RolloutTreeProvider,
   registerConsumerRolloutCommands,
 } from './rollout/consumerRollout';
+import {ReasoningRoutingMonitor, ReasoningTierStatusBar} from './reasoningRouting/reasoningRouting';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
@@ -73,6 +75,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const frictionView = new RolloutTreeProvider(rollout, 'friction');
   const readinessView = new RolloutTreeProvider(rollout, 'governance');
   const rollbackView = new RolloutTreeProvider(rollout, 'rollback');
+  const reasoningRouting = new ReasoningRoutingMonitor();
+  const reasoningStatus = new ReasoningTierStatusBar(reasoningRouting);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -154,10 +158,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
   }
   const rolloutState = await rollout.evaluate();
+  const reasoningState = reasoningStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
       'AI_DEV_OS consumer rollout rehearsal found migration friction.',
+    );
+  }
+  if (reasoningState.budgetPressure === 'HIGH' || reasoningState.budgetPressure === 'OVER_BUDGET') {
+    await notifications.warn(
+      'startup-reasoning-budget-pressure',
+      'AI_DEV_OS reasoning budget pressure is elevated. Review cost budget before escalating.',
     );
   }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
@@ -189,6 +200,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     simplificationStatus,
     presenceStatus,
     heartbeatStatus,
+    reasoningStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -238,6 +250,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       notifications,
       [rolloutView, frictionView, readinessView, rollbackView],
     ),
+    ...registerReasoningRoutingCommands(reasoningRouting, reasoningStatus, notifications),
   );
 }
 

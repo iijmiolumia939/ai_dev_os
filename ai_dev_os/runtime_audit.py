@@ -51,6 +51,19 @@ from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
 from ai_dev_os.providers.provider_contracts import ProviderRequest
 from ai_dev_os.providers.provider_telemetry import aggregate_provider_telemetry
+from ai_dev_os.reasoning_routing import (
+    CostBudgetPolicy,
+    EscalationPolicy,
+    EscalationPolicyInput,
+    QualityFloorPolicy,
+    ReasoningTask,
+    ReasoningTierPolicy,
+    ReasoningUsageSample,
+    SprintReasoningRouter,
+    SprintReasoningTask,
+    TaskComplexityInput,
+    TaskComplexityPolicy,
+)
 from ai_dev_os.release_readiness import (
     ConsumerRolloutPolicy,
     ExtensionReadinessPolicy,
@@ -516,6 +529,28 @@ class ConsumerRolloutAuditReport:
 
 
 @dataclass(frozen=True)
+class ReasoningRoutingAuditReport:
+    reasoning_routing_active: bool
+    task_complexity_active: bool
+    escalation_policy_active: bool
+    cost_budget_policy_active: bool
+    quality_floor_active: bool
+    sprint_reasoning_map_active: bool
+    tier_distribution: dict[str, int]
+    budget_pressure: str
+    escalation_reason: str
+    downgrade_recommendation: bool
+    compaction_recommendation: bool
+    estimated_avoided_premium_burn: int
+    estimated_avoided_unnecessary_escalation: int
+    human_visible_routing: bool
+    deterministic_reasoning_policy: bool
+    rollback_safe_routing: bool
+    provider_neutral_contracts: bool
+    hidden_escalation_used: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -548,6 +583,7 @@ class RuntimeEnforcementAuditReport:
     vscode_presence: VSCodePresenceAuditReport
     draft_injection: DraftInjectionAuditReport
     consumer_rollout: ConsumerRolloutAuditReport
+    reasoning_routing: ReasoningRoutingAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1981,6 +2017,122 @@ def audit_consumer_rollout() -> ConsumerRolloutAuditReport:
     )
 
 
+def audit_reasoning_routing() -> ReasoningRoutingAuditReport:
+    architecture = ReasoningTierPolicy().classify(
+        ReasoningTask(
+            name="Sprint 42 architecture",
+            description="architecture rollout strategy runtime boundary design",
+            affected_runtimes=("runtime_graph", "governance_core", "session_orchestrator"),
+            architecture_sensitive=True,
+            governance_sensitive=True,
+        )
+    )
+    tests = ReasoningTierPolicy().classify(
+        ReasoningTask(
+            name="runtime tests",
+            description="repetitive tests deterministic snapshots",
+            affected_runtimes=("tests",),
+        )
+    )
+    docs = ReasoningTierPolicy().classify(
+        ReasoningTask(name="docs", description="markdown checklist generation")
+    )
+    adapter = ReasoningTierPolicy().classify(
+        ReasoningTask(
+            name="adapter wiring",
+            description="runtime integration adapters orchestration wiring",
+            affected_runtimes=("providers", "session_orchestrator"),
+        )
+    )
+    complexity = TaskComplexityPolicy().evaluate(
+        TaskComplexityInput(
+            architecture_density=3,
+            cross_runtime_scope=2,
+            continuity_size=2,
+            reasoning_depth=3,
+            dependency_breadth=2,
+            governance_sensitivity=3,
+            runtime_authority_risk=1,
+        )
+    )
+    floor = QualityFloorPolicy().enforce(
+        tests.recommended_tier,
+        architecture_protection=True,
+        governance_protection=True,
+    )
+    escalation = EscalationPolicy().evaluate(
+        EscalationPolicyInput(
+            recommended_tier=architecture.recommended_tier,
+            complexity_level=complexity.complexity_level,
+            escalation_required=complexity.escalation_required,
+            quality_floor_tier=floor.minimum_reasoning_floor,
+            previous_escalations=1,
+            cooldown_remaining=0,
+        )
+    )
+    budget = CostBudgetPolicy().evaluate(
+        (
+            ReasoningUsageSample(architecture.task_name, architecture.recommended_tier),
+            ReasoningUsageSample(tests.task_name, tests.recommended_tier),
+            ReasoningUsageSample(docs.task_name, docs.recommended_tier),
+            ReasoningUsageSample(adapter.task_name, adapter.recommended_tier),
+        ),
+        daily_budget_units=20,
+        monthly_budget_units=500,
+    )
+    sprint_map = SprintReasoningRouter().map(
+        "42",
+        (
+            SprintReasoningTask(
+                "architecture",
+                "architecture rollout strategy runtime boundary design",
+                ("runtime_graph", "governance_core"),
+                architecture_sensitive=True,
+                governance_sensitive=True,
+            ),
+            SprintReasoningTask("runtime tests", "repetitive tests deterministic snapshots"),
+            SprintReasoningTask("docs", "markdown checklist generation"),
+            SprintReasoningTask(
+                "adapter wiring",
+                "runtime integration adapters orchestration wiring",
+                ("providers", "session_orchestrator"),
+            ),
+        ),
+    )
+    return ReasoningRoutingAuditReport(
+        reasoning_routing_active=architecture.recommended_tier == "HIGH"
+        and adapter.recommended_tier == "MEDIUM"
+        and tests.recommended_tier == "LOW",
+        task_complexity_active=complexity.bounded_metadata
+        and complexity.reasoning_recommendation == "HIGH",
+        escalation_policy_active=escalation.bounded_escalation
+        and escalation.human_visible_escalation
+        and not escalation.hidden_provider_switching,
+        cost_budget_policy_active=budget.deterministic_estimate and not budget.billing_api_used,
+        quality_floor_active=floor.unsafe_downgrade_blocked
+        and floor.minimum_reasoning_floor == "HIGH",
+        sprint_reasoning_map_active=sprint_map.task_tiers["architecture"] == "HIGH"
+        and sprint_map.task_tiers["docs"] == "LOW",
+        tier_distribution=budget.reasoning_tier_distribution,
+        budget_pressure=budget.budget_pressure,
+        escalation_reason=escalation.escalation_reason,
+        downgrade_recommendation=budget.downgrade_recommendation,
+        compaction_recommendation=budget.compaction_recommendation,
+        estimated_avoided_premium_burn=budget.estimated_avoided_premium_burn,
+        estimated_avoided_unnecessary_escalation=budget.estimated_avoided_unnecessary_escalation,
+        human_visible_routing=architecture.human_visible
+        and escalation.human_visible_escalation
+        and sprint_map.human_visible_routing,
+        deterministic_reasoning_policy=architecture.deterministic_policy
+        and budget.deterministic_estimate,
+        rollback_safe_routing=architecture.rollback_safe
+        and escalation.rollback_safe_escalation
+        and sprint_map.rollback_safe_routing,
+        provider_neutral_contracts=architecture.provider_neutral,
+        hidden_escalation_used=escalation.hidden_provider_switching,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2019,6 +2171,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         vscode_presence=audit_vscode_presence(),
         draft_injection=audit_draft_injection(),
         consumer_rollout=audit_consumer_rollout(),
+        reasoning_routing=audit_reasoning_routing(),
     )
 
 

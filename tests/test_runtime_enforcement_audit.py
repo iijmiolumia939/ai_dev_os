@@ -67,3 +67,22 @@ def test_runtime_audit_reports_vscode_presence_visibility() -> None:
     assert report.vscode_presence.estimated_avoided_invisible_governance_drift > 0
     assert report.vscode_presence.estimated_avoided_stale_extension_confusion > 0
     assert report.vscode_presence.compact_status.startswith("AI_DEV_OS")
+
+
+def test_runtime_audit_reports_reasoning_routing_cost_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.reasoning_routing.reasoning_routing_active is True
+    assert report.reasoning_routing.task_complexity_active is True
+    assert report.reasoning_routing.escalation_policy_active is True
+    assert report.reasoning_routing.cost_budget_policy_active is True
+    assert report.reasoning_routing.quality_floor_active is True
+    assert report.reasoning_routing.sprint_reasoning_map_active is True
+    assert report.reasoning_routing.tier_distribution == {"HIGH": 1, "MEDIUM": 1, "LOW": 2}
+    assert report.reasoning_routing.estimated_avoided_premium_burn > 0
+    assert report.reasoning_routing.estimated_avoided_unnecessary_escalation > 0
+    assert report.reasoning_routing.human_visible_routing is True
+    assert report.reasoning_routing.deterministic_reasoning_policy is True
+    assert report.reasoning_routing.rollback_safe_routing is True
+    assert report.reasoning_routing.provider_neutral_contracts is True
+    assert report.reasoning_routing.hidden_escalation_used is False
