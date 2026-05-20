@@ -7,6 +7,7 @@ export interface PersistenceState {
   current_session_generation: number;
   rollover_state: Record<string, unknown>;
   last_continuity_bundle: Record<string, unknown>;
+  continuity_index: Record<string, unknown>;
   current_prompt_mode: string;
   session_focus: string;
   stale_warning_state: Record<string, unknown>;
@@ -20,6 +21,7 @@ const defaultState: PersistenceState = {
   current_session_generation: 1,
   rollover_state: {rollover_pending: false},
   last_continuity_bundle: {},
+  continuity_index: {},
   current_prompt_mode: 'bounded_implementation',
   session_focus: 'bounded-implementation',
   stale_warning_state: {stale_session_detected: false, warning_count: 0},
@@ -44,17 +46,39 @@ export class LocalPersistenceStore {
     return path.join(this.storageDir(), 'session-boundary.json');
   }
 
+  rolloverStatePath(): string {
+    return path.join(this.storageDir(), 'rollover-state.json');
+  }
+
+  continuityIndexPath(): string {
+    return path.join(this.storageDir(), 'continuity-index.json');
+  }
+
   async ensure(): Promise<void> {
     await fs.mkdir(path.join(this.storageDir(), 'checkpoints'), {recursive: true});
+    await fs.mkdir(path.join(this.storageDir(), 'schema'), {recursive: true});
   }
 
   async read(): Promise<PersistenceState> {
-    try {
-      const raw = await fs.readFile(this.sessionBoundaryPath(), 'utf8');
-      return {...defaultState, ...JSON.parse(raw)} as PersistenceState;
-    } catch {
-      return defaultState;
-    }
+    const sessionBoundary = await this.readJson(this.sessionBoundaryPath());
+    const rolloverState = await this.readJson(this.rolloverStatePath());
+    const continuityIndex = await this.readJson(this.continuityIndexPath());
+    const base = {...defaultState, ...sessionBoundary} as PersistenceState;
+    return {
+      ...base,
+      rollover_state: {
+        ...defaultState.rollover_state,
+        ...base.rollover_state,
+        ...rolloverState,
+      },
+      continuity_index: continuityIndex,
+      compact_continuity_metadata: {
+        ...base.compact_continuity_metadata,
+        continuity_index_available: Object.keys(continuityIndex).length > 0,
+      },
+      summary_only: true,
+      bounded: true,
+    };
   }
 
   async write(state: PersistenceState): Promise<void> {
@@ -83,8 +107,22 @@ export class LocalPersistenceStore {
     return {
       ...state,
       repository_subset_summary: state.repository_subset_summary.slice(0, 5),
+      continuity_index: this.boundRecord(state.continuity_index),
       summary_only: true,
       bounded: true,
     };
+  }
+
+  private async readJson(filePath: string): Promise<Record<string, unknown>> {
+    try {
+      const raw = await fs.readFile(filePath, 'utf8');
+      return JSON.parse(raw) as Record<string, unknown>;
+    } catch {
+      return {};
+    }
+  }
+
+  private boundRecord(value: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(value).slice(0, 20));
   }
 }
