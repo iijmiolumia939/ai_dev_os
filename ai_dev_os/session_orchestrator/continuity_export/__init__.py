@@ -28,6 +28,8 @@ class ContinuityExportFrame:
     copy_ready_text: str
     estimated_tokens: int
     excluded_context: tuple[str, ...]
+    retrieval_budget_summary: str = ""
+    repo_wide_retrieval_forbidden: bool = True
 
 
 class ContinuityExportPolicy:
@@ -58,6 +60,8 @@ class ContinuityExportPolicy:
             copy_ready_text="",
             estimated_tokens=0,
             excluded_context=excluded,
+            retrieval_budget_summary="affected-runtime-only retrieval",
+            repo_wide_retrieval_forbidden=True,
         )
         text = self._render(frame, output_format)
         compact = GovernanceCompactExportPrimitive().export(
@@ -76,6 +80,8 @@ class ContinuityExportPolicy:
             copy_ready_text=text,
             estimated_tokens=min(self._estimate_tokens(text), max(1, compact.compact_export_size)),
             excluded_context=frame.excluded_context,
+            retrieval_budget_summary=frame.retrieval_budget_summary,
+            repo_wide_retrieval_forbidden=frame.repo_wide_retrieval_forbidden,
         )
 
     def _render(self, frame: ContinuityExportFrame, output_format: str) -> str:
@@ -98,6 +104,8 @@ class ContinuityExportPolicy:
             f"Active risks: {', '.join(frame.active_risks)}",
             f"Next prompt seed: {frame.next_prompt_seed}",
             f"Excluded context: {', '.join(frame.excluded_context)}",
+            f"Retrieval budget: {frame.retrieval_budget_summary}",
+            f"Repo-wide retrieval forbidden: {frame.repo_wide_retrieval_forbidden}",
         )
 
     def _estimate_tokens(self, text: str) -> int:

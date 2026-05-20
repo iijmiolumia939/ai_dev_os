@@ -38,6 +38,8 @@ class RuntimeSimplificationFrame:
     local_only_architecture_cognition: bool
     autonomous_mutation_used: bool
     hidden_contract_injection_used: bool
+    retrieval_budget_active: bool
+    repo_wide_retrieval_forbidden: bool
 
 
 class RuntimeSimplificationPolicy:
@@ -63,4 +65,6 @@ class RuntimeSimplificationPolicy:
             local_only_architecture_cognition=True,
             autonomous_mutation_used=False,
             hidden_contract_injection_used=False,
+            retrieval_budget_active=runtime_graph.retrieval_budget_active,
+            repo_wide_retrieval_forbidden=runtime_graph.repo_wide_retrieval_forbidden,
         )

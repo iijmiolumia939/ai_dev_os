@@ -6,6 +6,7 @@ import {registerGovernanceTrendCommands} from './commands/governanceTrendCommand
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
+import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
@@ -28,6 +29,7 @@ import {
   registerConsumerRolloutCommands,
 } from './rollout/consumerRollout';
 import {ReasoningRoutingMonitor, ReasoningTierStatusBar} from './reasoningRouting/reasoningRouting';
+import {RetrievalBudgetMonitor, RetrievalBudgetStatusBar} from './retrievalBudget/retrievalBudget';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
@@ -81,6 +83,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const reasoningStatus = new ReasoningTierStatusBar(reasoningRouting);
   const outputCompression = new OutputCompressionMonitor();
   const compactReportingStatus = new CompactReportingStatusBar(outputCompression);
+  const retrievalBudget = new RetrievalBudgetMonitor();
+  const retrievalBudgetStatus = new RetrievalBudgetStatusBar(retrievalBudget);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -164,6 +168,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const rolloutState = await rollout.evaluate();
   const reasoningState = reasoningStatus.refresh();
   const compactReportingState = compactReportingStatus.refresh();
+  const retrievalBudgetState = retrievalBudgetStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -180,6 +185,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await notifications.warn(
       'startup-output-verbosity-pressure',
       'AI_DEV_OS report verbosity pressure is high. Use compact reporting or expand only when needed.',
+    );
+  }
+  if (retrievalBudgetState.retrievalPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-retrieval-pressure-warning',
+      'AI_DEV_OS retrieval pressure is high. Compact retrieval scope before broad reasoning.',
     );
   }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
@@ -213,6 +224,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     heartbeatStatus,
     reasoningStatus,
     compactReportingStatus,
+    retrievalBudgetStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -264,6 +276,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     ),
     ...registerReasoningRoutingCommands(reasoningRouting, reasoningStatus, notifications),
     ...registerOutputCompressionCommands(outputCompression, compactReportingStatus, notifications),
+    ...registerRetrievalBudgetCommands(retrievalBudget, retrievalBudgetStatus, notifications),
   );
 }
 

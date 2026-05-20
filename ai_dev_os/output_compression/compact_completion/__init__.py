@@ -25,6 +25,7 @@ class CompactCompletionInput:
     next_step: str
     rollout_summary: str = ""
     unchanged_sections: tuple[str, ...] = ()
+    retrieval_budget_summary: str = ""
 
 
 @dataclass(frozen=True)
@@ -71,6 +72,7 @@ class CompactCompletionPolicy:
                 f"CI: {data.ci_status}",
                 validation.compact_validation_projection,
                 f"Runtime audit: {data.runtime_audit_status}",
+                f"Retrieval budget: {data.retrieval_budget_summary or 'bounded'}",
                 f"Risks: {len(data.risks)}",
                 f"Next: {data.next_step}",
             )
@@ -78,6 +80,11 @@ class CompactCompletionPolicy:
         details = (
             validation.expandable_details
             + tuple(f"Risk: {risk}" for risk in data.risks)
+            + (
+                (f"Retrieval budget: {data.retrieval_budget_summary}",)
+                if data.retrieval_budget_summary
+                else ()
+            )
             + tuple(deduplication.compact_references)
         )
         return CompactCompletionFrame(

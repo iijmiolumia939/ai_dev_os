@@ -104,3 +104,23 @@ def test_runtime_audit_reports_output_compression_controls() -> None:
     assert report.output_compression.estimated_avoided_repeated_summaries > 0
     assert report.output_compression.hidden_reporting_used is False
     assert report.output_compression.validation_skipped is False
+
+
+def test_runtime_audit_reports_retrieval_budget_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.retrieval_budget.retrieval_budget_active is True
+    assert report.retrieval_budget.retrieval_scope_active is True
+    assert report.retrieval_budget.retrieval_radius_active is True
+    assert report.retrieval_budget.retrieval_pressure_active is True
+    assert report.retrieval_budget.retrieval_compaction_active is True
+    assert report.retrieval_budget.repo_wide_retrieval_forbidden is True
+    assert report.retrieval_budget.estimated_avoided_hidden_input_tokens > 0
+    assert report.retrieval_budget.estimated_avoided_repo_wide_reasoning > 0
+    assert report.retrieval_budget.local_only is True
+    assert report.retrieval_budget.deterministic is True
+    assert report.retrieval_budget.summary_only is True
+    assert report.retrieval_budget.no_ast_replay is True
+    assert report.retrieval_budget.no_dynamic_tracing is True
+    assert report.retrieval_budget.no_hidden_provider_routing is True
+    assert report.retrieval_budget.no_automatic_retrieval_escalation is True

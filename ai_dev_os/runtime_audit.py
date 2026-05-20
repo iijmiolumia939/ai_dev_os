@@ -85,6 +85,7 @@ from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPoli
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
+from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
 from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
 from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
@@ -579,6 +580,28 @@ class OutputCompressionAuditReport:
 
 
 @dataclass(frozen=True)
+class RetrievalBudgetAuditReport:
+    retrieval_budget_active: bool
+    retrieval_scope_active: bool
+    retrieval_radius_active: bool
+    retrieval_pressure_active: bool
+    retrieval_compaction_active: bool
+    bounded_retrieval_neighborhood: tuple[str, ...]
+    repo_wide_retrieval_forbidden: bool
+    retrieval_pressure: str
+    compact_retrieval_recommendation: bool
+    estimated_avoided_hidden_input_tokens: int
+    estimated_avoided_repo_wide_reasoning: int
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    no_ast_replay: bool
+    no_dynamic_tracing: bool
+    no_hidden_provider_routing: bool
+    no_automatic_retrieval_escalation: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -613,6 +636,7 @@ class RuntimeEnforcementAuditReport:
     consumer_rollout: ConsumerRolloutAuditReport
     reasoning_routing: ReasoningRoutingAuditReport
     output_compression: OutputCompressionAuditReport
+    retrieval_budget: RetrievalBudgetAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2217,6 +2241,57 @@ def audit_output_compression() -> OutputCompressionAuditReport:
     )
 
 
+def audit_retrieval_budget() -> RetrievalBudgetAuditReport:
+    all_runtimes = (
+        "session_orchestrator",
+        "context_subset",
+        "retrieval",
+        "runtime_graph",
+        "governance_health",
+        "providers",
+        "workspace_snapshot",
+        "vscode_integration",
+    )
+    frame = RetrievalBudgetRuntime().evaluate(
+        affected_runtimes=("session_orchestrator", "retrieval"),
+        all_runtimes=all_runtimes,
+        dependencies=(
+            RuntimeDependency("session_orchestrator", "retrieval", 1, "continuity"),
+            RuntimeDependency("retrieval", "context_subset", 1, "scope"),
+            RuntimeDependency("runtime_graph", "governance_health", 3, "pressure"),
+            RuntimeDependency("workspace_snapshot", "providers", 4, "optional"),
+        ),
+        continuity_size=3_200,
+        contract_surfaces=("RetrievalScopeFrame", "RetrievalBudgetFrame", "RuntimeDependency"),
+        architecture_isolation=True,
+        max_dependency_distance=2,
+    )
+    return RetrievalBudgetAuditReport(
+        retrieval_budget_active=frame.retrieval_budget_active,
+        retrieval_scope_active=frame.scope.affected_runtime_only_retrieval
+        and frame.scope.repo_wide_retrieval_forbidden,
+        retrieval_radius_active=frame.radius.dependency_depth_cap_applied
+        and frame.radius.max_dependency_distance == 2,
+        retrieval_pressure_active=frame.pressure.pressure_level in {"LOW", "MEDIUM", "HIGH"},
+        retrieval_compaction_active=frame.compaction.summary_only
+        and bool(frame.compaction.expandable_retrieval_details),
+        bounded_retrieval_neighborhood=frame.scope.bounded_retrieval_neighborhood,
+        repo_wide_retrieval_forbidden=frame.repo_wide_retrieval_forbidden,
+        retrieval_pressure=frame.pressure.pressure_level,
+        compact_retrieval_recommendation=frame.budget.compact_retrieval_recommendation,
+        estimated_avoided_hidden_input_tokens=frame.estimated_avoided_hidden_input_tokens,
+        estimated_avoided_repo_wide_reasoning=frame.estimated_avoided_repo_wide_reasoning,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        no_ast_replay=frame.scope.no_ast_replay,
+        no_dynamic_tracing=frame.scope.no_dynamic_tracing,
+        no_hidden_provider_routing=frame.pressure.no_hidden_provider_routing,
+        no_automatic_retrieval_escalation=frame.pressure.no_automatic_retrieval_escalation
+        and not frame.budget.automatic_retrieval_escalation,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2257,6 +2332,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         consumer_rollout=audit_consumer_rollout(),
         reasoning_routing=audit_reasoning_routing(),
         output_compression=audit_output_compression(),
+        retrieval_budget=audit_retrieval_budget(),
     )
 
 

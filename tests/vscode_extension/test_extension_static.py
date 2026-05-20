@@ -28,6 +28,11 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showVerbosityPressure",
         "aiDevOs.expandCompletionSummary",
         "aiDevOs.showReportDensity",
+        "aiDevOs.showRetrievalBudget",
+        "aiDevOs.showRetrievalRadius",
+        "aiDevOs.showRetrievalPressure",
+        "aiDevOs.compactRetrievalScope",
+        "aiDevOs.showRetrievalNeighborhood",
     }.issubset(commands)
 
 
