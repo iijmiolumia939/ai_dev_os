@@ -68,6 +68,11 @@
     "onCommand:aiDevOs.showPresenceStatus",
     "onCommand:aiDevOs.showStaleExtensionWarning",
     "onCommand:aiDevOs.refreshGovernancePresence",
+    "onCommand:aiDevOs.showRolloutReadiness",
+    "onCommand:aiDevOs.showMigrationFriction",
+    "onCommand:aiDevOs.showGovernanceReadiness",
+    "onCommand:aiDevOs.showRollbackRehearsal",
+    "onCommand:aiDevOs.refreshRolloutRehearsal",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -78,6 +83,10 @@
     "onView:aiDevOsSharedPrimitives",
     "onView:aiDevOsPrimitiveReuse",
     "onView:aiDevOsBoundedRetention",
+    "onView:aiDevOsRolloutReadiness",
+    "onView:aiDevOsMigrationFriction",
+    "onView:aiDevOsGovernanceReadiness",
+    "onView:aiDevOsRollbackRehearsal",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -136,7 +145,12 @@
       {"command": "aiDevOs.checkExtensionVersion", "title": "AI_DEV_OS: Check Extension Version"},
       {"command": "aiDevOs.showPresenceStatus", "title": "AI_DEV_OS: Show Presence Status"},
       {"command": "aiDevOs.showStaleExtensionWarning", "title": "AI_DEV_OS: Show Stale Extension Warning"},
-      {"command": "aiDevOs.refreshGovernancePresence", "title": "AI_DEV_OS: Refresh Governance Presence"}
+      {"command": "aiDevOs.refreshGovernancePresence", "title": "AI_DEV_OS: Refresh Governance Presence"},
+      {"command": "aiDevOs.showRolloutReadiness", "title": "AI_DEV_OS: Show Rollout Readiness"},
+      {"command": "aiDevOs.showMigrationFriction", "title": "AI_DEV_OS: Show Migration Friction"},
+      {"command": "aiDevOs.showGovernanceReadiness", "title": "AI_DEV_OS: Show Governance Readiness"},
+      {"command": "aiDevOs.showRollbackRehearsal", "title": "AI_DEV_OS: Show Rollback Rehearsal"},
+      {"command": "aiDevOs.refreshRolloutRehearsal", "title": "AI_DEV_OS: Refresh Rollout Rehearsal"}
     ],
     "views": {
       "explorer": [
@@ -183,6 +197,22 @@
         {
           "id": "aiDevOsBoundedRetention",
           "name": "AI_DEV_OS Bounded Retention"
+        },
+        {
+          "id": "aiDevOsRolloutReadiness",
+          "name": "AI_DEV_OS Rollout Readiness"
+        },
+        {
+          "id": "aiDevOsMigrationFriction",
+          "name": "AI_DEV_OS Migration Friction"
+        },
+        {
+          "id": "aiDevOsGovernanceReadiness",
+          "name": "AI_DEV_OS Governance Readiness"
+        },
+        {
+          "id": "aiDevOsRollbackRehearsal",
+          "name": "AI_DEV_OS Rollback Rehearsal"
         }
       ]
     },

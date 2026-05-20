@@ -19,6 +19,11 @@ import {
   RuntimeHeartbeatStatusBar,
   registerGovernancePresenceCommands,
 } from './presence/governancePresence';
+import {
+  ConsumerRolloutMonitor,
+  RolloutTreeProvider,
+  registerConsumerRolloutCommands,
+} from './rollout/consumerRollout';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
@@ -63,6 +68,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const presence = new GovernancePresenceMonitor(context);
   const presenceStatus = new GovernancePresenceStatusBar(presence);
   const heartbeatStatus = new RuntimeHeartbeatStatusBar(presence);
+  const rollout = new ConsumerRolloutMonitor();
+  const rolloutView = new RolloutTreeProvider(rollout, 'rollout');
+  const frictionView = new RolloutTreeProvider(rollout, 'friction');
+  const readinessView = new RolloutTreeProvider(rollout, 'governance');
+  const rollbackView = new RolloutTreeProvider(rollout, 'rollback');
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -143,6 +153,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS runtime heartbeat is stale or unavailable.',
     );
   }
+  const rolloutState = await rollout.evaluate();
+  if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
+    await notifications.warn(
+      'startup-rollout-friction-warning',
+      'AI_DEV_OS consumer rollout rehearsal found migration friction.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -161,6 +178,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeOverlap', runtimeOverlapView),
     vscode.window.registerTreeDataProvider('aiDevOsContractOverlap', contractOverlapView),
     vscode.window.registerTreeDataProvider('aiDevOsMergeCandidates', mergeCandidateView),
+    vscode.window.registerTreeDataProvider('aiDevOsRolloutReadiness', rolloutView),
+    vscode.window.registerTreeDataProvider('aiDevOsMigrationFriction', frictionView),
+    vscode.window.registerTreeDataProvider('aiDevOsGovernanceReadiness', readinessView),
+    vscode.window.registerTreeDataProvider('aiDevOsRollbackRehearsal', rollbackView),
     governanceStatus,
     governanceTrendStatus,
     governanceCoreStatus,
@@ -211,6 +232,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       restored,
       healthState,
       runtimeGraphState,
+    ),
+    ...registerConsumerRolloutCommands(
+      rollout,
+      notifications,
+      [rolloutView, frictionView, readinessView, rollbackView],
     ),
   );
 }

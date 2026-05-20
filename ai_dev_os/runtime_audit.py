@@ -4,6 +4,13 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_dev_os.consumer_rollout import (
+    CompatibilityProjectionPolicy,
+    ConsumerRolloutAuditPolicy,
+    GovernanceReadinessPolicy,
+    MigrationFrictionPolicy,
+    RollbackRehearsalPolicy,
+)
 from ai_dev_os.context_subset.continuity_scope import ContinuityScopePolicy
 from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
 from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
@@ -468,6 +475,24 @@ class VSCodePresenceAuditReport:
 
 
 @dataclass(frozen=True)
+class ConsumerRolloutAuditReport:
+    consumer_rollout_active: bool
+    rollout_audit_active: bool
+    migration_friction_active: bool
+    compatibility_projection_active: bool
+    governance_readiness_active: bool
+    rollback_rehearsal_active: bool
+    estimated_avoided_rollout_failure: int
+    estimated_avoided_stale_migration_state: int
+    rollout_ready: bool
+    migration_friction: str
+    governance_readiness: str
+    rollback_ready: bool
+    bounded_rollout_confirmed: bool
+    consumer_name: str
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -498,6 +523,7 @@ class RuntimeEnforcementAuditReport:
     governance_core: GovernanceCoreAuditReport
     release_readiness: ReleaseReadinessAuditReport
     vscode_presence: VSCodePresenceAuditReport
+    consumer_rollout: ConsumerRolloutAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1862,6 +1888,40 @@ def audit_vscode_presence() -> VSCodePresenceAuditReport:
     )
 
 
+def audit_consumer_rollout() -> ConsumerRolloutAuditReport:
+    consumer_repo = _default_consumer_repo()
+    audit = ConsumerRolloutAuditPolicy().evaluate(consumer_repo, platform_repo=".")
+    friction = MigrationFrictionPolicy().evaluate(consumer_repo, platform_repo=".")
+    compatibility = CompatibilityProjectionPolicy().evaluate(consumer_repo, platform_repo=".")
+    governance = GovernanceReadinessPolicy().evaluate(consumer_repo, platform_repo=".")
+    rollback = RollbackRehearsalPolicy().evaluate(consumer_repo, platform_repo=".")
+    avoided_failure = (
+        2_000 + len(friction.friction_categories) * 400 + int(rollback.rollback_ready) * 600
+    )
+    avoided_stale = 1_200 + len(friction.recommended_human_actions) * 300
+    return ConsumerRolloutAuditReport(
+        consumer_rollout_active=audit.summary_only and audit.install_state_active,
+        rollout_audit_active=audit.summary_only,
+        migration_friction_active=friction.summary_only,
+        compatibility_projection_active=compatibility.summary_only,
+        governance_readiness_active=governance.summary_only,
+        rollback_rehearsal_active=rollback.summary_only and rollback.dry_run_only,
+        estimated_avoided_rollout_failure=avoided_failure,
+        estimated_avoided_stale_migration_state=avoided_stale,
+        rollout_ready=audit.rollout_ready,
+        migration_friction=audit.migration_friction,
+        governance_readiness=audit.governance_readiness,
+        rollback_ready=audit.rollback_ready,
+        bounded_rollout_confirmed=audit.bounded_rollout_confirmed,
+        consumer_name=audit.consumer_name,
+    )
+
+
+def _default_consumer_repo() -> Path:
+    sibling = Path("..") / "AITuber"
+    return sibling if sibling.exists() else Path(".")
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1893,6 +1953,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         governance_core=audit_governance_core(),
         release_readiness=audit_release_readiness(),
         vscode_presence=audit_vscode_presence(),
+        consumer_rollout=audit_consumer_rollout(),
     )
 
 
