@@ -40,6 +40,8 @@ class RuntimeSimplificationFrame:
     hidden_contract_injection_used: bool
     retrieval_budget_active: bool
     repo_wide_retrieval_forbidden: bool
+    incremental_context_active: bool
+    repo_wide_replay_forbidden: bool
 
 
 class RuntimeSimplificationPolicy:
@@ -67,4 +69,6 @@ class RuntimeSimplificationPolicy:
             hidden_contract_injection_used=False,
             retrieval_budget_active=runtime_graph.retrieval_budget_active,
             repo_wide_retrieval_forbidden=runtime_graph.repo_wide_retrieval_forbidden,
+            incremental_context_active=runtime_graph.incremental_context_active,
+            repo_wide_replay_forbidden=runtime_graph.repo_wide_replay_forbidden,
         )

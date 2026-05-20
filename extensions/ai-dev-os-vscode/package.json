@@ -96,6 +96,12 @@
     "onCommand:aiDevOs.showRetrievalPressure",
     "onCommand:aiDevOs.compactRetrievalScope",
     "onCommand:aiDevOs.showRetrievalNeighborhood",
+    "onCommand:aiDevOs.showContextDelta",
+    "onCommand:aiDevOs.showIncrementalRetrieval",
+    "onCommand:aiDevOs.showDeltaAudit",
+    "onCommand:aiDevOs.showReplayPressure",
+    "onCommand:aiDevOs.compactIncrementalContext",
+    "onCommand:aiDevOs.showIncrementalRecommendations",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -196,7 +202,13 @@
       {"command": "aiDevOs.showRetrievalRadius", "title": "AI_DEV_OS: Show Retrieval Radius"},
       {"command": "aiDevOs.showRetrievalPressure", "title": "AI_DEV_OS: Show Retrieval Pressure"},
       {"command": "aiDevOs.compactRetrievalScope", "title": "AI_DEV_OS: Compact Retrieval Scope"},
-      {"command": "aiDevOs.showRetrievalNeighborhood", "title": "AI_DEV_OS: Show Retrieval Neighborhood"}
+      {"command": "aiDevOs.showRetrievalNeighborhood", "title": "AI_DEV_OS: Show Retrieval Neighborhood"},
+      {"command": "aiDevOs.showContextDelta", "title": "AI_DEV_OS: Show Context Delta"},
+      {"command": "aiDevOs.showIncrementalRetrieval", "title": "AI_DEV_OS: Show Incremental Retrieval"},
+      {"command": "aiDevOs.showDeltaAudit", "title": "AI_DEV_OS: Show Delta Audit"},
+      {"command": "aiDevOs.showReplayPressure", "title": "AI_DEV_OS: Show Replay Pressure"},
+      {"command": "aiDevOs.compactIncrementalContext", "title": "AI_DEV_OS: Compact Incremental Context"},
+      {"command": "aiDevOs.showIncrementalRecommendations", "title": "AI_DEV_OS: Show Incremental Recommendations"}
     ],
     "views": {
       "explorer": [

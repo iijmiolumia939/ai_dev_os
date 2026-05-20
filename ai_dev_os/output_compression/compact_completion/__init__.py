@@ -26,6 +26,7 @@ class CompactCompletionInput:
     rollout_summary: str = ""
     unchanged_sections: tuple[str, ...] = ()
     retrieval_budget_summary: str = ""
+    incremental_context_summary: str = ""
 
 
 @dataclass(frozen=True)
@@ -73,6 +74,7 @@ class CompactCompletionPolicy:
                 validation.compact_validation_projection,
                 f"Runtime audit: {data.runtime_audit_status}",
                 f"Retrieval budget: {data.retrieval_budget_summary or 'bounded'}",
+                f"Incremental context: {data.incremental_context_summary or 'delta-only'}",
                 f"Risks: {len(data.risks)}",
                 f"Next: {data.next_step}",
             )
@@ -83,6 +85,11 @@ class CompactCompletionPolicy:
             + (
                 (f"Retrieval budget: {data.retrieval_budget_summary}",)
                 if data.retrieval_budget_summary
+                else ()
+            )
+            + (
+                (f"Incremental context: {data.incremental_context_summary}",)
+                if data.incremental_context_summary
                 else ()
             )
             + tuple(deduplication.compact_references)

@@ -33,6 +33,12 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showRetrievalPressure",
         "aiDevOs.compactRetrievalScope",
         "aiDevOs.showRetrievalNeighborhood",
+        "aiDevOs.showContextDelta",
+        "aiDevOs.showIncrementalRetrieval",
+        "aiDevOs.showDeltaAudit",
+        "aiDevOs.showReplayPressure",
+        "aiDevOs.compactIncrementalContext",
+        "aiDevOs.showIncrementalRecommendations",
     }.issubset(commands)
 
 

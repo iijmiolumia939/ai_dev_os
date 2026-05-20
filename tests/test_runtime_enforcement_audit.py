@@ -124,3 +124,33 @@ def test_runtime_audit_reports_retrieval_budget_controls() -> None:
     assert report.retrieval_budget.no_dynamic_tracing is True
     assert report.retrieval_budget.no_hidden_provider_routing is True
     assert report.retrieval_budget.no_automatic_retrieval_escalation is True
+
+
+def test_runtime_audit_reports_incremental_context_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.incremental_context.incremental_context_active is True
+    assert report.incremental_context.context_delta_active is True
+    assert report.incremental_context.delta_retrieval_active is True
+    assert report.incremental_context.continuity_delta_active is True
+    assert report.incremental_context.audit_delta_active is True
+    assert report.incremental_context.cognition_cache_active is True
+    assert report.incremental_context.incremental_pressure_active is True
+    assert report.incremental_context.incremental_recommendation_active is True
+    assert report.incremental_context.estimated_avoided_repeated_input_tokens > 0
+    assert report.incremental_context.estimated_avoided_duplicate_runtime_cognition > 0
+    assert report.incremental_context.local_only is True
+    assert report.incremental_context.deterministic is True
+    assert report.incremental_context.summary_only is True
+    assert report.incremental_context.bounded_retention is True
+    assert report.incremental_context.no_raw_transcript_persistence is True
+    assert report.incremental_context.no_hidden_provider_memory is True
+    assert report.incremental_context.no_ast_replay is True
+    assert report.incremental_context.no_repo_wide_replay is True
+    assert report.incremental_context.no_dynamic_tracing is True
+    assert report.incremental_context.no_automatic_context_expansion is True
+    assert report.runtime_graph.incremental_context_active is True
+    assert report.runtime_simplification.incremental_context_active is True
+    assert report.workspace_persistence.incremental_context_active is True
+    assert report.governance_health.incremental_context_active is True
+    assert report.governance_trends.incremental_context_active is True

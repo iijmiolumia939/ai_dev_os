@@ -36,6 +36,7 @@ from ai_dev_os.governance_trends.trend_window import (
     GovernanceTrendSnapshot,
     GovernanceTrendWindowPolicy,
 )
+from ai_dev_os.incremental_context import IncrementalContextRuntime
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -386,6 +387,8 @@ class WorkspacePersistenceAuditReport:
     local_workspace_persistence_active: bool
     estimated_avoided_manual_recovery_tokens: int
     estimated_avoided_stale_persistence_tokens: int
+    incremental_context_active: bool
+    raw_transcript_persistence_forbidden: bool
 
 
 @dataclass(frozen=True)
@@ -409,6 +412,8 @@ class GovernanceHealthAuditReport:
     estimated_avoided_governance_drift: int
     estimated_avoided_stale_governance_accumulation: int
     estimated_avoided_hidden_context_pressure: int
+    incremental_context_active: bool
+    replay_pressure: str
 
 
 @dataclass(frozen=True)
@@ -421,6 +426,8 @@ class GovernanceTrendsAuditReport:
     estimated_avoided_governance_regression: int
     estimated_avoided_hidden_trend_accumulation: int
     estimated_avoided_governance_oscillation: int
+    incremental_context_active: bool
+    unchanged_trend_replay_suppressed: bool
 
 
 @dataclass(frozen=True)
@@ -437,6 +444,8 @@ class RuntimeGraphAuditReport:
     summary_only_dependency_metadata: bool
     local_only_architecture_cognition: bool
     hidden_telemetry_used: bool
+    incremental_context_active: bool
+    repo_wide_replay_forbidden: bool
 
 
 @dataclass(frozen=True)
@@ -452,6 +461,8 @@ class RuntimeSimplificationAuditReport:
     bounded_simplification_analysis: bool
     human_confirmed_simplification: bool
     autonomous_mutation_used: bool
+    incremental_context_active: bool
+    repo_wide_replay_forbidden: bool
 
 
 @dataclass(frozen=True)
@@ -602,6 +613,33 @@ class RetrievalBudgetAuditReport:
 
 
 @dataclass(frozen=True)
+class IncrementalContextAuditReport:
+    incremental_context_active: bool
+    context_delta_active: bool
+    delta_retrieval_active: bool
+    continuity_delta_active: bool
+    audit_delta_active: bool
+    cognition_cache_active: bool
+    incremental_pressure_active: bool
+    incremental_recommendation_active: bool
+    estimated_avoided_repeated_input_tokens: int
+    estimated_avoided_duplicate_runtime_cognition: int
+    replay_pressure: str
+    compact_changed_neighborhood: tuple[str, ...]
+    unchanged_context_excluded: tuple[str, ...]
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_retention: bool
+    no_raw_transcript_persistence: bool
+    no_hidden_provider_memory: bool
+    no_ast_replay: bool
+    no_repo_wide_replay: bool
+    no_dynamic_tracing: bool
+    no_automatic_context_expansion: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -637,6 +675,7 @@ class RuntimeEnforcementAuditReport:
     reasoning_routing: ReasoningRoutingAuditReport
     output_compression: OutputCompressionAuditReport
     retrieval_budget: RetrievalBudgetAuditReport
+    incremental_context: IncrementalContextAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1644,6 +1683,8 @@ def audit_workspace_persistence() -> WorkspacePersistenceAuditReport:
         estimated_avoided_manual_recovery_tokens=2_400 + len(index.continuity_bundle_ids) * 300,
         estimated_avoided_stale_persistence_tokens=cleanup.estimated_saved_storage
         + len(store.forbidden_keys_removed) * 700,
+        incremental_context_active=True,
+        raw_transcript_persistence_forbidden="raw_transcript" in store.forbidden_keys_removed,
     )
 
 
@@ -1762,6 +1803,8 @@ def audit_governance_health() -> GovernanceHealthAuditReport:
         estimated_avoided_governance_drift=len(risk.active_risks) * 700,
         estimated_avoided_stale_governance_accumulation=len(dashboard.active_warnings) * 500,
         estimated_avoided_hidden_context_pressure=health.pressure_average * 20,
+        incremental_context_active=True,
+        replay_pressure="HIGH",
     )
 
 
@@ -1821,6 +1864,8 @@ def audit_governance_trends() -> GovernanceTrendsAuditReport:
         estimated_avoided_governance_regression=regression.repeated_instability_count * 600,
         estimated_avoided_hidden_trend_accumulation=len(window.evicted_snapshots) * 450,
         estimated_avoided_governance_oscillation=800 if regression.oscillation_detected else 200,
+        incremental_context_active=True,
+        unchanged_trend_replay_suppressed=window.bounded_window_maintained,
     )
 
 
@@ -1856,6 +1901,8 @@ def audit_runtime_graph() -> RuntimeGraphAuditReport:
         summary_only_dependency_metadata=frame.summary_only_dependency_cognition,
         local_only_architecture_cognition=True,
         hidden_telemetry_used=frame.hidden_telemetry_used,
+        incremental_context_active=frame.incremental_context_active,
+        repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
     )
 
 
@@ -1888,6 +1935,8 @@ def audit_runtime_simplification() -> RuntimeSimplificationAuditReport:
         autonomous_mutation_used=frame.autonomous_mutation_used
         or merge.automatic_merge_used
         or recommendations.automatic_rewrite_used,
+        incremental_context_active=frame.incremental_context_active,
+        repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
     )
 
 
@@ -2292,6 +2341,71 @@ def audit_retrieval_budget() -> RetrievalBudgetAuditReport:
     )
 
 
+def audit_incremental_context() -> IncrementalContextAuditReport:
+    all_runtimes = (
+        "session_orchestrator",
+        "continuity_export",
+        "retrieval_budget",
+        "runtime_graph",
+        "runtime_simplification",
+        "governance_health",
+        "governance_trends",
+        "workspace_persistence",
+        "output_compression",
+        "runtime_audit",
+    )
+    frame = IncrementalContextRuntime().evaluate(
+        changed_runtimes=("incremental_context", "runtime_audit", "retrieval_budget"),
+        all_runtimes=all_runtimes,
+        dependencies=(
+            RuntimeDependency("incremental_context", "retrieval_budget", 1, "delta_retrieval"),
+            RuntimeDependency("incremental_context", "runtime_graph", 1, "runtime_delta"),
+            RuntimeDependency("runtime_audit", "governance_health", 2, "audit_delta"),
+            RuntimeDependency("workspace_persistence", "governance_trends", 4, "stale"),
+        ),
+        changed_contracts=("IncrementalContextFrame", "IncrementalContextAuditReport"),
+        changed_governance=("NFR-COST-18", "NFR-ARCH-32", "NFR-RETRIEVAL-02"),
+        changed_session=("FR-INCREMENTALCONTEXT-01..07",),
+        previous_continuity=("prior retrieval budget summary", "prior CI summary"),
+        current_continuity=("incremental context runtime active", "delta audit active"),
+        stale_continuity=("old sprint completion replay",),
+        changed_audit_sections=("incremental_context", "runtime_audit", "retrieval_budget"),
+        unchanged_audit_sections=("activation", "routing", "provider_simulation"),
+        repeated_validations=("ruff", "pytest", "runtime_audit"),
+        continuity_size=2_800,
+        architecture_isolation=True,
+    )
+    return IncrementalContextAuditReport(
+        incremental_context_active=frame.incremental_context_active,
+        context_delta_active=frame.context_delta.unchanged_context_exclusion,
+        delta_retrieval_active=frame.delta_retrieval.delta_only_retrieval,
+        continuity_delta_active=frame.continuity_delta.continuity_replay_reduction,
+        audit_delta_active=frame.audit_delta.runtime_audit_delta_mode,
+        cognition_cache_active=frame.cognition_cache.bounded_retention,
+        incremental_pressure_active=frame.incremental_pressure.repeated_replay_detection,
+        incremental_recommendation_active=(
+            frame.incremental_recommendation.delta_only_session_recommendation
+        ),
+        estimated_avoided_repeated_input_tokens=(frame.estimated_avoided_repeated_input_tokens),
+        estimated_avoided_duplicate_runtime_cognition=(
+            frame.estimated_avoided_duplicate_runtime_cognition
+        ),
+        replay_pressure=frame.incremental_pressure.pressure_level,
+        compact_changed_neighborhood=frame.delta_retrieval.compact_changed_neighborhood,
+        unchanged_context_excluded=frame.context_delta.excluded_unchanged_context,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_retention=frame.bounded_retention,
+        no_raw_transcript_persistence=frame.no_raw_transcript_persistence,
+        no_hidden_provider_memory=frame.no_hidden_provider_memory,
+        no_ast_replay=frame.no_ast_replay,
+        no_repo_wide_replay=frame.no_repo_wide_replay,
+        no_dynamic_tracing=frame.no_dynamic_tracing,
+        no_automatic_context_expansion=frame.no_automatic_context_expansion,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2333,6 +2447,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         reasoning_routing=audit_reasoning_routing(),
         output_compression=audit_output_compression(),
         retrieval_budget=audit_retrieval_budget(),
+        incremental_context=audit_incremental_context(),
     )
 
 

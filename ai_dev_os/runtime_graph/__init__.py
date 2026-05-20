@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_dev_os.incremental_context import IncrementalContextRuntime
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph.architecture_pressure import (
     ArchitecturePressureFrame,
@@ -33,6 +34,9 @@ class RuntimeGraphFrame:
     retrieval_budget_active: bool
     retrieval_budget_summary_only: bool
     repo_wide_retrieval_forbidden: bool
+    incremental_context_active: bool
+    delta_context_summary_only: bool
+    repo_wide_replay_forbidden: bool
 
 
 class RuntimeGraphPolicy:
@@ -59,6 +63,29 @@ class RuntimeGraphPolicy:
             contract_surfaces=contract.exported_contracts,
             architecture_isolation=pressure.simplification_recommended,
         )
+        incremental = IncrementalContextRuntime().evaluate(
+            changed_runtimes=affected,
+            all_runtimes=runtimes,
+            dependencies=tuple(
+                RuntimeDependency(
+                    source=edge.source_runtime,
+                    target=edge.target_runtime,
+                    contract=edge.dependency_kind,
+                )
+                for edge in graph.bounded_dependency_edges[:max_edges]
+            ),
+            changed_contracts=contract.exported_contracts[:3],
+            changed_governance=("runtime_graph",),
+            changed_session=("runtime_graph_delta",),
+            previous_continuity=("previous runtime graph replay",),
+            current_continuity=("changed runtime graph summary",),
+            stale_continuity=("stale runtime graph replay",),
+            changed_audit_sections=("runtime_graph",),
+            unchanged_audit_sections=("activation", "budget"),
+            repeated_validations=("pytest",),
+            continuity_size=min(2_400, contract.contract_surface_size * 20),
+            architecture_isolation=pressure.simplification_recommended,
+        )
         return RuntimeGraphFrame(
             discovery=discovery,
             dependency_graph=graph,
@@ -71,4 +98,7 @@ class RuntimeGraphPolicy:
             retrieval_budget_active=retrieval_budget.retrieval_budget_active,
             retrieval_budget_summary_only=retrieval_budget.summary_only,
             repo_wide_retrieval_forbidden=retrieval_budget.repo_wide_retrieval_forbidden,
+            incremental_context_active=incremental.incremental_context_active,
+            delta_context_summary_only=incremental.summary_only,
+            repo_wide_replay_forbidden=incremental.no_repo_wide_replay,
         )

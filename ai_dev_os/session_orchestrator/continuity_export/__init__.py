@@ -29,7 +29,10 @@ class ContinuityExportFrame:
     estimated_tokens: int
     excluded_context: tuple[str, ...]
     retrieval_budget_summary: str = ""
+    incremental_context_summary: str = ""
+    unchanged_sprint_summary_suppressed: bool = True
     repo_wide_retrieval_forbidden: bool = True
+    repo_wide_replay_forbidden: bool = True
 
 
 class ContinuityExportPolicy:
@@ -61,7 +64,10 @@ class ContinuityExportPolicy:
             estimated_tokens=0,
             excluded_context=excluded,
             retrieval_budget_summary="affected-runtime-only retrieval",
+            incremental_context_summary="changed-continuity-only export",
+            unchanged_sprint_summary_suppressed=True,
             repo_wide_retrieval_forbidden=True,
+            repo_wide_replay_forbidden=True,
         )
         text = self._render(frame, output_format)
         compact = GovernanceCompactExportPrimitive().export(
@@ -81,7 +87,10 @@ class ContinuityExportPolicy:
             estimated_tokens=min(self._estimate_tokens(text), max(1, compact.compact_export_size)),
             excluded_context=frame.excluded_context,
             retrieval_budget_summary=frame.retrieval_budget_summary,
+            incremental_context_summary=frame.incremental_context_summary,
+            unchanged_sprint_summary_suppressed=frame.unchanged_sprint_summary_suppressed,
             repo_wide_retrieval_forbidden=frame.repo_wide_retrieval_forbidden,
+            repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
         )
 
     def _render(self, frame: ContinuityExportFrame, output_format: str) -> str:
@@ -105,7 +114,10 @@ class ContinuityExportPolicy:
             f"Next prompt seed: {frame.next_prompt_seed}",
             f"Excluded context: {', '.join(frame.excluded_context)}",
             f"Retrieval budget: {frame.retrieval_budget_summary}",
+            f"Incremental context: {frame.incremental_context_summary}",
+            f"Unchanged sprint summary suppressed: {frame.unchanged_sprint_summary_suppressed}",
             f"Repo-wide retrieval forbidden: {frame.repo_wide_retrieval_forbidden}",
+            f"Repo-wide replay forbidden: {frame.repo_wide_replay_forbidden}",
         )
 
     def _estimate_tokens(self, text: str) -> int:
