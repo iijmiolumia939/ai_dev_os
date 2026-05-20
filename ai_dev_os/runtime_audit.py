@@ -51,6 +51,7 @@ from ai_dev_os.repository_intelligence.validation_collector import ValidationCol
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
+from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
 from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
 from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
@@ -395,6 +396,21 @@ class RuntimeGraphAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimeSimplificationAuditReport:
+    runtime_overlap_active: bool
+    contract_overlap_active: bool
+    runtime_merge_candidates_active: bool
+    governance_duplication_active: bool
+    simplification_recommendations_active: bool
+    estimated_avoided_runtime_fragmentation: int
+    estimated_avoided_governance_duplication: int
+    estimated_avoided_contract_explosion: int
+    bounded_simplification_analysis: bool
+    human_confirmed_simplification: bool
+    autonomous_mutation_used: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -421,6 +437,7 @@ class RuntimeEnforcementAuditReport:
     governance_health: GovernanceHealthAuditReport
     governance_trends: GovernanceTrendsAuditReport
     runtime_graph: RuntimeGraphAuditReport
+    runtime_simplification: RuntimeSimplificationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1643,6 +1660,38 @@ def audit_runtime_graph() -> RuntimeGraphAuditReport:
     )
 
 
+def audit_runtime_simplification() -> RuntimeSimplificationAuditReport:
+    frame = RuntimeSimplificationPolicy().evaluate(".")
+    overlap = frame.runtime_overlap
+    contract = frame.contract_overlap
+    merge = frame.merge_candidates
+    governance = frame.governance_duplication
+    recommendations = frame.recommendations
+    avoided_fragmentation = (
+        len(merge.merge_candidates) * 480 + len(overlap.overlap_categories) * 180
+    )
+    avoided_governance = len(governance.duplicated_governance_groups) * 520
+    avoided_contract = len(contract.duplicated_contract_groups) * 260 + (
+        700 if contract.oversized_contract_surface else 0
+    )
+    return RuntimeSimplificationAuditReport(
+        runtime_overlap_active=overlap.overlap_detected and overlap.summary_only,
+        contract_overlap_active=contract.contract_overlap_detected and contract.summary_only,
+        runtime_merge_candidates_active=merge.human_review_required and merge.recommendation_only,
+        governance_duplication_active=governance.governance_duplication_detected,
+        simplification_recommendations_active=recommendations.summary_only
+        and recommendations.human_confirmed_only,
+        estimated_avoided_runtime_fragmentation=avoided_fragmentation,
+        estimated_avoided_governance_duplication=avoided_governance,
+        estimated_avoided_contract_explosion=avoided_contract,
+        bounded_simplification_analysis=frame.bounded_simplification_analysis,
+        human_confirmed_simplification=recommendations.human_confirmed_only,
+        autonomous_mutation_used=frame.autonomous_mutation_used
+        or merge.automatic_merge_used
+        or recommendations.automatic_rewrite_used,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1670,6 +1719,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         governance_health=audit_governance_health(),
         governance_trends=audit_governance_trends(),
         runtime_graph=audit_runtime_graph(),
+        runtime_simplification=audit_runtime_simplification(),
     )
 
 

@@ -51,10 +51,19 @@
     "onCommand:aiDevOs.showArchitecturePressure",
     "onCommand:aiDevOs.showOversizedRuntimeWarnings",
     "onCommand:aiDevOs.compactRuntimeGraph",
+    "onCommand:aiDevOs.showRuntimeOverlap",
+    "onCommand:aiDevOs.showContractOverlap",
+    "onCommand:aiDevOs.showMergeCandidates",
+    "onCommand:aiDevOs.showGovernanceDuplication",
+    "onCommand:aiDevOs.showSimplificationRecommendations",
+    "onCommand:aiDevOs.compactSimplificationView",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
     "onView:aiDevOsRuntimeClusters",
+    "onView:aiDevOsRuntimeOverlap",
+    "onView:aiDevOsContractOverlap",
+    "onView:aiDevOsMergeCandidates",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -96,7 +105,13 @@
       {"command": "aiDevOs.showContractSurface", "title": "AI_DEV_OS: Show Contract Surface"},
       {"command": "aiDevOs.showArchitecturePressure", "title": "AI_DEV_OS: Show Architecture Pressure"},
       {"command": "aiDevOs.showOversizedRuntimeWarnings", "title": "AI_DEV_OS: Show Oversized Runtime Warnings"},
-      {"command": "aiDevOs.compactRuntimeGraph", "title": "AI_DEV_OS: Compact Runtime Graph"}
+      {"command": "aiDevOs.compactRuntimeGraph", "title": "AI_DEV_OS: Compact Runtime Graph"},
+      {"command": "aiDevOs.showRuntimeOverlap", "title": "AI_DEV_OS: Show Runtime Overlap"},
+      {"command": "aiDevOs.showContractOverlap", "title": "AI_DEV_OS: Show Contract Overlap"},
+      {"command": "aiDevOs.showMergeCandidates", "title": "AI_DEV_OS: Show Merge Candidates"},
+      {"command": "aiDevOs.showGovernanceDuplication", "title": "AI_DEV_OS: Show Governance Duplication"},
+      {"command": "aiDevOs.showSimplificationRecommendations", "title": "AI_DEV_OS: Show Simplification Recommendations"},
+      {"command": "aiDevOs.compactSimplificationView", "title": "AI_DEV_OS: Compact Simplification View"}
     ],
     "views": {
       "explorer": [
@@ -119,6 +134,18 @@
         {
           "id": "aiDevOsRuntimeClusters",
           "name": "AI_DEV_OS Runtime Clusters"
+        },
+        {
+          "id": "aiDevOsRuntimeOverlap",
+          "name": "AI_DEV_OS Runtime Overlap"
+        },
+        {
+          "id": "aiDevOsContractOverlap",
+          "name": "AI_DEV_OS Contract Overlap"
+        },
+        {
+          "id": "aiDevOsMergeCandidates",
+          "name": "AI_DEV_OS Merge Candidates"
         }
       ]
     },

@@ -4,6 +4,7 @@ import {registerGovernanceHealthCommands} from './commands/governanceHealthComma
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
+import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
@@ -11,11 +12,15 @@ import {RateLimitedNotifications} from './notifications/rateLimitedNotifications
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
+import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
+import {ContractOverlapViewProvider} from './views/contractOverlapView';
 import {GovernanceDashboardViewProvider} from './views/governanceDashboardView';
 import {GovernanceTrendViewProvider} from './views/governanceTrendView';
+import {MergeCandidateViewProvider} from './views/mergeCandidateView';
 import {RuntimeClusterViewProvider} from './views/runtimeClusterView';
 import {RuntimeGraphViewProvider} from './views/runtimeGraphView';
+import {RuntimeOverlapViewProvider} from './views/runtimeOverlapView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -34,12 +39,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const architectureStatus = new ArchitecturePressureStatusBar(runtimeGraph);
   const runtimeGraphView = new RuntimeGraphViewProvider(runtimeGraph);
   const runtimeClusterView = new RuntimeClusterViewProvider(runtimeGraph);
+  const runtimeSimplification = new RuntimeSimplificationMonitor();
+  const simplificationStatus = new SimplificationStatusBar(runtimeSimplification);
+  const runtimeOverlapView = new RuntimeOverlapViewProvider(runtimeSimplification);
+  const contractOverlapView = new ContractOverlapViewProvider(runtimeSimplification);
+  const mergeCandidateView = new MergeCandidateViewProvider(runtimeSimplification);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
   const healthState = await governanceStatus.refresh();
   const trendState = await governanceTrendStatus.refresh();
   const runtimeGraphState = architectureStatus.refresh();
+  const simplificationState = simplificationStatus.refresh();
   await store.update(persistence.toBoundaryState(restored));
   if (restored.rollover_state.rollover_pending || restored.stale_warning_state.stale_session_detected) {
     await notifications.warn(
@@ -86,6 +97,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS runtime graph has cross-boundary pressure. Review the compact graph.',
     );
   }
+  if (simplificationState.governanceGroups.length > 0) {
+    await notifications.warn(
+      'startup-runtime-simplification-governance-warning',
+      `AI_DEV_OS governance duplication groups: ${simplificationState.governanceGroups.length}.`,
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -98,9 +115,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceTrends', governanceTrendView),
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeGraph', runtimeGraphView),
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeClusters', runtimeClusterView),
+    vscode.window.registerTreeDataProvider('aiDevOsRuntimeOverlap', runtimeOverlapView),
+    vscode.window.registerTreeDataProvider('aiDevOsContractOverlap', contractOverlapView),
+    vscode.window.registerTreeDataProvider('aiDevOsMergeCandidates', mergeCandidateView),
     governanceStatus,
     governanceTrendStatus,
     architectureStatus,
+    simplificationStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -119,6 +140,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       notifications,
       runtimeGraphView,
       runtimeClusterView,
+    ),
+    ...registerRuntimeSimplificationCommands(
+      runtimeSimplification,
+      simplificationStatus,
+      notifications,
+      runtimeOverlapView,
+      contractOverlapView,
+      mergeCandidateView,
     ),
   );
 }
