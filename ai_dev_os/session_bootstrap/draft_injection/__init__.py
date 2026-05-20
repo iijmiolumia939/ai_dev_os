@@ -9,6 +9,17 @@ from ai_dev_os.session_bootstrap.chat_prefill import (
     ChatPrefillPolicy,
 )
 from ai_dev_os.session_bootstrap.chat_target_detection import ChatTargetDetectionPolicy
+from ai_dev_os.session_bootstrap.provider_prefill import (
+    ENTER_ONLY_READY,
+    PrefillObservabilityFrame,
+    PrefillObservabilityPolicy,
+    ProviderPrefillFrame,
+)
+from ai_dev_os.session_bootstrap.provider_prefill.clipboard_fallback import (
+    ClipboardFallbackPrefillAdapter,
+)
+from ai_dev_os.session_bootstrap.provider_prefill.copilot_chat import CopilotChatPrefillAdapter
+from ai_dev_os.session_bootstrap.provider_prefill.vscode_chat import VSCodeChatPrefillAdapter
 from ai_dev_os.session_orchestrator.continuity_export import ContinuityExportPolicy
 from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 
@@ -22,6 +33,8 @@ class BootstrapDraftPreviewFrame:
     architecture_isolation: str
     enter_ready_state: str
     waiting_for_send_state: str
+    provider_name: str = "vscode_chat"
+    enter_only_confidence: str = ENTER_ONLY_READY
 
 
 @dataclass(frozen=True)
@@ -41,6 +54,13 @@ class CopilotDraftInjectionFrame:
     authority_escalation_used: bool
     status_bar_states: tuple[str, ...]
     warnings: tuple[str, ...]
+    provider_name: str = "vscode_chat"
+    prefill_supported: bool = True
+    prefill_attempted: bool = True
+    prefill_success: bool = True
+    enter_only_confidence: str = ENTER_ONLY_READY
+    provider_prefill: ProviderPrefillFrame | None = None
+    observability: PrefillObservabilityFrame | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -67,8 +87,16 @@ class DraftInjectionPolicy:
             "FR-DRAFTINJECT-03",
             "FR-DRAFTINJECT-04",
             "FR-DRAFTINJECT-05",
+            "FR-PREFILL-01",
+            "FR-PREFILL-02",
+            "FR-PREFILL-03",
+            "FR-PREFILL-04",
+            "FR-PREFILL-05",
             "NFR-UX-02",
+            "NFR-UX-03",
             "NFR-ARCH-29",
+            "NFR-ARCH-30",
+            "NFR-OBS-03",
             "NFR-SEC-05",
         ),
         active_tests: tuple[str, ...] = (
@@ -77,12 +105,18 @@ class DraftInjectionPolicy:
             "TC-DRAFTINJECT-03",
             "TC-DRAFTINJECT-04",
             "TC-DRAFTINJECT-05",
+            "TC-PREFILL-01",
+            "TC-PREFILL-02",
+            "TC-PREFILL-03",
+            "TC-PREFILL-04",
+            "TC-PREFILL-05",
         ),
         affected_runtimes: tuple[str, ...] = (
             "session_bootstrap.draft_injection",
             "session_bootstrap.chat_prefill",
             "session_bootstrap.chat_launch",
             "session_bootstrap.chat_target_detection",
+            "session_bootstrap.provider_prefill",
             "vscode_extension",
         ),
         architecture_isolation: str = "no authority escalation; extension opens draft only",
@@ -147,6 +181,14 @@ class DraftInjectionPolicy:
             continuity=continuity,
             prompt_pack=prompt,
         )
+        provider_prefill = self._provider_prefill(
+            requested_target=target.detected_target,
+            draft_text=prefill.draft_text,
+            continuity_text=continuity.copy_ready_text,
+            sprint_prompt_text=prompt.copy_ready_text,
+            bootstrap_preview_text=objective,
+        )
+        observability = PrefillObservabilityPolicy().observe(provider_prefill)
         preview = BootstrapDraftPreviewFrame(
             estimated_token_size=prefill.estimated_token_size,
             included_continuity=prefill.included_continuity,
@@ -155,22 +197,64 @@ class DraftInjectionPolicy:
             architecture_isolation=architecture_isolation,
             enter_ready_state=ENTER_READY_STATE,
             waiting_for_send_state=WAITING_FOR_SEND_STATE,
+            provider_name=provider_prefill.provider_name,
+            enter_only_confidence=provider_prefill.enter_only_confidence,
         )
-        warnings = tuple(dict.fromkeys(target.warnings + launch.warnings + prefill.warnings))
+        warnings = tuple(
+            dict.fromkeys(
+                target.warnings
+                + launch.warnings
+                + prefill.warnings
+                + provider_prefill.warnings
+                + observability.warnings
+            )
+        )
         return CopilotDraftInjectionFrame(
-            chat_opened=launch.chat_opened,
-            draft_prefilled=prefill.draft_prefilled,
-            continuity_injected=prefill.continuity_injected,
-            awaiting_human_send=prefill.awaiting_human_send,
+            chat_opened=provider_prefill.chat_opened,
+            draft_prefilled=provider_prefill.prefill_success,
+            continuity_injected=provider_prefill.continuity_injected,
+            awaiting_human_send=provider_prefill.awaiting_human_send,
             draft_text=prefill.draft_text,
             preview=preview,
-            target=target.detected_target,
-            clipboard_fallback_active=launch.clipboard_fallback_active,
+            target=provider_prefill.provider_name,
+            clipboard_fallback_active=provider_prefill.clipboard_fallback_active,
             auto_send=False,
             hidden_continuation=False,
             background_message_dispatch=False,
             silent_prompt_mutation=False,
             authority_escalation_used=False,
-            status_bar_states=(ENTER_READY_STATE, WAITING_FOR_SEND_STATE),
+            status_bar_states=(
+                "AI_DEV_OS ENTER_ONLY_READY",
+                "AI_DEV_OS PREFILL_PARTIAL",
+                "AI_DEV_OS CLIPBOARD_ONLY",
+            ),
             warnings=warnings,
+            provider_name=provider_prefill.provider_name,
+            prefill_supported=provider_prefill.prefill_supported,
+            prefill_attempted=provider_prefill.prefill_attempted,
+            prefill_success=provider_prefill.prefill_success,
+            enter_only_confidence=provider_prefill.enter_only_confidence,
+            provider_prefill=provider_prefill,
+            observability=observability,
         )
+
+    def _provider_prefill(
+        self,
+        *,
+        requested_target: str,
+        draft_text: str,
+        continuity_text: str,
+        sprint_prompt_text: str,
+        bootstrap_preview_text: str,
+    ) -> ProviderPrefillFrame:
+        common = {
+            "draft_text": draft_text,
+            "continuity_text": continuity_text,
+            "sprint_prompt_text": sprint_prompt_text,
+            "bootstrap_preview_text": bootstrap_preview_text,
+        }
+        if requested_target == "copilot_chat":
+            return CopilotChatPrefillAdapter().prefill(**common)
+        if requested_target == "vscode_chat":
+            return VSCodeChatPrefillAdapter().prefill(**common)
+        return ClipboardFallbackPrefillAdapter().prefill(**common)

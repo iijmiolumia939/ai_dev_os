@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from ai_dev_os.session_bootstrap.chat_launch import ChatLaunchPolicy
-from ai_dev_os.session_bootstrap.chat_prefill import WAITING_FOR_SEND_STATE
 from ai_dev_os.session_bootstrap.chat_target_detection import ChatTargetDetectionPolicy
 from ai_dev_os.session_bootstrap.draft_injection import (
     CopilotDraftInjectionFrame,
@@ -20,7 +19,8 @@ def test_tc_draftinject_01_builds_visible_enter_only_draft() -> None:
     assert frame.awaiting_human_send is True
     assert "AI_DEV_OS Bootstrap Draft" in frame.draft_text
     assert "The final Enter/Send is a human action." in frame.draft_text
-    assert WAITING_FOR_SEND_STATE in frame.status_bar_states
+    assert "AI_DEV_OS ENTER_ONLY_READY" in frame.status_bar_states
+    assert frame.enter_only_confidence == "ENTER_ONLY_READY"
 
 
 def test_tc_draftinject_02_never_enables_hidden_or_background_send() -> None:

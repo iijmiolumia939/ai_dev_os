@@ -14,12 +14,32 @@ const chatOpenCommand = 'workbench.action.chat.open';
 const newChatCommand = 'workbench.action.chat.newChat';
 const enterReadyState = 'AI_DEV_OS ENTER_READY';
 const waitingForSendState = 'AI_DEV_OS WAITING_FOR_SEND';
+const enterOnlyReadyState = 'AI_DEV_OS ENTER_ONLY_READY';
+const prefillPartialState = 'AI_DEV_OS PREFILL_PARTIAL';
+const clipboardOnlyState = 'AI_DEV_OS CLIPBOARD_ONLY';
+
+type PrefillProvider = 'vscode_chat' | 'copilot_chat' | 'clipboard_fallback';
+
+function statusForConfidence(confidence: string): string {
+  if (confidence === 'ENTER_ONLY_READY') {
+    return enterOnlyReadyState;
+  }
+  if (confidence === 'PREFILL_PARTIAL') {
+    return prefillPartialState;
+  }
+  return clipboardOnlyState;
+}
 
 function previewText(result: BootstrapDraftResult): string {
   return [
     'AI_DEV_OS Bootstrap Draft Preview',
     `Estimated tokens: ${result.preview.estimated_token_size}`,
     `Target: ${result.target}`,
+    `Provider: ${result.provider_name}`,
+    `Prefill supported: ${result.prefill_supported}`,
+    `Prefill attempted: ${result.prefill_attempted}`,
+    `Prefill success: ${result.prefill_success}`,
+    `Enter-only confidence: ${result.enter_only_confidence}`,
     `Awaiting human send: ${result.awaiting_human_send}`,
     '',
     'Included continuity:',
@@ -65,17 +85,19 @@ export function registerSessionCommands(
         query: result.draft_text,
         isPartialQuery: true,
       });
-      enterOnlyStatus.text = result.preview.waiting_for_send_state || waitingForSendState;
+      enterOnlyStatus.text = statusForConfidence(result.enter_only_confidence);
       return true;
     } catch {
       await clipboard.copy(result.draft_text);
-      enterOnlyStatus.text = result.preview.waiting_for_send_state || waitingForSendState;
+      enterOnlyStatus.text = clipboardOnlyState;
       return false;
     }
   };
 
-  const generateBootstrapDraft = async (): Promise<BootstrapDraftResult> => {
-    const result = await drafts.generate(workspaceFolder());
+  const generateBootstrapDraft = async (
+    provider: PrefillProvider = 'vscode_chat',
+  ): Promise<BootstrapDraftResult> => {
+    const result = await drafts.generate(workspaceFolder(), provider);
     await store.update({
       lastExportedContinuityBundle: result.draft_text,
       pendingRolloverState: true,
@@ -199,7 +221,7 @@ export function registerSessionCommands(
   const retryDraftInjection = vscode.commands.registerCommand(
     'aiDevOs.retryDraftInjection',
     async () => {
-      const result = await generateBootstrapDraft();
+      const result = await generateBootstrapDraft('vscode_chat');
       await openDraftInChat(result);
       await notifications.info(
         'bootstrap-draft-retry',
@@ -213,6 +235,70 @@ export function registerSessionCommands(
     'aiDevOs.showEnterOnlyState',
     async () => {
       await vscode.window.showInformationMessage(enterOnlyStatus.text);
+      view.refresh();
+    },
+  );
+
+  const checkPrefillSupport = vscode.commands.registerCommand(
+    'aiDevOs.checkPrefillSupport',
+    async () => {
+      const result = await generateBootstrapDraft('vscode_chat');
+      enterOnlyStatus.text = statusForConfidence(result.enter_only_confidence);
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS prefill support: provider=${result.provider_name}, supported=${result.prefill_supported}, confidence=${result.enter_only_confidence}`,
+      );
+      view.refresh();
+    },
+  );
+
+  const retryCopilotInjection = vscode.commands.registerCommand(
+    'aiDevOs.retryCopilotInjection',
+    async () => {
+      const result = await generateBootstrapDraft('copilot_chat');
+      const opened = await openDraftInChat(result);
+      await notifications.info(
+        'copilot-prefill-retry',
+        opened
+          ? 'AI_DEV_OS Copilot draft prefill is ready. Press Enter/Send manually.'
+          : 'AI_DEV_OS Copilot prefill fell back to clipboard. Paste and send manually.',
+      );
+      view.refresh();
+    },
+  );
+
+  const showPrefillStatus = vscode.commands.registerCommand(
+    'aiDevOs.showPrefillStatus',
+    async () => {
+      const result = await generateBootstrapDraft('vscode_chat');
+      enterOnlyStatus.text = statusForConfidence(result.enter_only_confidence);
+      await vscode.window.showInformationMessage(
+        JSON.stringify(
+          {
+            provider: result.provider_name,
+            confidence: result.enter_only_confidence,
+            prefillSuccess: result.prefill_success,
+            clipboardFallback: result.clipboard_fallback_active,
+            injectionFailed: result.observability.injection_failed,
+            providerUnsupported: result.observability.provider_unsupported,
+          },
+          undefined,
+          2,
+        ),
+      );
+      view.refresh();
+    },
+  );
+
+  const showClipboardFallback = vscode.commands.registerCommand(
+    'aiDevOs.showClipboardFallback',
+    async () => {
+      const result = await generateBootstrapDraft('clipboard_fallback');
+      await clipboard.copy(result.draft_text);
+      enterOnlyStatus.text = clipboardOnlyState;
+      await notifications.warn(
+        'prefill-clipboard-only',
+        'AI_DEV_OS clipboard fallback is ready. Paste and send manually.',
+      );
       view.refresh();
     },
   );
@@ -258,6 +344,10 @@ export function registerSessionCommands(
     previewBootstrapDraft,
     retryDraftInjection,
     showEnterOnlyState,
+    checkPrefillSupport,
+    retryCopilotInjection,
+    showPrefillStatus,
+    showClipboardFallback,
     compactCurrentSession,
     showStaleWarning,
     enterOnlyStatus,

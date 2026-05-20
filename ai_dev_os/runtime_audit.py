@@ -477,6 +477,11 @@ class VSCodePresenceAuditReport:
 
 @dataclass(frozen=True)
 class DraftInjectionAuditReport:
+    provider_prefill_active: bool
+    copilot_prefill_active: bool
+    vscode_chat_prefill_active: bool
+    prefill_observability_active: bool
+    enter_only_confidence: str
     draft_injection_active: bool
     chat_prefill_active: bool
     chat_launch_active: bool
@@ -1908,14 +1913,29 @@ def audit_vscode_presence() -> VSCodePresenceAuditReport:
 
 
 def audit_draft_injection() -> DraftInjectionAuditReport:
-    frame = DraftInjectionPolicy().build(
+    vscode_frame = DraftInjectionPolicy().build(
         project_name="workspace",
         sprint_id="next",
         requested_target="vscode_chat",
     )
-    avoided_friction = 900 if frame.draft_prefilled and frame.awaiting_human_send else 300
+    copilot_frame = DraftInjectionPolicy().build(
+        project_name="workspace",
+        sprint_id="next",
+        requested_target="copilot_chat",
+    )
+    frame = vscode_frame
+    avoided_friction = (
+        frame.observability.estimated_avoided_handoff_friction if frame.observability else 300
+    )
     avoided_stale = len(frame.preview.excluded_stale_context) * 420
     return DraftInjectionAuditReport(
+        provider_prefill_active=bool(frame.provider_prefill)
+        and frame.provider_prefill.awaiting_human_send,
+        copilot_prefill_active=copilot_frame.prefill_success and copilot_frame.awaiting_human_send,
+        vscode_chat_prefill_active=frame.prefill_success and frame.awaiting_human_send,
+        prefill_observability_active=bool(frame.observability)
+        and frame.observability.summary_only,
+        enter_only_confidence=frame.enter_only_confidence,
         draft_injection_active=frame.draft_prefilled and frame.continuity_injected,
         chat_prefill_active=frame.draft_prefilled,
         chat_launch_active=frame.chat_opened,

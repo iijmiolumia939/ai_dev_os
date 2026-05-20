@@ -89,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workspace", default=".")
     parser.add_argument("--from-file", default="")
     parser.add_argument("--type", default="sprint-start")
+    parser.add_argument("--provider", default="vscode_chat")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--copy-ready", action="store_true")
     args = parser.parse_args(argv)
@@ -177,7 +178,7 @@ def _dispatch(args: argparse.Namespace) -> Any:
     if command == "session-boundary-handoff":
         return _session_boundary_handoff(args.workspace, args.sprint)
     if command == "bootstrap-draft":
-        return _bootstrap_draft(args.workspace, args.sprint)
+        return _bootstrap_draft(args.workspace, args.sprint, args.provider)
     if command == "persistence-store":
         return _workspace_persistence(args.workspace, args.sprint)["persistence_store"]
     if command == "restore-session-state":
@@ -643,11 +644,12 @@ def _session_boundary_handoff(workspace: str, sprint: str):
     }
 
 
-def _bootstrap_draft(workspace: str, sprint: str):
+def _bootstrap_draft(workspace: str, sprint: str, provider: str):
     project_name = Path(workspace).resolve().name or "workspace"
     return DraftInjectionPolicy().build(
         project_name=project_name,
         sprint_id=sprint,
+        requested_target=provider,
     )
 
 

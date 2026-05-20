@@ -11,9 +11,20 @@ from ai_dev_os.session_bootstrap.draft_injection import (
     CopilotDraftInjectionFrame,
     DraftInjectionPolicy,
 )
+from ai_dev_os.session_bootstrap.provider_prefill import (
+    CLIPBOARD_ONLY,
+    ENTER_ONLY_READY,
+    PREFILL_PARTIAL,
+    EnterOnlyConfidencePolicy,
+    PrefillObservabilityFrame,
+    PrefillObservabilityPolicy,
+    ProviderPrefillFrame,
+    ProviderPrefillPolicy,
+)
 
 __all__ = [
     "BootstrapDraftPreviewFrame",
+    "CLIPBOARD_ONLY",
     "ChatLaunchFrame",
     "ChatLaunchPolicy",
     "ChatPrefillFrame",
@@ -22,4 +33,11 @@ __all__ = [
     "ChatTargetDetectionPolicy",
     "CopilotDraftInjectionFrame",
     "DraftInjectionPolicy",
+    "ENTER_ONLY_READY",
+    "EnterOnlyConfidencePolicy",
+    "PREFILL_PARTIAL",
+    "PrefillObservabilityFrame",
+    "PrefillObservabilityPolicy",
+    "ProviderPrefillFrame",
+    "ProviderPrefillPolicy",
 ]

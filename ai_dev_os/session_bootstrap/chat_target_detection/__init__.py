@@ -33,7 +33,7 @@ class ChatTargetDetectionPolicy:
         *,
         requested_target: str = "vscode_chat",
         available_targets: tuple[str, ...] = SUPPORTED_TARGETS,
-        prefill_capable_targets: tuple[str, ...] = ("vscode_chat",),
+        prefill_capable_targets: tuple[str, ...] = ("vscode_chat", "copilot_chat"),
         clipboard_fallback_allowed: bool = True,
     ) -> ChatTargetDetectionFrame:
         normalized = requested_target.strip().lower() or "vscode_chat"

@@ -19,6 +19,10 @@ def test_tc_draftinject_01_commands_are_declared() -> None:
     assert commands["aiDevOs.previewBootstrapDraft"] == "AI_DEV_OS: Preview Bootstrap Draft"
     assert commands["aiDevOs.retryDraftInjection"] == "AI_DEV_OS: Retry Draft Injection"
     assert commands["aiDevOs.showEnterOnlyState"] == "AI_DEV_OS: Show Enter-Only State"
+    assert commands["aiDevOs.checkPrefillSupport"] == "AI_DEV_OS: Check Prefill Support"
+    assert commands["aiDevOs.retryCopilotInjection"] == "AI_DEV_OS: Retry Copilot Injection"
+    assert commands["aiDevOs.showPrefillStatus"] == "AI_DEV_OS: Show Prefill Status"
+    assert commands["aiDevOs.showClipboardFallback"] == "AI_DEV_OS: Show Clipboard Fallback"
 
 
 def test_tc_draftinject_02_activation_events_are_declared() -> None:
@@ -30,6 +34,10 @@ def test_tc_draftinject_02_activation_events_are_declared() -> None:
     assert "onCommand:aiDevOs.previewBootstrapDraft" in activation
     assert "onCommand:aiDevOs.retryDraftInjection" in activation
     assert "onCommand:aiDevOs.showEnterOnlyState" in activation
+    assert "onCommand:aiDevOs.checkPrefillSupport" in activation
+    assert "onCommand:aiDevOs.retryCopilotInjection" in activation
+    assert "onCommand:aiDevOs.showPrefillStatus" in activation
+    assert "onCommand:aiDevOs.showClipboardFallback" in activation
 
 
 def test_tc_draftinject_03_extension_uses_visible_prefill_and_status_states() -> None:
@@ -39,6 +47,10 @@ def test_tc_draftinject_03_extension_uses_visible_prefill_and_status_states() ->
     assert "isPartialQuery" in source
     assert "AI_DEV_OS ENTER_READY" in source
     assert "AI_DEV_OS WAITING_FOR_SEND" in source
+    assert "AI_DEV_OS ENTER_ONLY_READY" in source
+    assert "AI_DEV_OS PREFILL_PARTIAL" in source
+    assert "AI_DEV_OS CLIPBOARD_ONLY" in source
+    assert "copilot_chat" in source
     assert "bootstrap-draft" in source
 
 
