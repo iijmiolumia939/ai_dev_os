@@ -30,6 +30,7 @@ class ContinuityExportFrame:
     excluded_context: tuple[str, ...]
     retrieval_budget_summary: str = ""
     incremental_context_summary: str = ""
+    reasoning_scope_summary: str = ""
     unchanged_sprint_summary_suppressed: bool = True
     repo_wide_retrieval_forbidden: bool = True
     repo_wide_replay_forbidden: bool = True
@@ -65,6 +66,7 @@ class ContinuityExportPolicy:
             excluded_context=excluded,
             retrieval_budget_summary="affected-runtime-only retrieval",
             incremental_context_summary="changed-continuity-only export",
+            reasoning_scope_summary="local-patch reasoning only",
             unchanged_sprint_summary_suppressed=True,
             repo_wide_retrieval_forbidden=True,
             repo_wide_replay_forbidden=True,
@@ -88,6 +90,7 @@ class ContinuityExportPolicy:
             excluded_context=frame.excluded_context,
             retrieval_budget_summary=frame.retrieval_budget_summary,
             incremental_context_summary=frame.incremental_context_summary,
+            reasoning_scope_summary=frame.reasoning_scope_summary,
             unchanged_sprint_summary_suppressed=frame.unchanged_sprint_summary_suppressed,
             repo_wide_retrieval_forbidden=frame.repo_wide_retrieval_forbidden,
             repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
@@ -115,6 +118,7 @@ class ContinuityExportPolicy:
             f"Excluded context: {', '.join(frame.excluded_context)}",
             f"Retrieval budget: {frame.retrieval_budget_summary}",
             f"Incremental context: {frame.incremental_context_summary}",
+            f"Reasoning scope: {frame.reasoning_scope_summary}",
             f"Unchanged sprint summary suppressed: {frame.unchanged_sprint_summary_suppressed}",
             f"Repo-wide retrieval forbidden: {frame.repo_wide_retrieval_forbidden}",
             f"Repo-wide replay forbidden: {frame.repo_wide_replay_forbidden}",

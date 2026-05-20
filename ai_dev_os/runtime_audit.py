@@ -74,6 +74,7 @@ from ai_dev_os.reasoning_routing import (
     TaskComplexityInput,
     TaskComplexityPolicy,
 )
+from ai_dev_os.reasoning_scope import ReasoningScopeRuntime
 from ai_dev_os.release_readiness import (
     ConsumerRolloutPolicy,
     ExtensionReadinessPolicy,
@@ -414,6 +415,8 @@ class GovernanceHealthAuditReport:
     estimated_avoided_hidden_context_pressure: int
     incremental_context_active: bool
     replay_pressure: str
+    reasoning_scope_active: bool
+    premium_pressure: str
 
 
 @dataclass(frozen=True)
@@ -428,6 +431,8 @@ class GovernanceTrendsAuditReport:
     estimated_avoided_governance_oscillation: int
     incremental_context_active: bool
     unchanged_trend_replay_suppressed: bool
+    reasoning_scope_active: bool
+    unnecessary_escalation_suppressed: bool
 
 
 @dataclass(frozen=True)
@@ -446,6 +451,8 @@ class RuntimeGraphAuditReport:
     hidden_telemetry_used: bool
     incremental_context_active: bool
     repo_wide_replay_forbidden: bool
+    reasoning_scope_active: bool
+    automatic_architecture_escalation_forbidden: bool
 
 
 @dataclass(frozen=True)
@@ -463,6 +470,8 @@ class RuntimeSimplificationAuditReport:
     autonomous_mutation_used: bool
     incremental_context_active: bool
     repo_wide_replay_forbidden: bool
+    reasoning_scope_active: bool
+    automatic_architecture_escalation_forbidden: bool
 
 
 @dataclass(frozen=True)
@@ -569,6 +578,8 @@ class ReasoningRoutingAuditReport:
     rollback_safe_routing: bool
     provider_neutral_contracts: bool
     hidden_escalation_used: bool
+    reasoning_scope_active: bool
+    local_patch_recommendation_active: bool
 
 
 @dataclass(frozen=True)
@@ -640,6 +651,31 @@ class IncrementalContextAuditReport:
 
 
 @dataclass(frozen=True)
+class ReasoningScopeAuditReport:
+    reasoning_scope_active: bool
+    reasoning_depth_active: bool
+    architecture_reasoning_guard_active: bool
+    local_patch_mode_active: bool
+    reasoning_pressure_active: bool
+    reasoning_compaction_active: bool
+    reasoning_recommendation_active: bool
+    estimated_avoided_premium_reasoning_burn: int
+    estimated_avoided_unnecessary_architecture_reasoning: int
+    pressure_level: str
+    depth_cap: int
+    task_local_cognition_scope: tuple[str, ...]
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_cognition_only: bool
+    no_hidden_chain_of_thought_persistence: bool
+    no_ast_replay: bool
+    no_hidden_provider_routing: bool
+    no_automatic_architecture_escalation: bool
+    no_automatic_roadmap_synthesis: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -676,6 +712,7 @@ class RuntimeEnforcementAuditReport:
     output_compression: OutputCompressionAuditReport
     retrieval_budget: RetrievalBudgetAuditReport
     incremental_context: IncrementalContextAuditReport
+    reasoning_scope: ReasoningScopeAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1805,6 +1842,8 @@ def audit_governance_health() -> GovernanceHealthAuditReport:
         estimated_avoided_hidden_context_pressure=health.pressure_average * 20,
         incremental_context_active=True,
         replay_pressure="HIGH",
+        reasoning_scope_active=True,
+        premium_pressure="MEDIUM",
     )
 
 
@@ -1866,6 +1905,8 @@ def audit_governance_trends() -> GovernanceTrendsAuditReport:
         estimated_avoided_governance_oscillation=800 if regression.oscillation_detected else 200,
         incremental_context_active=True,
         unchanged_trend_replay_suppressed=window.bounded_window_maintained,
+        reasoning_scope_active=True,
+        unnecessary_escalation_suppressed=True,
     )
 
 
@@ -1903,6 +1944,10 @@ def audit_runtime_graph() -> RuntimeGraphAuditReport:
         hidden_telemetry_used=frame.hidden_telemetry_used,
         incremental_context_active=frame.incremental_context_active,
         repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
+        reasoning_scope_active=frame.reasoning_scope_active,
+        automatic_architecture_escalation_forbidden=(
+            frame.automatic_architecture_escalation_forbidden
+        ),
     )
 
 
@@ -1937,6 +1982,10 @@ def audit_runtime_simplification() -> RuntimeSimplificationAuditReport:
         or recommendations.automatic_rewrite_used,
         incremental_context_active=frame.incremental_context_active,
         repo_wide_replay_forbidden=frame.repo_wide_replay_forbidden,
+        reasoning_scope_active=frame.reasoning_scope_active,
+        automatic_architecture_escalation_forbidden=(
+            frame.automatic_architecture_escalation_forbidden
+        ),
     )
 
 
@@ -2201,6 +2250,19 @@ def audit_reasoning_routing() -> ReasoningRoutingAuditReport:
             ),
         ),
     )
+    scope = ReasoningScopeRuntime().evaluate(
+        task_name="routine adapter patch",
+        complexity="LOW",
+        affected_runtimes=("reasoning_routing",),
+        touched_files=("ai_dev_os/reasoning_routing/__init__.py",),
+        adjacent_contracts=("ReasoningTierFrame",),
+        requested_depth=3,
+        requested_runtime_count=4,
+        repeated_architecture_sections=1,
+        governance_sensitive=True,
+        continuity_size=3_200,
+        escalation_requested=True,
+    )
     return ReasoningRoutingAuditReport(
         reasoning_routing_active=architecture.recommended_tier == "HIGH"
         and adapter.recommended_tier == "MEDIUM"
@@ -2232,6 +2294,10 @@ def audit_reasoning_routing() -> ReasoningRoutingAuditReport:
         and sprint_map.rollback_safe_routing,
         provider_neutral_contracts=architecture.provider_neutral,
         hidden_escalation_used=escalation.hidden_provider_switching,
+        reasoning_scope_active=scope.reasoning_scope_active,
+        local_patch_recommendation_active=(
+            scope.reasoning_recommendation.downgrade_to_local_recommendation
+        ),
     )
 
 
@@ -2406,6 +2472,58 @@ def audit_incremental_context() -> IncrementalContextAuditReport:
     )
 
 
+def audit_reasoning_scope() -> ReasoningScopeAuditReport:
+    frame = ReasoningScopeRuntime().evaluate(
+        task_name="low complexity local patch",
+        complexity="LOW",
+        affected_runtimes=("reasoning_scope", "reasoning_routing"),
+        touched_files=(
+            "ai_dev_os/reasoning_scope/__init__.py",
+            "ai_dev_os/runtime_audit.py",
+        ),
+        adjacent_contracts=("ReasoningScopeRuntimeFrame", "ReasoningRoutingAuditReport"),
+        requested_depth=4,
+        requested_runtime_count=7,
+        repeated_architecture_sections=2,
+        governance_sensitive=True,
+        architecture_sensitive=False,
+        continuity_size=4_200,
+        escalation_requested=True,
+    )
+    return ReasoningScopeAuditReport(
+        reasoning_scope_active=frame.reasoning_scope_active,
+        reasoning_depth_active=frame.reasoning_depth.reasoning_depth_cap > 0,
+        architecture_reasoning_guard_active=(
+            frame.architecture_guard.architecture_wide_reasoning_forbidden
+            and frame.architecture_guard.no_automatic_architecture_escalation
+        ),
+        local_patch_mode_active=frame.local_patch_mode.local_runtime_only_reasoning,
+        reasoning_pressure_active=frame.reasoning_pressure.pressure_level
+        in {"LOW", "MEDIUM", "HIGH"},
+        reasoning_compaction_active=frame.reasoning_compaction.summary_only
+        and bool(frame.reasoning_compaction.compact_reasoning_summaries),
+        reasoning_recommendation_active=(
+            frame.reasoning_recommendation.premium_reasoning_avoidance_recommendation
+        ),
+        estimated_avoided_premium_reasoning_burn=(frame.estimated_avoided_premium_reasoning_burn),
+        estimated_avoided_unnecessary_architecture_reasoning=(
+            frame.estimated_avoided_unnecessary_architecture_reasoning
+        ),
+        pressure_level=frame.reasoning_pressure.pressure_level,
+        depth_cap=frame.reasoning_depth.reasoning_depth_cap,
+        task_local_cognition_scope=frame.reasoning_scope.task_local_cognition_scope,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_cognition_only=frame.bounded_cognition_only,
+        no_hidden_chain_of_thought_persistence=(frame.no_hidden_chain_of_thought_persistence),
+        no_ast_replay=frame.no_ast_replay,
+        no_hidden_provider_routing=frame.no_hidden_provider_routing,
+        no_automatic_architecture_escalation=frame.no_automatic_architecture_escalation,
+        no_automatic_roadmap_synthesis=frame.no_automatic_roadmap_synthesis,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2448,6 +2566,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         output_compression=audit_output_compression(),
         retrieval_budget=audit_retrieval_budget(),
         incremental_context=audit_incremental_context(),
+        reasoning_scope=audit_reasoning_scope(),
     )
 
 

@@ -7,6 +7,7 @@ import {registerIncrementalContextCommands} from './commands/incrementalContextC
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
+import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
@@ -31,6 +32,7 @@ import {
   registerConsumerRolloutCommands,
 } from './rollout/consumerRollout';
 import {ReasoningRoutingMonitor, ReasoningTierStatusBar} from './reasoningRouting/reasoningRouting';
+import {ReasoningScopeMonitor, ReasoningScopeStatusBar} from './reasoningScope/reasoningScope';
 import {RetrievalBudgetMonitor, RetrievalBudgetStatusBar} from './retrievalBudget/retrievalBudget';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
@@ -83,6 +85,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const rollbackView = new RolloutTreeProvider(rollout, 'rollback');
   const reasoningRouting = new ReasoningRoutingMonitor();
   const reasoningStatus = new ReasoningTierStatusBar(reasoningRouting);
+  const reasoningScope = new ReasoningScopeMonitor();
+  const reasoningScopeStatus = new ReasoningScopeStatusBar(reasoningScope);
   const outputCompression = new OutputCompressionMonitor();
   const compactReportingStatus = new CompactReportingStatusBar(outputCompression);
   const retrievalBudget = new RetrievalBudgetMonitor();
@@ -171,6 +175,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
   const rolloutState = await rollout.evaluate();
   const reasoningState = reasoningStatus.refresh();
+  const reasoningScopeState = reasoningScopeStatus.refresh();
   const compactReportingState = compactReportingStatus.refresh();
   const retrievalBudgetState = retrievalBudgetStatus.refresh();
   const incrementalContextState = incrementalContextStatus.refresh();
@@ -184,6 +189,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await notifications.warn(
       'startup-reasoning-budget-pressure',
       'AI_DEV_OS reasoning budget pressure is elevated. Review cost budget before escalating.',
+    );
+  }
+  if (reasoningScopeState.reasoningPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-premium-reasoning-pressure',
+      'AI_DEV_OS premium reasoning pressure is high. Use local patch mode before escalating.',
     );
   }
   if (compactReportingState.verbosityPressure === 'HIGH') {
@@ -234,6 +245,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     presenceStatus,
     heartbeatStatus,
     reasoningStatus,
+    reasoningScopeStatus,
     compactReportingStatus,
     retrievalBudgetStatus,
     incrementalContextStatus,
@@ -287,6 +299,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       [rolloutView, frictionView, readinessView, rollbackView],
     ),
     ...registerReasoningRoutingCommands(reasoningRouting, reasoningStatus, notifications),
+    ...registerReasoningScopeCommands(reasoningScope, reasoningScopeStatus, notifications),
     ...registerOutputCompressionCommands(outputCompression, compactReportingStatus, notifications),
     ...registerRetrievalBudgetCommands(retrievalBudget, retrievalBudgetStatus, notifications),
     ...registerIncrementalContextCommands(

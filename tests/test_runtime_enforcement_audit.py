@@ -154,3 +154,31 @@ def test_runtime_audit_reports_incremental_context_controls() -> None:
     assert report.workspace_persistence.incremental_context_active is True
     assert report.governance_health.incremental_context_active is True
     assert report.governance_trends.incremental_context_active is True
+
+
+def test_runtime_audit_reports_reasoning_scope_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.reasoning_scope.reasoning_scope_active is True
+    assert report.reasoning_scope.reasoning_depth_active is True
+    assert report.reasoning_scope.architecture_reasoning_guard_active is True
+    assert report.reasoning_scope.local_patch_mode_active is True
+    assert report.reasoning_scope.reasoning_pressure_active is True
+    assert report.reasoning_scope.reasoning_compaction_active is True
+    assert report.reasoning_scope.reasoning_recommendation_active is True
+    assert report.reasoning_scope.estimated_avoided_premium_reasoning_burn > 0
+    assert report.reasoning_scope.estimated_avoided_unnecessary_architecture_reasoning > 0
+    assert report.reasoning_scope.local_only is True
+    assert report.reasoning_scope.deterministic is True
+    assert report.reasoning_scope.summary_only is True
+    assert report.reasoning_scope.bounded_cognition_only is True
+    assert report.reasoning_scope.no_hidden_chain_of_thought_persistence is True
+    assert report.reasoning_scope.no_ast_replay is True
+    assert report.reasoning_scope.no_hidden_provider_routing is True
+    assert report.reasoning_scope.no_automatic_architecture_escalation is True
+    assert report.reasoning_scope.no_automatic_roadmap_synthesis is True
+    assert report.reasoning_routing.reasoning_scope_active is True
+    assert report.runtime_graph.reasoning_scope_active is True
+    assert report.runtime_simplification.reasoning_scope_active is True
+    assert report.governance_health.reasoning_scope_active is True
+    assert report.governance_trends.reasoning_scope_active is True

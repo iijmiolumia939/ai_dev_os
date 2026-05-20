@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_dev_os.incremental_context import IncrementalContextRuntime
+from ai_dev_os.reasoning_scope import ReasoningScopeRuntime
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph.architecture_pressure import (
     ArchitecturePressureFrame,
@@ -37,6 +38,9 @@ class RuntimeGraphFrame:
     incremental_context_active: bool
     delta_context_summary_only: bool
     repo_wide_replay_forbidden: bool
+    reasoning_scope_active: bool
+    local_patch_reasoning_active: bool
+    automatic_architecture_escalation_forbidden: bool
 
 
 class RuntimeGraphPolicy:
@@ -86,6 +90,20 @@ class RuntimeGraphPolicy:
             continuity_size=min(2_400, contract.contract_surface_size * 20),
             architecture_isolation=pressure.simplification_recommended,
         )
+        reasoning_scope = ReasoningScopeRuntime().evaluate(
+            task_name="runtime_graph_delta",
+            complexity="MEDIUM" if pressure.simplification_recommended else "LOW",
+            affected_runtimes=affected,
+            touched_files=("ai_dev_os/runtime_graph/__init__.py",),
+            adjacent_contracts=contract.exported_contracts[:3],
+            requested_depth=3,
+            requested_runtime_count=len(runtimes),
+            repeated_architecture_sections=len(clusters.oversized_clusters),
+            governance_sensitive=pressure.simplification_recommended,
+            architecture_sensitive=pressure.simplification_recommended,
+            continuity_size=min(2_400, contract.contract_surface_size * 20),
+            escalation_requested=pressure.simplification_recommended,
+        )
         return RuntimeGraphFrame(
             discovery=discovery,
             dependency_graph=graph,
@@ -101,4 +119,9 @@ class RuntimeGraphPolicy:
             incremental_context_active=incremental.incremental_context_active,
             delta_context_summary_only=incremental.summary_only,
             repo_wide_replay_forbidden=incremental.no_repo_wide_replay,
+            reasoning_scope_active=reasoning_scope.reasoning_scope_active,
+            local_patch_reasoning_active=reasoning_scope.local_patch_mode.local_runtime_only_reasoning,
+            automatic_architecture_escalation_forbidden=(
+                reasoning_scope.no_automatic_architecture_escalation
+            ),
         )

@@ -42,6 +42,8 @@ class RuntimeSimplificationFrame:
     repo_wide_retrieval_forbidden: bool
     incremental_context_active: bool
     repo_wide_replay_forbidden: bool
+    reasoning_scope_active: bool
+    automatic_architecture_escalation_forbidden: bool
 
 
 class RuntimeSimplificationPolicy:
@@ -71,4 +73,8 @@ class RuntimeSimplificationPolicy:
             repo_wide_retrieval_forbidden=runtime_graph.repo_wide_retrieval_forbidden,
             incremental_context_active=runtime_graph.incremental_context_active,
             repo_wide_replay_forbidden=runtime_graph.repo_wide_replay_forbidden,
+            reasoning_scope_active=runtime_graph.reasoning_scope_active,
+            automatic_architecture_escalation_forbidden=(
+                runtime_graph.automatic_architecture_escalation_forbidden
+            ),
         )
