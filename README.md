@@ -8,7 +8,23 @@ This repository is not tied to AITuber, CatSimulator, Unity, MuJoCo, or any sing
 
 ## Release Status
 
-`0.1.0-alpha.2` is the current alpha release line. Public APIs are intentionally small, extension interfaces are still evolving, and governance runtime policies are experimental. Runtime enforcement audit now runs as release governance, but this release is still suitable for pilot consumer repositories rather than a stable long-term API contract.
+`0.1.0-alpha.3` is the current prerelease line. It stabilizes release readiness, consumer rollout safety, and bounded governance checks for pilot consumer repositories such as AITuber. Python package metadata uses PEP 440 version `0.1.0a3`; the GitHub prerelease tag is `0.1.0-alpha.3`.
+
+This is still an alpha boundary. API freeze is not guaranteed. Rollout must remain human-confirmed, rollback-safe, local-first, and summary-only; AI_DEV_OS does not perform hidden consumer repository mutation.
+
+## Release Readiness
+
+Run the deterministic release checks before consumer rollout:
+
+```powershell
+python -m ai_dev_os.cli release-readiness --json
+python -m ai_dev_os.cli consumer-rollout-check --copy-ready
+python -m ai_dev_os.cli extension-readiness --json
+python -m ai_dev_os.cli governance-freeze-status --json
+python -m ai_dev_os.runtime_audit
+```
+
+Consumer rollout guidance lives in `docs/consumer-rollout/`. Compatibility and alpha governance boundaries live in `docs/releases/`.
 
 ## Vision
 

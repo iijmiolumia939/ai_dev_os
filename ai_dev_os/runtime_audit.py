@@ -44,6 +44,11 @@ from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
 from ai_dev_os.providers.provider_contracts import ProviderRequest
 from ai_dev_os.providers.provider_telemetry import aggregate_provider_telemetry
+from ai_dev_os.release_readiness import (
+    ConsumerRolloutPolicy,
+    ExtensionReadinessPolicy,
+    GovernanceFreezeStatusPolicy,
+)
 from ai_dev_os.repository_intelligence.ci_context import CIContextPolicy
 from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
@@ -428,6 +433,20 @@ class GovernanceCoreAuditReport:
 
 
 @dataclass(frozen=True)
+class ReleaseReadinessAuditReport:
+    release_readiness_active: bool
+    consumer_rollout_active: bool
+    extension_release_ready: bool
+    governance_freeze_active: bool
+    bounded_release_confirmed: bool
+    estimated_avoided_rollout_confusion: int
+    estimated_avoided_stale_migration_context: int
+    rollback_safe_release_prep: bool
+    local_first_governance: bool
+    no_hidden_automation: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -456,6 +475,7 @@ class RuntimeEnforcementAuditReport:
     runtime_graph: RuntimeGraphAuditReport
     runtime_simplification: RuntimeSimplificationAuditReport
     governance_core: GovernanceCoreAuditReport
+    release_readiness: ReleaseReadinessAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1737,6 +1757,47 @@ def audit_governance_core() -> GovernanceCoreAuditReport:
     )
 
 
+def audit_release_readiness() -> ReleaseReadinessAuditReport:
+    activation = audit_runtime_activation()
+    session = audit_session_lifecycle()
+    workspace = audit_workspace_persistence()
+    provider = audit_provider_simulation()
+    runtime_graph = audit_runtime_graph()
+    simplification = audit_runtime_simplification()
+    governance_core = audit_governance_core()
+    extension = ExtensionReadinessPolicy().evaluate(".")
+    rollout = ConsumerRolloutPolicy().evaluate(".")
+    freeze = GovernanceFreezeStatusPolicy().evaluate(".")
+    no_hidden_automation = (
+        provider.no_real_provider_call
+        and not runtime_graph.hidden_telemetry_used
+        and not simplification.autonomous_mutation_used
+        and governance_core.automatic_rewrite_used is False
+    )
+    bounded = (
+        activation.initialized
+        and governance_core.bounded_governance_reuse
+        and governance_core.bounded_retention_active
+        and session.summary_only_continuity
+        and extension.extension_release_ready
+        and rollout.human_confirmed_rollout
+        and freeze.alpha_boundary_declared
+    )
+    return ReleaseReadinessAuditReport(
+        release_readiness_active=bounded,
+        consumer_rollout_active=rollout.consumer_rollout_active,
+        extension_release_ready=extension.extension_release_ready,
+        governance_freeze_active=freeze.governance_freeze_active,
+        bounded_release_confirmed=bounded,
+        estimated_avoided_rollout_confusion=len(rollout.supported_consumers) * 420,
+        estimated_avoided_stale_migration_context=session.estimated_avoided_tokens
+        + workspace.estimated_avoided_stale_persistence_tokens,
+        rollback_safe_release_prep=rollout.rollback_procedure_documented,
+        local_first_governance=workspace.local_workspace_persistence_active,
+        no_hidden_automation=no_hidden_automation,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1766,6 +1827,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_graph=audit_runtime_graph(),
         runtime_simplification=audit_runtime_simplification(),
         governance_core=audit_governance_core(),
+        release_readiness=audit_release_readiness(),
     )
 
 

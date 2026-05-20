@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-alpha.3
+
+- Added deterministic release readiness audit for 0.1.0-alpha.3 prerelease rollout.
+- Added consumer rollout docs for AITuber, cat simulator, standalone governance repos, and experimental repos.
+- Added compatibility matrix and runtime governance freeze docs with explicit alpha boundary language.
+- Added CLI commands for `release-readiness`, `consumer-rollout-check`, `extension-readiness`, and `governance-freeze-status` with `--json` and `--copy-ready` support.
+- Added runtime audit `release_readiness` section for bounded release confirmation and rollout confusion reduction estimates.
+- Prepared VSCode extension release docs and package metadata for prerelease VSIX verification.
+- Maintained human-confirmed rollout, local-only persistence, no hidden automation, and rollback-safe migration boundaries.
+
 ## 0.1.0-alpha.2
 
 - Added runtime enforcement audit as a release governance asset.

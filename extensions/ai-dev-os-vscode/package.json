@@ -2,7 +2,7 @@
   "name": "ai-dev-os-vscode",
   "displayName": "AI DEV OS Session Boundary",
   "description": "Human-confirmed session boundary enforcement for AI_DEV_OS.",
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.3",
   "publisher": "iijmiolumia939",
   "license": "MIT",
   "repository": {

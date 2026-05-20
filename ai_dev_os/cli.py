@@ -34,6 +34,12 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.release_readiness import (
+    ConsumerRolloutPolicy,
+    ExtensionReadinessPolicy,
+    GovernanceFreezeStatusPolicy,
+    ReleaseReadinessPolicy,
+)
 from ai_dev_os.repository_intelligence.ci_context import CIContextPolicy
 from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
@@ -211,6 +217,14 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _governance_trends(args.workspace, args.sprint)["stability_trend"]
     if command == "governance-dashboard-delta":
         return _governance_trends(args.workspace, args.sprint)["dashboard_delta"]
+    if command == "release-readiness":
+        return ReleaseReadinessPolicy().evaluate(args.workspace)
+    if command == "consumer-rollout-check":
+        return ConsumerRolloutPolicy().evaluate(args.workspace)
+    if command == "extension-readiness":
+        return ExtensionReadinessPolicy().evaluate(args.workspace)
+    if command == "governance-freeze-status":
+        return GovernanceFreezeStatusPolicy().evaluate(args.workspace)
     raise SystemExit(f"unsupported command: {command}")
 
 
