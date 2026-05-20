@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.continuity_primitives import GovernanceContinuityPrimitive
+
 EXCLUDED_CONTEXT_KEYS = {
     "full_sprint_history",
     "giant_markdown",
@@ -56,7 +58,12 @@ class ContinuityBundlePolicy:
             key: value for key, value in extra_context.items() if key not in EXCLUDED_CONTEXT_KEYS
         }
         summary = self._compact_text(source.current_sprint_summary, 900 if summary_only else 1_500)
-        roadmap = self._limit_tuple(source.current_roadmap, 3 if summary_only else 5)
+        continuity = GovernanceContinuityPrimitive().scope(
+            source.current_roadmap,
+            continuity_budget=self.token_budget,
+            max_scope_items=3 if summary_only else 5,
+        )
+        roadmap = continuity.continuity_scope
         risks = self._limit_tuple(source.active_risks, 3 if summary_only else 5)
         constraints = self._limit_tuple(
             source.current_architectural_constraints,

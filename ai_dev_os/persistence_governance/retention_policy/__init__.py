@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.bounded_retention import GovernanceBoundedRetentionPrimitive
+
 
 @dataclass(frozen=True)
 class RetentionPolicyFrame:
@@ -35,13 +37,18 @@ class RetentionPolicy:
         prompt_export_retention: int = 5,
         compact_bundle_retention: int = 8,
     ) -> RetentionPolicyFrame:
+        primitive = GovernanceBoundedRetentionPrimitive()
+        windows = (
+            primitive.apply(checkpoint_generations, retention_limit=max_checkpoint_generations),
+            primitive.apply(continuity_lineage, retention_limit=max_continuity_lineage_depth),
+            primitive.apply(stale_rollovers, retention_limit=stale_rollover_expiration),
+            primitive.apply(inactive_sprints, retention_limit=inactive_sprint_retention),
+            primitive.apply(prompt_exports, retention_limit=prompt_export_retention),
+            primitive.apply(compact_bundles, retention_limit=compact_bundle_retention),
+        )
         expired = []
-        expired.extend(checkpoint_generations[max_checkpoint_generations:])
-        expired.extend(continuity_lineage[max_continuity_lineage_depth:])
-        expired.extend(stale_rollovers[stale_rollover_expiration:])
-        expired.extend(inactive_sprints[inactive_sprint_retention:])
-        expired.extend(prompt_exports[prompt_export_retention:])
-        expired.extend(compact_bundles[compact_bundle_retention:])
+        for window in windows:
+            expired.extend(window.evicted_items)
         expired_entries = tuple(dict.fromkeys(expired))
         all_entries = tuple(
             dict.fromkeys(

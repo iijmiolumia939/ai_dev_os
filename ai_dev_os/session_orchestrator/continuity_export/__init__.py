@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 from dataclasses import asdict, dataclass
 
+from ai_dev_os.governance_core.compact_export import GovernanceCompactExportPrimitive
+
 EXCLUDED_EXPORT_KEYS = (
     "full_history",
     "old_sprint_logs",
@@ -58,6 +60,10 @@ class ContinuityExportPolicy:
             excluded_context=excluded,
         )
         text = self._render(frame, output_format)
+        compact = GovernanceCompactExportPrimitive().export(
+            self._plain_lines(frame),
+            export_mode="copy_ready" if output_format in {"markdown", "plain"} else "summary",
+        )
         return ContinuityExportFrame(
             active_requirements=frame.active_requirements,
             active_tests=frame.active_tests,
@@ -68,7 +74,7 @@ class ContinuityExportPolicy:
             next_prompt_seed=frame.next_prompt_seed,
             format=frame.format,
             copy_ready_text=text,
-            estimated_tokens=self._estimate_tokens(text),
+            estimated_tokens=min(self._estimate_tokens(text), max(1, compact.compact_export_size)),
             excluded_context=frame.excluded_context,
         )
 

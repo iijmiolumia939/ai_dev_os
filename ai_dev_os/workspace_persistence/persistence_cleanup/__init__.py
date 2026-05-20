@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.stale_detection import GovernanceStaleDetectionPrimitive
+
 
 @dataclass(frozen=True)
 class PersistenceCleanupFrame:
@@ -20,11 +22,13 @@ class PersistenceCleanupPolicy:
         expired_entries: tuple[str, ...] = (),
         duplicate_entries: tuple[str, ...] = (),
     ) -> PersistenceCleanupFrame:
+        shared_stale = GovernanceStaleDetectionPrimitive().detect(entries)
         cleanup_candidates = tuple(
             dict.fromkeys(
                 item
                 for item in (*expired_entries, *duplicate_entries, *entries)
-                if item not in active_entries and self._is_stale(item)
+                if item not in active_entries
+                and (self._is_stale(item) or shared_stale.stale_detected)
             )
         )
         retained = tuple(item for item in entries if item not in cleanup_candidates)

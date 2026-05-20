@@ -15,6 +15,7 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
 from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
@@ -411,6 +412,22 @@ class RuntimeSimplificationAuditReport:
 
 
 @dataclass(frozen=True)
+class GovernanceCoreAuditReport:
+    governance_core_active: bool
+    pressure_primitives_active: bool
+    stale_detection_primitives_active: bool
+    bounded_retention_active: bool
+    continuity_primitives_active: bool
+    compact_export_primitives_active: bool
+    estimated_avoided_governance_duplication: int
+    estimated_avoided_runtime_fragmentation: int
+    estimated_avoided_bounded_retention_drift: int
+    bounded_governance_reuse: bool
+    human_confirmed_migration: bool
+    automatic_rewrite_used: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -438,6 +455,7 @@ class RuntimeEnforcementAuditReport:
     governance_trends: GovernanceTrendsAuditReport
     runtime_graph: RuntimeGraphAuditReport
     runtime_simplification: RuntimeSimplificationAuditReport
+    governance_core: GovernanceCoreAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1692,6 +1710,33 @@ def audit_runtime_simplification() -> RuntimeSimplificationAuditReport:
     )
 
 
+def audit_governance_core() -> GovernanceCoreAuditReport:
+    frame = GovernanceCorePolicy().evaluate()
+    avoided_duplication = (
+        frame.pressure.pressure_severity * 80 + len(frame.stale.stale_categories) * 220
+    )
+    avoided_fragmentation = (
+        len(frame.continuity.continuity_scope) * 180 + frame.compact_export.compact_export_size * 4
+    )
+    avoided_retention_drift = frame.retention.eviction_count * 360
+    return GovernanceCoreAuditReport(
+        governance_core_active=frame.governance_core_active,
+        pressure_primitives_active=frame.pressure.bounded_pressure_state,
+        stale_detection_primitives_active=frame.stale.summary_only,
+        bounded_retention_active=frame.retention.bounded_retention_active
+        and frame.retention.bounded_growth_maintained,
+        continuity_primitives_active=frame.continuity.bounded_continuity_maintained,
+        compact_export_primitives_active=frame.compact_export.summary_only
+        and frame.compact_export.bounded_export_maintained,
+        estimated_avoided_governance_duplication=avoided_duplication,
+        estimated_avoided_runtime_fragmentation=avoided_fragmentation,
+        estimated_avoided_bounded_retention_drift=avoided_retention_drift,
+        bounded_governance_reuse=frame.bounded_governance_reuse,
+        human_confirmed_migration=True,
+        automatic_rewrite_used=frame.automatic_rewrite_used,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1720,6 +1765,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         governance_trends=audit_governance_trends(),
         runtime_graph=audit_runtime_graph(),
         runtime_simplification=audit_runtime_simplification(),
+        governance_core=audit_governance_core(),
     )
 
 

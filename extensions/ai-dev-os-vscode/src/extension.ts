@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
@@ -8,20 +9,24 @@ import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplific
 import {registerSessionCommands} from './commands/sessionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
+import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
+import {BoundedRetentionViewProvider} from './views/boundedRetentionView';
 import {ContractOverlapViewProvider} from './views/contractOverlapView';
 import {GovernanceDashboardViewProvider} from './views/governanceDashboardView';
 import {GovernanceTrendViewProvider} from './views/governanceTrendView';
 import {MergeCandidateViewProvider} from './views/mergeCandidateView';
+import {PrimitiveReuseViewProvider} from './views/primitiveReuseView';
 import {RuntimeClusterViewProvider} from './views/runtimeClusterView';
 import {RuntimeGraphViewProvider} from './views/runtimeGraphView';
 import {RuntimeOverlapViewProvider} from './views/runtimeOverlapView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
+import {SharedPrimitiveViewProvider} from './views/sharedPrimitiveView';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -35,6 +40,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceTrend = new GovernanceTrendMonitor(governanceHealth);
   const governanceTrendStatus = new GovernanceTrendStatusBar(governanceTrend);
   const governanceTrendView = new GovernanceTrendViewProvider(governanceTrend);
+  const governanceCore = new GovernanceCoreMonitor();
+  const governanceCoreStatus = new GovernanceCoreStatusBar(governanceCore);
+  const sharedPrimitiveView = new SharedPrimitiveViewProvider(governanceCore);
+  const primitiveReuseView = new PrimitiveReuseViewProvider(governanceCore);
+  const boundedRetentionView = new BoundedRetentionViewProvider(governanceCore);
   const runtimeGraph = new RuntimeGraphMonitor();
   const architectureStatus = new ArchitecturePressureStatusBar(runtimeGraph);
   const runtimeGraphView = new RuntimeGraphViewProvider(runtimeGraph);
@@ -49,6 +59,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceState = await governance.validate();
   const healthState = await governanceStatus.refresh();
   const trendState = await governanceTrendStatus.refresh();
+  const coreState = governanceCoreStatus.refresh();
   const runtimeGraphState = architectureStatus.refresh();
   const simplificationState = simplificationStatus.refresh();
   await store.update(persistence.toBoundaryState(restored));
@@ -103,6 +114,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `AI_DEV_OS governance duplication groups: ${simplificationState.governanceGroups.length}.`,
     );
   }
+  if (coreState.duplicatedGovernanceWarningsReduced) {
+    await notifications.info(
+      'startup-governance-core-reuse',
+      `AI_DEV_OS governance core primitive reuse targets: ${coreState.reuseTargets.length}.`,
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -113,6 +130,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceDashboard', governanceView),
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceTrends', governanceTrendView),
+    vscode.window.registerTreeDataProvider('aiDevOsSharedPrimitives', sharedPrimitiveView),
+    vscode.window.registerTreeDataProvider('aiDevOsPrimitiveReuse', primitiveReuseView),
+    vscode.window.registerTreeDataProvider('aiDevOsBoundedRetention', boundedRetentionView),
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeGraph', runtimeGraphView),
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeClusters', runtimeClusterView),
     vscode.window.registerTreeDataProvider('aiDevOsRuntimeOverlap', runtimeOverlapView),
@@ -120,6 +140,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     vscode.window.registerTreeDataProvider('aiDevOsMergeCandidates', mergeCandidateView),
     governanceStatus,
     governanceTrendStatus,
+    governanceCoreStatus,
     architectureStatus,
     simplificationStatus,
     ...registerGovernanceHealthCommands(
@@ -133,6 +154,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       governanceTrendStatus,
       notifications,
       governanceTrendView,
+    ),
+    ...registerGovernanceCoreCommands(
+      governanceCore,
+      governanceCoreStatus,
+      notifications,
+      sharedPrimitiveView,
+      primitiveReuseView,
+      boundedRetentionView,
     ),
     ...registerRuntimeGraphCommands(
       runtimeGraph,

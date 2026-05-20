@@ -57,6 +57,11 @@
     "onCommand:aiDevOs.showGovernanceDuplication",
     "onCommand:aiDevOs.showSimplificationRecommendations",
     "onCommand:aiDevOs.compactSimplificationView",
+    "onCommand:aiDevOs.showGovernanceCore",
+    "onCommand:aiDevOs.showSharedPrimitives",
+    "onCommand:aiDevOs.showPrimitiveReuse",
+    "onCommand:aiDevOs.showBoundedRetention",
+    "onCommand:aiDevOs.showCompactExportStatus",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -64,6 +69,9 @@
     "onView:aiDevOsRuntimeOverlap",
     "onView:aiDevOsContractOverlap",
     "onView:aiDevOsMergeCandidates",
+    "onView:aiDevOsSharedPrimitives",
+    "onView:aiDevOsPrimitiveReuse",
+    "onView:aiDevOsBoundedRetention",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -111,7 +119,12 @@
       {"command": "aiDevOs.showMergeCandidates", "title": "AI_DEV_OS: Show Merge Candidates"},
       {"command": "aiDevOs.showGovernanceDuplication", "title": "AI_DEV_OS: Show Governance Duplication"},
       {"command": "aiDevOs.showSimplificationRecommendations", "title": "AI_DEV_OS: Show Simplification Recommendations"},
-      {"command": "aiDevOs.compactSimplificationView", "title": "AI_DEV_OS: Compact Simplification View"}
+      {"command": "aiDevOs.compactSimplificationView", "title": "AI_DEV_OS: Compact Simplification View"},
+      {"command": "aiDevOs.showGovernanceCore", "title": "AI_DEV_OS: Show Governance Core"},
+      {"command": "aiDevOs.showSharedPrimitives", "title": "AI_DEV_OS: Show Shared Primitives"},
+      {"command": "aiDevOs.showPrimitiveReuse", "title": "AI_DEV_OS: Show Primitive Reuse"},
+      {"command": "aiDevOs.showBoundedRetention", "title": "AI_DEV_OS: Show Bounded Retention"},
+      {"command": "aiDevOs.showCompactExportStatus", "title": "AI_DEV_OS: Show Compact Export Status"}
     ],
     "views": {
       "explorer": [
@@ -146,6 +159,18 @@
         {
           "id": "aiDevOsMergeCandidates",
           "name": "AI_DEV_OS Merge Candidates"
+        },
+        {
+          "id": "aiDevOsSharedPrimitives",
+          "name": "AI_DEV_OS Shared Primitives"
+        },
+        {
+          "id": "aiDevOsPrimitiveReuse",
+          "name": "AI_DEV_OS Primitive Reuse"
+        },
+        {
+          "id": "aiDevOsBoundedRetention",
+          "name": "AI_DEV_OS Bounded Retention"
         }
       ]
     },

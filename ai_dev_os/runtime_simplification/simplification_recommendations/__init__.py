@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.compact_export import GovernanceCompactExportPrimitive
 from ai_dev_os.runtime_simplification.contract_overlap import RuntimeContractOverlapFrame
 from ai_dev_os.runtime_simplification.governance_duplication import GovernanceDuplicationFrame
 from ai_dev_os.runtime_simplification.runtime_merge_candidates import RuntimeMergeCandidateFrame
@@ -36,6 +37,10 @@ class RuntimeSimplificationRecommendationPolicy:
         isolation = ("isolate high-risk merge candidates",) if merge.isolation_required else ()
         consolidation = tuple(
             f"consolidate {group}" for group in governance.duplicated_governance_groups[:4]
+        )
+        GovernanceCompactExportPrimitive().export(
+            merge.merge_candidates + reductions + tightening + isolation + consolidation,
+            export_mode="summary",
         )
         return RuntimeSimplificationRecommendationFrame(
             recommended_runtime_merges=merge.merge_candidates,

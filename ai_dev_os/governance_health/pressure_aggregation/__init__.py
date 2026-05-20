@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.pressure_primitives import GovernancePressurePrimitive
+
 _PRESSURE_LEVELS = {
     "low": 1,
     "medium": 2,
@@ -45,18 +47,24 @@ class GovernancePressurePolicy:
             "stale_context": stale_context_pressure,
         }
         scores = {name: _level(value) for name, value in samples.items()}
+        primitive = GovernancePressurePrimitive().aggregate(
+            retrieval_pressure=retrieval_pressure,
+            persistence_pressure=persistence_pressure,
+            session_pressure=session_pressure,
+            architecture_pressure=architecture_pressure,
+            provider_pressure=provider_pressure,
+            continuity_pressure=_max_pressure(continuity_pressure, stale_context_pressure),
+            checkpoint_pressure=checkpoint_pressure,
+            previous_pressure=previous_pressure,
+        )
         total = sum(scores.values())
-        average = round(total / len(scores))
-        aggregate = _label(average)
-        dominant = max(scores, key=scores.get)
-        direction = _direction(_level(previous_pressure), _level(aggregate))
         trend = tuple(f"{name}:{samples[name]}" for name in sorted(samples))
         return GovernancePressureFrame(
-            aggregate_pressure=aggregate,
-            dominant_pressure=dominant,
-            pressure_direction=direction,
+            aggregate_pressure=primitive.aggregated_pressure,
+            dominant_pressure=primitive.dominant_pressure,
+            pressure_direction=primitive.pressure_direction,
             pressure_trend=trend,
-            bounded_operation_recommended=aggregate in {"high", "critical"},
+            bounded_operation_recommended=primitive.aggregated_pressure in {"high", "critical"},
             pressure_score=total,
         )
 
@@ -81,3 +89,7 @@ def _direction(previous: int, current: int) -> str:
     if current < previous:
         return "falling"
     return "steady"
+
+
+def _max_pressure(first: str, second: str) -> str:
+    return first if _level(first) >= _level(second) else second

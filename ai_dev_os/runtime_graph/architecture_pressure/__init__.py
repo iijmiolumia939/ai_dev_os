@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.pressure_primitives import GovernancePressurePrimitive
 from ai_dev_os.runtime_graph.contract_surface import RuntimeContractSurfaceFrame
 from ai_dev_os.runtime_graph.dependency_graph import RuntimeDependencyGraphFrame
 from ai_dev_os.runtime_graph.runtime_clustering import RuntimeClusterFrame
@@ -46,7 +47,16 @@ class ArchitecturePressurePolicy:
             "orchestration": orchestration,
             "persistence_complexity": persistence,
         }
-        dominant = max(pressures, key=lambda key: _score(pressures[key]))
+        primitive = GovernancePressurePrimitive().aggregate(
+            retrieval_pressure=dependency_density,
+            persistence_pressure=persistence,
+            architecture_pressure=runtime_count,
+            session_pressure=orchestration,
+            checkpoint_pressure="low",
+            provider_pressure="low",
+            continuity_pressure=contract_surface,
+        )
+        dominant = _dominant_runtime_pressure(primitive.dominant_pressure, pressures)
         bounded = (
             graph.bounded_graph_size
             and discovery.summary_only
@@ -79,3 +89,17 @@ def _pressure(value: int, *, medium: int, high: int) -> str:
 
 def _score(pressure: str) -> int:
     return {"low": 1, "medium": 2, "high": 3}.get(pressure, 0)
+
+
+def _dominant_runtime_pressure(primitive_name: str, pressures: dict[str, str]) -> str:
+    mapping = {
+        "retrieval": "dependency_density",
+        "persistence": "persistence_complexity",
+        "architecture": "runtime_count",
+        "session": "orchestration",
+        "continuity": "contract_surface",
+    }
+    mapped = mapping.get(primitive_name, "")
+    if mapped in pressures:
+        return mapped
+    return max(pressures, key=lambda key: _score(pressures[key]))

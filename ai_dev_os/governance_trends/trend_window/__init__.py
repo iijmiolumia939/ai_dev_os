@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.bounded_retention import GovernanceBoundedRetentionPrimitive
+
 _PRESSURE = {"low": 1, "medium": 2, "high": 3, "critical": 4}
 _STABILITY = {"stable": 3, "warning": 2, "unstable": 1, "degraded": 0}
 
@@ -39,14 +41,21 @@ class GovernanceTrendWindowPolicy:
         max_window_size: int = 5,
     ) -> GovernanceTrendWindowFrame:
         max_size = max(1, max_window_size)
-        retained = snapshots[-max_size:]
-        evicted = snapshots[: max(0, len(snapshots) - max_size)]
+        retention = GovernanceBoundedRetentionPrimitive().apply(
+            tuple(item.snapshot_id for item in snapshots),
+            retention_limit=max_size,
+        )
+        retained_ids = set(retention.retained_items)
+        evicted_ids = set(retention.evicted_items)
+        retained = tuple(item for item in snapshots if item.snapshot_id in retained_ids)
         return GovernanceTrendWindowFrame(
             active_window_size=len(retained),
-            evicted_snapshots=tuple(item.snapshot_id for item in evicted),
+            evicted_snapshots=tuple(
+                item.snapshot_id for item in snapshots if item.snapshot_id in evicted_ids
+            ),
             trend_window_pressure=_pressure_label(retained),
             trend_window_stability=_stability_label(retained),
-            bounded_window_maintained=len(retained) <= max_size,
+            bounded_window_maintained=retention.bounded_growth_maintained,
             snapshots=retained,
             max_window_size=max_size,
             full_historical_replay_allowed=False,

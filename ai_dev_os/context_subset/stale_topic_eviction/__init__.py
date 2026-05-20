@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.governance_core.stale_detection import GovernanceStaleDetectionPrimitive
+
 STALE_MARKERS = {
     "obsolete_roadmap": ("obsolete roadmap", "old roadmap", "superseded roadmap"),
     "inactive_migration": ("inactive migration", "paused migration"),
@@ -24,6 +26,7 @@ class StaleTopicEvictionFrame:
 
 class StaleTopicEvictionPolicy:
     def evict(self, topics: tuple[str, ...]) -> StaleTopicEvictionFrame:
+        shared_stale = GovernanceStaleDetectionPrimitive().detect(topics)
         evicted: list[str] = []
         retained: list[str] = []
         reasons: dict[str, str] = {}
@@ -32,6 +35,9 @@ class StaleTopicEvictionPolicy:
             if reason:
                 evicted.append(topic)
                 reasons[topic] = reason
+            elif shared_stale.stale_detected and "stale" in topic.lower():
+                evicted.append(topic)
+                reasons[topic] = "shared_stale_signal"
             elif topic not in retained:
                 retained.append(topic)
         saved = sum(max(80, len(topic.split()) * 35) for topic in evicted)
