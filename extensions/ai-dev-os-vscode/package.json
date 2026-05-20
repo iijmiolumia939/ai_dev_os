@@ -18,6 +18,11 @@
     "onCommand:aiDevOs.showSessionBoundaryState",
     "onCommand:aiDevOs.compactCurrentSession",
     "onCommand:aiDevOs.showStaleSessionWarning",
+    "onCommand:aiDevOs.restoreSessionState",
+    "onCommand:aiDevOs.showPersistenceState",
+    "onCommand:aiDevOs.cleanupStalePersistence",
+    "onCommand:aiDevOs.exportLocalContinuityIndex",
+    "onCommand:aiDevOs.resetLocalSessionState",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -30,7 +35,12 @@
       {"command": "aiDevOs.confirmSessionRollover", "title": "AI_DEV_OS: Confirm Session Rollover"},
       {"command": "aiDevOs.showSessionBoundaryState", "title": "AI_DEV_OS: Show Session Boundary State"},
       {"command": "aiDevOs.compactCurrentSession", "title": "AI_DEV_OS: Compact Current Session"},
-      {"command": "aiDevOs.showStaleSessionWarning", "title": "AI_DEV_OS: Show Stale Session Warning"}
+      {"command": "aiDevOs.showStaleSessionWarning", "title": "AI_DEV_OS: Show Stale Session Warning"},
+      {"command": "aiDevOs.restoreSessionState", "title": "AI_DEV_OS: Restore Session State"},
+      {"command": "aiDevOs.showPersistenceState", "title": "AI_DEV_OS: Show Persistence State"},
+      {"command": "aiDevOs.cleanupStalePersistence", "title": "AI_DEV_OS: Cleanup Stale Persistence"},
+      {"command": "aiDevOs.exportLocalContinuityIndex", "title": "AI_DEV_OS: Export Local Continuity Index"},
+      {"command": "aiDevOs.resetLocalSessionState", "title": "AI_DEV_OS: Reset Local Session State"}
     ],
     "views": {
       "explorer": [

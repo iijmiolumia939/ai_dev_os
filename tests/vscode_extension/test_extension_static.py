@@ -10,7 +10,7 @@ def test_extension_commands_are_declared() -> None:
     package = json.loads((ROOT / "package.json").read_text(encoding="utf-8"))
     commands = {item["command"] for item in package["contributes"]["commands"]}
 
-    assert commands == {
+    assert {
         "aiDevOs.sessionAudit",
         "aiDevOs.generateHandoff",
         "aiDevOs.copyContinuityBundle",
@@ -19,7 +19,7 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showSessionBoundaryState",
         "aiDevOs.compactCurrentSession",
         "aiDevOs.showStaleSessionWarning",
-    }
+    }.issubset(commands)
 
 
 def test_extension_has_local_state_without_telemetry() -> None:

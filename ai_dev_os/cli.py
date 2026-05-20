@@ -43,6 +43,11 @@ from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificati
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
 from ai_dev_os.vscode_integration.prompt_export import PromptExportPolicy
 from ai_dev_os.vscode_integration.session_handoff import SessionHandoffPolicy
+from ai_dev_os.workspace_persistence.continuity_index import ContinuityIndexPolicy
+from ai_dev_os.workspace_persistence.persistence_cleanup import PersistenceCleanupPolicy
+from ai_dev_os.workspace_persistence.persistence_store import PersistenceStorePolicy
+from ai_dev_os.workspace_persistence.session_restore import SessionRestorePolicy
+from ai_dev_os.workspace_persistence.state_checkpoint import StateCheckpointPolicy
 from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
 from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
 from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
@@ -146,6 +151,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _session_boundary(args.workspace, args.sprint)["handoff_confirmation"]
     if command == "session-boundary-handoff":
         return _session_boundary_handoff(args.workspace, args.sprint)
+    if command == "persistence-store":
+        return _workspace_persistence(args.workspace, args.sprint)["persistence_store"]
+    if command == "restore-session-state":
+        return _workspace_persistence(args.workspace, args.sprint)["session_restore"]
+    if command == "state-checkpoint":
+        return _workspace_persistence(args.workspace, args.sprint)["state_checkpoint"]
+    if command == "continuity-index":
+        return _workspace_persistence(args.workspace, args.sprint)["continuity_index"]
+    if command == "cleanup-persistence":
+        return _workspace_persistence(args.workspace, args.sprint)["persistence_cleanup"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -558,6 +573,65 @@ def _session_boundary_handoff(workspace: str, sprint: str):
         "boundary_enforcement": boundary["boundary_enforcement"],
         "rollover_state": boundary["rollover_state"],
         "handoff_confirmation": boundary["handoff_confirmation"],
+    }
+
+
+def _workspace_persistence(workspace: str, sprint: str):
+    boundary = _session_boundary(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    subset = _context_subset(workspace, sprint)
+    handoff = _vscode_handoff(workspace, sprint)
+    store = PersistenceStorePolicy().build(
+        current_session_generation=boundary["session_generation"].active_generation,
+        rollover_state=_to_data(boundary["rollover_state"]),
+        last_continuity_bundle=handoff.continuity_bundle,
+        current_prompt_mode=modes["reasoning_profile"].mode,
+        session_focus=handoff.session_focus,
+        stale_warning_state=_to_data(boundary["stale_session"]),
+        repository_subset_summary=subset["repository_subset"].active_repositories,
+        compact_continuity_metadata={
+            "continuity_scope": subset["continuity_scope"].included_context,
+            "prompt_mode": modes["reasoning_profile"].mode,
+            "summary_only": True,
+        },
+        workspace=workspace,
+    )
+    restore = SessionRestorePolicy().restore(store)
+    checkpoint = StateCheckpointPolicy().checkpoint(
+        session_generation=store.current_session_generation,
+        enforcement_state=boundary["boundary_enforcement"].enforcement_state,
+        prompt_mode=store.current_prompt_mode,
+        continuity_scope=subset["continuity_scope"].included_context,
+        repository_subset=store.repository_subset_summary,
+        active_sprint_metadata={
+            "sprint": sprint,
+            "session_focus": store.session_focus,
+            "full_workspace_snapshot": "excluded",
+        },
+    )
+    bundle_id = f"{Path(workspace).resolve().name}:{sprint}:{store.current_session_generation}"
+    index = ContinuityIndexPolicy().index(
+        continuity_bundle_ids=(bundle_id,),
+        generation_mapping={bundle_id: store.current_session_generation},
+        sprint_mapping={bundle_id: sprint},
+        prompt_export_references=("prompt.txt", "continuation.md"),
+        rollover_lineage=(boundary["session_generation"].parent_session, bundle_id),
+        stale_continuity_flags=(
+            ("stale-warning",) if boundary["stale_session"].stale_session_detected else ()
+        ),
+    )
+    cleanup = PersistenceCleanupPolicy().cleanup(
+        entries=("obsolete-continuity", bundle_id, "duplicate-compact-export"),
+        active_entries=(bundle_id,),
+        expired_entries=("obsolete-continuity",),
+        duplicate_entries=("duplicate-compact-export",),
+    )
+    return {
+        "persistence_store": store,
+        "session_restore": restore,
+        "state_checkpoint": checkpoint,
+        "continuity_index": index,
+        "persistence_cleanup": cleanup,
     }
 
 

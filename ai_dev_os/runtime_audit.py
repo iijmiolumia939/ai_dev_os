@@ -58,6 +58,11 @@ from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificati
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
 from ai_dev_os.vscode_integration.prompt_export import PromptExportPolicy
 from ai_dev_os.vscode_integration.session_handoff import SessionHandoffPolicy
+from ai_dev_os.workspace_persistence.continuity_index import ContinuityIndexPolicy
+from ai_dev_os.workspace_persistence.persistence_cleanup import PersistenceCleanupPolicy
+from ai_dev_os.workspace_persistence.persistence_store import PersistenceStorePolicy
+from ai_dev_os.workspace_persistence.session_restore import SessionRestorePolicy
+from ai_dev_os.workspace_persistence.state_checkpoint import StateCheckpointPolicy
 from ai_dev_os.workspace_snapshot.architecture_hotspots import ArchitectureHotspotPolicy
 from ai_dev_os.workspace_snapshot.known_failures import KnownFailurePolicy
 from ai_dev_os.workspace_snapshot.multi_repository import MultiRepositoryPolicy
@@ -309,6 +314,17 @@ class SessionBoundaryAuditReport:
 
 
 @dataclass(frozen=True)
+class WorkspacePersistenceAuditReport:
+    persistence_store_active: bool
+    session_restore_active: bool
+    continuity_index_active: bool
+    persistence_cleanup_active: bool
+    local_workspace_persistence_active: bool
+    estimated_avoided_manual_recovery_tokens: int
+    estimated_avoided_stale_persistence_tokens: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -330,6 +346,7 @@ class RuntimeEnforcementAuditReport:
     prompt_modes: PromptModesAuditReport
     vscode_integration: VSCodeIntegrationAuditReport
     session_boundary: SessionBoundaryAuditReport
+    workspace_persistence: WorkspacePersistenceAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1285,6 +1302,61 @@ def audit_session_boundary() -> SessionBoundaryAuditReport:
     )
 
 
+def audit_workspace_persistence() -> WorkspacePersistenceAuditReport:
+    store = PersistenceStorePolicy().build(
+        current_session_generation=4,
+        rollover_state={"rollover_pending": True, "raw_transcript": "excluded"},
+        last_continuity_bundle={"bundle_id": "b-4", "provider_responses": "excluded"},
+        current_prompt_mode="bounded_implementation",
+        session_focus="bounded-implementation",
+        stale_warning_state={"stale_session_detected": True, "warning_count": 2},
+        repository_subset_summary=("ai_dev_os", "consumer"),
+        compact_continuity_metadata={"summary_only": True, "full_prompt_history": "excluded"},
+    )
+    restore = SessionRestorePolicy().restore(store)
+    checkpoint = StateCheckpointPolicy().checkpoint(
+        session_generation=store.current_session_generation,
+        enforcement_state="ROLLOVER_REQUIRED",
+        prompt_mode=store.current_prompt_mode,
+        continuity_scope=("active_sprint_continuity", "repository_subset"),
+        repository_subset=store.repository_subset_summary,
+        active_sprint_metadata={"sprint": "42", "full_workspace_snapshot": "excluded"},
+    )
+    index = ContinuityIndexPolicy().index(
+        continuity_bundle_ids=("b-4",),
+        generation_mapping={"b-4": store.current_session_generation},
+        sprint_mapping={"b-4": "42"},
+        prompt_export_references=("prompt.txt",),
+        rollover_lineage=("b-3", "b-4"),
+        stale_continuity_flags=("b-3",),
+    )
+    cleanup = PersistenceCleanupPolicy().cleanup(
+        entries=("obsolete-b-1", "b-4", "duplicate-b-2"),
+        active_entries=("b-4",),
+        expired_entries=("obsolete-b-1",),
+        duplicate_entries=("duplicate-b-2",),
+    )
+    gitignore = Path(".gitignore")
+    gitignore_text = gitignore.read_text(encoding="utf-8") if gitignore.exists() else ""
+    return WorkspacePersistenceAuditReport(
+        persistence_store_active=store.bounded
+        and store.summary_only
+        and bool(store.forbidden_keys_removed)
+        and checkpoint.full_workspace_snapshot_included is False,
+        session_restore_active=restore.restore_available
+        and restore.pending_rollover_restored
+        and not restore.stale_persistence_auto_applied,
+        continuity_index_active=index.summary_only and not index.raw_export_replay_allowed,
+        persistence_cleanup_active=cleanup.stale_persistence_detected
+        and bool(cleanup.cleaned_entries),
+        local_workspace_persistence_active=".ai-dev-os/" in gitignore_text
+        and ".ai-dev-os" in store.store_path,
+        estimated_avoided_manual_recovery_tokens=2_400 + len(index.continuity_bundle_ids) * 300,
+        estimated_avoided_stale_persistence_tokens=cleanup.estimated_saved_storage
+        + len(store.forbidden_keys_removed) * 700,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1307,6 +1379,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         prompt_modes=audit_prompt_modes(),
         vscode_integration=audit_vscode_integration(),
         session_boundary=audit_session_boundary(),
+        workspace_persistence=audit_workspace_persistence(),
     )
 
 
