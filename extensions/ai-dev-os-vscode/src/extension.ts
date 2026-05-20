@@ -1,14 +1,17 @@
 import * as vscode from 'vscode';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
+import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
+import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
 import {BoundaryStateStore} from './state/boundaryState';
 import {GovernanceDashboardViewProvider} from './views/governanceDashboardView';
+import {GovernanceTrendViewProvider} from './views/governanceTrendView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -20,10 +23,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceHealth = new GovernanceHealthMonitor(persistence, governance);
   const governanceStatus = new GovernanceStatusBar(governanceHealth);
   const governanceView = new GovernanceDashboardViewProvider(governanceHealth);
+  const governanceTrend = new GovernanceTrendMonitor(governanceHealth);
+  const governanceTrendStatus = new GovernanceTrendStatusBar(governanceTrend);
+  const governanceTrendView = new GovernanceTrendViewProvider(governanceTrend);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
   const healthState = await governanceStatus.refresh();
+  const trendState = await governanceTrendStatus.refresh();
   await store.update(persistence.toBoundaryState(restored));
   if (restored.rollover_state.rollover_pending || restored.stale_warning_state.stale_session_detected) {
     await notifications.warn(
@@ -53,6 +60,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `AI_DEV_OS governance health is ${healthState.level}. Review the governance dashboard.`,
     );
   }
+  if (trendState.trendLevel === 'DEGRADING' || trendState.trendLevel === 'OSCILLATING') {
+    await notifications.warn(
+      'startup-governance-trend-warning',
+      `AI_DEV_OS governance trend is ${trendState.trendLevel}. Review dashboard delta.`,
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -62,12 +75,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceDashboard', governanceView),
+    vscode.window.registerTreeDataProvider('aiDevOsGovernanceTrends', governanceTrendView),
     governanceStatus,
+    governanceTrendStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
       notifications,
       governanceView,
+    ),
+    ...registerGovernanceTrendCommands(
+      governanceTrend,
+      governanceTrendStatus,
+      notifications,
+      governanceTrendView,
     ),
   );
 }

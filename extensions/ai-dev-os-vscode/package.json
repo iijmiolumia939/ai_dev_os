@@ -35,7 +35,14 @@
     "onCommand:aiDevOs.runGovernanceStabilityAudit",
     "onCommand:aiDevOs.compactGovernanceContext",
     "onCommand:aiDevOs.showArchitectureIsolationState",
+    "onCommand:aiDevOs.showGovernanceTrends",
+    "onCommand:aiDevOs.showGovernanceDrift",
+    "onCommand:aiDevOs.showGovernanceRegression",
+    "onCommand:aiDevOs.showDashboardDelta",
+    "onCommand:aiDevOs.compactGovernanceWindow",
+    "onCommand:aiDevOs.resetGovernanceTrendWindow",
     "onView:aiDevOsGovernanceDashboard",
+    "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -65,7 +72,13 @@
       {"command": "aiDevOs.showGovernancePressure", "title": "AI_DEV_OS: Show Governance Pressure"},
       {"command": "aiDevOs.runGovernanceStabilityAudit", "title": "AI_DEV_OS: Run Governance Stability Audit"},
       {"command": "aiDevOs.compactGovernanceContext", "title": "AI_DEV_OS: Compact Governance Context"},
-      {"command": "aiDevOs.showArchitectureIsolationState", "title": "AI_DEV_OS: Show Architecture Isolation State"}
+      {"command": "aiDevOs.showArchitectureIsolationState", "title": "AI_DEV_OS: Show Architecture Isolation State"},
+      {"command": "aiDevOs.showGovernanceTrends", "title": "AI_DEV_OS: Show Governance Trends"},
+      {"command": "aiDevOs.showGovernanceDrift", "title": "AI_DEV_OS: Show Governance Drift"},
+      {"command": "aiDevOs.showGovernanceRegression", "title": "AI_DEV_OS: Show Governance Regression"},
+      {"command": "aiDevOs.showDashboardDelta", "title": "AI_DEV_OS: Show Dashboard Delta"},
+      {"command": "aiDevOs.compactGovernanceWindow", "title": "AI_DEV_OS: Compact Governance Window"},
+      {"command": "aiDevOs.resetGovernanceTrendWindow", "title": "AI_DEV_OS: Reset Governance Trend Window"}
     ],
     "views": {
       "explorer": [
@@ -76,6 +89,10 @@
         {
           "id": "aiDevOsGovernanceDashboard",
           "name": "AI_DEV_OS Governance Dashboard"
+        },
+        {
+          "id": "aiDevOsGovernanceTrends",
+          "name": "AI_DEV_OS Governance Trends"
         }
       ]
     },

@@ -16,6 +16,14 @@ from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
 from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
 from ai_dev_os.governance_health.risk_aggregation import GovernanceRiskPolicy
 from ai_dev_os.governance_health.stability_assessment import GovernanceStabilityPolicy
+from ai_dev_os.governance_trends.dashboard_delta import GovernanceDashboardDeltaPolicy
+from ai_dev_os.governance_trends.drift_detection import GovernanceDriftPolicy
+from ai_dev_os.governance_trends.regression_detection import GovernanceRegressionPolicy
+from ai_dev_os.governance_trends.stability_trends import GovernanceStabilityTrendPolicy
+from ai_dev_os.governance_trends.trend_window import (
+    GovernanceTrendSnapshot,
+    GovernanceTrendWindowPolicy,
+)
 from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
 from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
 from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
@@ -193,6 +201,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _governance_health(args.workspace, args.sprint)["stability"]
     if command == "architecture-isolation-state":
         return _prompt_modes(args.workspace, args.sprint)["session_mode"]
+    if command == "governance-trends":
+        return _governance_trends(args.workspace, args.sprint)["trend_window"]
+    if command == "governance-drift":
+        return _governance_trends(args.workspace, args.sprint)["drift"]
+    if command == "governance-regression":
+        return _governance_trends(args.workspace, args.sprint)["regression"]
+    if command == "governance-stability-trend":
+        return _governance_trends(args.workspace, args.sprint)["stability_trend"]
+    if command == "governance-dashboard-delta":
+        return _governance_trends(args.workspace, args.sprint)["dashboard_delta"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -784,6 +802,72 @@ def _governance_health(workspace: str, sprint: str):
         "risk": risk,
         "dashboard": dashboard,
         "stability": stability,
+    }
+
+
+def _governance_trends(workspace: str, sprint: str):
+    current = _governance_health(workspace, sprint)
+    health = current["health"]
+    pressure = current["pressure"]
+    risk = current["risk"]
+    stability = current["stability"]
+    snapshots = (
+        GovernanceTrendSnapshot(
+            snapshot_id="t-1",
+            pressure="low",
+            risk="low",
+            health_state="HEALTHY",
+            stability_state="stable",
+            health_score=88,
+            checkpoint_pressure="low",
+            persistence_pressure="low",
+        ),
+        GovernanceTrendSnapshot(
+            snapshot_id="t-2",
+            pressure="medium",
+            risk="medium",
+            health_state="STABLE_WARNING",
+            stability_state="warning",
+            health_score=74,
+            checkpoint_pressure="medium",
+            persistence_pressure="medium",
+        ),
+        GovernanceTrendSnapshot(
+            snapshot_id="t-3",
+            pressure="high",
+            risk="medium",
+            health_state="HIGH_PRESSURE",
+            stability_state="unstable",
+            health_score=54,
+            checkpoint_pressure="high",
+            persistence_pressure="medium",
+        ),
+        GovernanceTrendSnapshot(
+            snapshot_id="current",
+            pressure=pressure.aggregate_pressure,
+            risk=risk.aggregate_risk,
+            health_state=health.governance_health_state,
+            stability_state=("stable" if stability.stability_score >= 80 else "warning"),
+            health_score=health.governance_health_score,
+            checkpoint_pressure=current["dashboard"].checkpoint_pressure,
+            persistence_pressure=current["dashboard"].persistence_budget_state,
+            architecture_isolation=current["dashboard"].architecture_isolation_state,
+        ),
+    )
+    window = GovernanceTrendWindowPolicy().apply(snapshots, max_window_size=4)
+    drift = GovernanceDriftPolicy().detect(window)
+    regression = GovernanceRegressionPolicy().detect(window)
+    stability_trend = GovernanceStabilityTrendPolicy().evaluate(window)
+    dashboard_delta = GovernanceDashboardDeltaPolicy().summarize(
+        previous=window.snapshots[-2],
+        current=window.snapshots[-1],
+    )
+    return {
+        "trend_window": window,
+        "drift": drift,
+        "regression": regression,
+        "stability_trend": stability_trend,
+        "dashboard_delta": dashboard_delta,
     }
 
 

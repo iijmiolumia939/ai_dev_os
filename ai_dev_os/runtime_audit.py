@@ -20,6 +20,14 @@ from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
 from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
 from ai_dev_os.governance_health.risk_aggregation import GovernanceRiskPolicy
 from ai_dev_os.governance_health.stability_assessment import GovernanceStabilityPolicy
+from ai_dev_os.governance_trends.dashboard_delta import GovernanceDashboardDeltaPolicy
+from ai_dev_os.governance_trends.drift_detection import GovernanceDriftPolicy
+from ai_dev_os.governance_trends.regression_detection import GovernanceRegressionPolicy
+from ai_dev_os.governance_trends.stability_trends import GovernanceStabilityTrendPolicy
+from ai_dev_os.governance_trends.trend_window import (
+    GovernanceTrendSnapshot,
+    GovernanceTrendWindowPolicy,
+)
 from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
 from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
 from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
@@ -358,6 +366,18 @@ class GovernanceHealthAuditReport:
 
 
 @dataclass(frozen=True)
+class GovernanceTrendsAuditReport:
+    governance_trend_window_active: bool
+    governance_drift_detection_active: bool
+    governance_regression_active: bool
+    governance_stability_trends_active: bool
+    dashboard_delta_active: bool
+    estimated_avoided_governance_regression: int
+    estimated_avoided_hidden_trend_accumulation: int
+    estimated_avoided_governance_oscillation: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -382,6 +402,7 @@ class RuntimeEnforcementAuditReport:
     workspace_persistence: WorkspacePersistenceAuditReport
     persistence_governance: PersistenceGovernanceAuditReport
     governance_health: GovernanceHealthAuditReport
+    governance_trends: GovernanceTrendsAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1510,6 +1531,65 @@ def audit_governance_health() -> GovernanceHealthAuditReport:
     )
 
 
+def audit_governance_trends() -> GovernanceTrendsAuditReport:
+    snapshots = (
+        GovernanceTrendSnapshot("g-1", "low", "low", "HEALTHY", "stable", 90),
+        GovernanceTrendSnapshot("g-2", "medium", "medium", "STABLE_WARNING", "warning", 72),
+        GovernanceTrendSnapshot("g-3", "high", "medium", "HIGH_PRESSURE", "unstable", 55),
+        GovernanceTrendSnapshot(
+            "g-4",
+            "medium",
+            "high",
+            "STABLE_WARNING",
+            "warning",
+            68,
+            checkpoint_pressure="high",
+            persistence_pressure="high",
+        ),
+        GovernanceTrendSnapshot(
+            "g-5",
+            "high",
+            "high",
+            "HIGH_PRESSURE",
+            "unstable",
+            50,
+            checkpoint_pressure="high",
+            persistence_pressure="high",
+        ),
+        GovernanceTrendSnapshot(
+            "g-6",
+            "critical",
+            "high",
+            "CRITICAL_GOVERNANCE",
+            "degraded",
+            30,
+            checkpoint_pressure="high",
+            persistence_pressure="critical",
+            architecture_isolation="recommended",
+        ),
+    )
+    window = GovernanceTrendWindowPolicy().apply(snapshots, max_window_size=5)
+    drift = GovernanceDriftPolicy().detect(window)
+    regression = GovernanceRegressionPolicy().detect(window)
+    stability = GovernanceStabilityTrendPolicy().evaluate(window)
+    delta = GovernanceDashboardDeltaPolicy().summarize(
+        previous=window.snapshots[-2],
+        current=window.snapshots[-1],
+    )
+    return GovernanceTrendsAuditReport(
+        governance_trend_window_active=window.bounded_window_maintained
+        and not window.full_historical_replay_allowed,
+        governance_drift_detection_active=drift.drift_detected,
+        governance_regression_active=regression.regression_detected,
+        governance_stability_trends_active=stability.stability_direction
+        in {"improving", "stable", "degrading", "oscillating"},
+        dashboard_delta_active=delta.delta_only_summary and not delta.raw_runtime_replay_allowed,
+        estimated_avoided_governance_regression=regression.repeated_instability_count * 600,
+        estimated_avoided_hidden_trend_accumulation=len(window.evicted_snapshots) * 450,
+        estimated_avoided_governance_oscillation=800 if regression.oscillation_detected else 200,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1535,6 +1615,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         workspace_persistence=audit_workspace_persistence(),
         persistence_governance=audit_persistence_governance(),
         governance_health=audit_governance_health(),
+        governance_trends=audit_governance_trends(),
     )
 
 
