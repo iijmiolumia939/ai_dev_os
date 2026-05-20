@@ -24,6 +24,10 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showEscalationPolicy",
         "aiDevOs.showSprintReasoningMap",
         "aiDevOs.compactReasoningScope",
+        "aiDevOs.toggleCompactReporting",
+        "aiDevOs.showVerbosityPressure",
+        "aiDevOs.expandCompletionSummary",
+        "aiDevOs.showReportDensity",
     }.issubset(commands)
 
 

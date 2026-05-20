@@ -36,6 +36,15 @@ from ai_dev_os.governance_trends.trend_window import (
     GovernanceTrendSnapshot,
     GovernanceTrendWindowPolicy,
 )
+from ai_dev_os.output_compression import (
+    CompactCompletionInput,
+    CompactCompletionPolicy,
+    ReportDensityPolicy,
+    SummaryDeduplicationPolicy,
+    SummarySection,
+    ValidationCompactionPolicy,
+    ValidationResult,
+)
 from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
 from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
 from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
@@ -551,6 +560,25 @@ class ReasoningRoutingAuditReport:
 
 
 @dataclass(frozen=True)
+class OutputCompressionAuditReport:
+    output_compression_active: bool
+    summary_deduplication_active: bool
+    validation_compaction_active: bool
+    report_density_active: bool
+    compact_completion_active: bool
+    verbosity_pressure: str
+    compact_summary_lines: int
+    expandable_reporting: bool
+    human_readable: bool
+    rollback_safe: bool
+    deterministic_compact_mode: bool
+    estimated_avoided_completion_tokens: int
+    estimated_avoided_repeated_summaries: int
+    hidden_reporting_used: bool
+    validation_skipped: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -584,6 +612,7 @@ class RuntimeEnforcementAuditReport:
     draft_injection: DraftInjectionAuditReport
     consumer_rollout: ConsumerRolloutAuditReport
     reasoning_routing: ReasoningRoutingAuditReport
+    output_compression: OutputCompressionAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2133,6 +2162,61 @@ def audit_reasoning_routing() -> ReasoningRoutingAuditReport:
     )
 
 
+def audit_output_compression() -> OutputCompressionAuditReport:
+    validation_results = (
+        ValidationResult("pytest", "pass", 289, "full test suite"),
+        ValidationResult("runtime audit", "pass", 1, "output compression active"),
+        ValidationResult("build", "success", 1, "wheel and sdist verified"),
+        ValidationResult("twine", "success", 1, "metadata check"),
+        ValidationResult("compile", "success", 1, "VSCode extension"),
+    )
+    validation = ValidationCompactionPolicy().compact(validation_results)
+    sections = (
+        SummarySection("validation pass", "pytest passed and build passed"),
+        SummarySection("clean worktree", "clean worktree", unchanged=True),
+        SummarySection("CI success", "remote CI success", unchanged=True),
+        SummarySection("artifact cleanup", "generated artifacts removed", unchanged=True),
+        SummarySection("rollout summary", "rollout summary unchanged", unchanged=True),
+    )
+    dedup = SummaryDeduplicationPolicy().deduplicate(sections)
+    density = ReportDensityPolicy().audit(
+        tuple(section.title for section in sections),
+        unchanged_sections=4,
+        repeated_token_estimate=dedup.estimated_avoided_repeated_tokens,
+    )
+    completion = CompactCompletionPolicy().compact(
+        CompactCompletionInput(
+            commit="06d38e7",
+            ci_status="success",
+            validation_results=validation_results,
+            runtime_audit_status="active",
+            risks=("verbose completion drift", "repeated validation output"),
+            next_step="output compression rollout",
+            rollout_summary="unchanged rollout summary",
+            unchanged_sections=("rollout",),
+        )
+    )
+    return OutputCompressionAuditReport(
+        output_compression_active=completion.compact and completion.bounded,
+        summary_deduplication_active=dedup.repeated_summary_detected
+        and dedup.unchanged_section_suppression,
+        validation_compaction_active=validation.validation_aggregation
+        and validation.compact_validation_projection.startswith("Validation: pass"),
+        report_density_active=density.compaction_recommendation,
+        compact_completion_active=completion.compact and completion.deduplicated,
+        verbosity_pressure=density.verbosity_pressure,
+        compact_summary_lines=len(completion.compact_summary.splitlines()),
+        expandable_reporting=completion.expandable and bool(completion.expandable_details),
+        human_readable=completion.human_readable,
+        rollback_safe=completion.rollback_safe,
+        deterministic_compact_mode=completion.deterministic_compact_mode,
+        estimated_avoided_completion_tokens=completion.estimated_avoided_completion_tokens,
+        estimated_avoided_repeated_summaries=completion.estimated_avoided_repeated_summaries,
+        hidden_reporting_used=False,
+        validation_skipped=False,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2172,6 +2256,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         draft_injection=audit_draft_injection(),
         consumer_rollout=audit_consumer_rollout(),
         reasoning_routing=audit_reasoning_routing(),
+        output_compression=audit_output_compression(),
     )
 
 

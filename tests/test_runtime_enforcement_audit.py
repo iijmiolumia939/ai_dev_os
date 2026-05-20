@@ -86,3 +86,21 @@ def test_runtime_audit_reports_reasoning_routing_cost_controls() -> None:
     assert report.reasoning_routing.rollback_safe_routing is True
     assert report.reasoning_routing.provider_neutral_contracts is True
     assert report.reasoning_routing.hidden_escalation_used is False
+
+
+def test_runtime_audit_reports_output_compression_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.output_compression.output_compression_active is True
+    assert report.output_compression.summary_deduplication_active is True
+    assert report.output_compression.validation_compaction_active is True
+    assert report.output_compression.report_density_active is True
+    assert report.output_compression.compact_completion_active is True
+    assert report.output_compression.expandable_reporting is True
+    assert report.output_compression.human_readable is True
+    assert report.output_compression.rollback_safe is True
+    assert report.output_compression.deterministic_compact_mode is True
+    assert report.output_compression.estimated_avoided_completion_tokens > 0
+    assert report.output_compression.estimated_avoided_repeated_summaries > 0
+    assert report.output_compression.hidden_reporting_used is False
+    assert report.output_compression.validation_skipped is False

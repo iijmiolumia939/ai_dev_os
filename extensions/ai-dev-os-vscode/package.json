@@ -87,6 +87,10 @@
     "onCommand:aiDevOs.showEscalationPolicy",
     "onCommand:aiDevOs.showSprintReasoningMap",
     "onCommand:aiDevOs.compactReasoningScope",
+    "onCommand:aiDevOs.toggleCompactReporting",
+    "onCommand:aiDevOs.showVerbosityPressure",
+    "onCommand:aiDevOs.expandCompletionSummary",
+    "onCommand:aiDevOs.showReportDensity",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -178,7 +182,11 @@
       {"command": "aiDevOs.showCostBudget", "title": "AI_DEV_OS: Show Cost Budget"},
       {"command": "aiDevOs.showEscalationPolicy", "title": "AI_DEV_OS: Show Escalation Policy"},
       {"command": "aiDevOs.showSprintReasoningMap", "title": "AI_DEV_OS: Show Sprint Reasoning Map"},
-      {"command": "aiDevOs.compactReasoningScope", "title": "AI_DEV_OS: Compact Reasoning Scope"}
+      {"command": "aiDevOs.compactReasoningScope", "title": "AI_DEV_OS: Compact Reasoning Scope"},
+      {"command": "aiDevOs.toggleCompactReporting", "title": "AI_DEV_OS: Toggle Compact Reporting"},
+      {"command": "aiDevOs.showVerbosityPressure", "title": "AI_DEV_OS: Show Verbosity Pressure"},
+      {"command": "aiDevOs.expandCompletionSummary", "title": "AI_DEV_OS: Expand Completion Summary"},
+      {"command": "aiDevOs.showReportDensity", "title": "AI_DEV_OS: Show Report Density"}
     ],
     "views": {
       "explorer": [

@@ -3,6 +3,7 @@ import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands'
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
+import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
@@ -12,6 +13,7 @@ import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health'
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
+import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
 import {
@@ -77,6 +79,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const rollbackView = new RolloutTreeProvider(rollout, 'rollback');
   const reasoningRouting = new ReasoningRoutingMonitor();
   const reasoningStatus = new ReasoningTierStatusBar(reasoningRouting);
+  const outputCompression = new OutputCompressionMonitor();
+  const compactReportingStatus = new CompactReportingStatusBar(outputCompression);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -159,6 +163,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   }
   const rolloutState = await rollout.evaluate();
   const reasoningState = reasoningStatus.refresh();
+  const compactReportingState = compactReportingStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -169,6 +174,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await notifications.warn(
       'startup-reasoning-budget-pressure',
       'AI_DEV_OS reasoning budget pressure is elevated. Review cost budget before escalating.',
+    );
+  }
+  if (compactReportingState.verbosityPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-output-verbosity-pressure',
+      'AI_DEV_OS report verbosity pressure is high. Use compact reporting or expand only when needed.',
     );
   }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
@@ -201,6 +212,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     presenceStatus,
     heartbeatStatus,
     reasoningStatus,
+    compactReportingStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -251,6 +263,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       [rolloutView, frictionView, readinessView, rollbackView],
     ),
     ...registerReasoningRoutingCommands(reasoningRouting, reasoningStatus, notifications),
+    ...registerOutputCompressionCommands(outputCompression, compactReportingStatus, notifications),
   );
 }
 

@@ -42,6 +42,10 @@ def test_sprint_close_recommends_next_session_bundle_and_remote_verification() -
             test_results=("pytest tests/session_orchestrator: pass",),
             remaining_risks=("remote CI pending",),
             next_roadmap=("release gate",),
+            commit="abc123",
+            ci_status="success",
+            runtime_audit_status="active",
+            rollout_summary="rollout unchanged",
         )
     )
 
@@ -50,6 +54,13 @@ def test_sprint_close_recommends_next_session_bundle_and_remote_verification() -
     assert frame.commit_push_required is True
     assert frame.remote_verification_required is True
     assert "Next sprint context seed" in frame.next_sprint_context_seed
+    assert frame.compact_reporting_active is True
+    assert "Commit: abc123" in frame.compact_sprint_completion
+    assert frame.compact_ci_summary == "CI: success"
+    assert frame.compact_runtime_audit_summary == "Runtime audit: active"
+    assert frame.compact_rollout_summary == "Rollout: compact-ref"
+    assert frame.expandable_completion_details
+    assert frame.estimated_avoided_completion_tokens >= 0
 
 
 def test_prompt_pack_is_copy_ready_plain_text() -> None:
