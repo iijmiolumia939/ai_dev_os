@@ -11,6 +11,11 @@ from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
 from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
 from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
 from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
+from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
+from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
+from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
+from ai_dev_os.persistence_governance.schema_evolution import SchemaEvolutionPolicy
+from ai_dev_os.persistence_governance.schema_migration import SchemaMigrationPolicy
 from ai_dev_os.prompt_modes.context_depth import ContextDepthPolicy
 from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
@@ -161,6 +166,16 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _workspace_persistence(args.workspace, args.sprint)["continuity_index"]
     if command == "cleanup-persistence":
         return _workspace_persistence(args.workspace, args.sprint)["persistence_cleanup"]
+    if command == "retention-policy":
+        return _persistence_governance(args.workspace, args.sprint)["retention_policy"]
+    if command == "persistence-budget":
+        return _persistence_governance(args.workspace, args.sprint)["persistence_budget"]
+    if command == "schema-evolution":
+        return _persistence_governance(args.workspace, args.sprint)["schema_evolution"]
+    if command == "schema-migration":
+        return _persistence_governance(args.workspace, args.sprint)["schema_migration"]
+    if command == "checkpoint-rotation":
+        return _persistence_governance(args.workspace, args.sprint)["checkpoint_rotation"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -632,6 +647,48 @@ def _workspace_persistence(workspace: str, sprint: str):
         "state_checkpoint": checkpoint,
         "continuity_index": index,
         "persistence_cleanup": cleanup,
+    }
+
+
+def _persistence_governance(workspace: str, sprint: str):
+    persistence = _workspace_persistence(workspace, sprint)
+    checkpoint_ids = tuple(f"checkpoint-{index}" for index in range(9))
+    retention = RetentionPolicy().apply(
+        checkpoint_generations=checkpoint_ids,
+        continuity_lineage=tuple(f"lineage-{index}" for index in range(10)),
+        stale_rollovers=("stale-rollover-1", "stale-rollover-2", "stale-rollover-3"),
+        inactive_sprints=("inactive-sprint-1", "inactive-sprint-2", "inactive-sprint-3"),
+        prompt_exports=tuple(f"prompt-export-{index}" for index in range(7)),
+        compact_bundles=tuple(f"compact-bundle-{index}" for index in range(10)),
+    )
+    budget = PersistenceBudgetPolicy().evaluate(
+        checkpoint_storage=18_000,
+        continuity_index_storage=8_000,
+        prompt_export_storage=10_000,
+        stale_persistence_storage=15_000,
+        schema_metadata_storage=2_000,
+    )
+    schema = SchemaEvolutionPolicy().evaluate(
+        schema_version="1.1",
+        current_version="0.9",
+    )
+    migration = SchemaMigrationPolicy().migrate(
+        state={
+            "schema_version": "0.9",
+            "raw_transcript": "excluded",
+            "summary": "bounded state",
+        },
+        from_version="0.9",
+        to_version="1.1",
+    )
+    rotation = CheckpointRotationPolicy().rotate(checkpoints=checkpoint_ids)
+    return {
+        "retention_policy": retention,
+        "persistence_budget": budget,
+        "schema_evolution": schema,
+        "schema_migration": migration,
+        "checkpoint_rotation": rotation,
+        "workspace_persistence": persistence,
     }
 
 

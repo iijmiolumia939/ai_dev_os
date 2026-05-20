@@ -23,6 +23,11 @@
     "onCommand:aiDevOs.cleanupStalePersistence",
     "onCommand:aiDevOs.exportLocalContinuityIndex",
     "onCommand:aiDevOs.resetLocalSessionState",
+    "onCommand:aiDevOs.showPersistenceBudget",
+    "onCommand:aiDevOs.rotateCheckpoints",
+    "onCommand:aiDevOs.validatePersistenceSchema",
+    "onCommand:aiDevOs.migrateLocalPersistence",
+    "onCommand:aiDevOs.cleanupExpiredContinuity",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -40,7 +45,12 @@
       {"command": "aiDevOs.showPersistenceState", "title": "AI_DEV_OS: Show Persistence State"},
       {"command": "aiDevOs.cleanupStalePersistence", "title": "AI_DEV_OS: Cleanup Stale Persistence"},
       {"command": "aiDevOs.exportLocalContinuityIndex", "title": "AI_DEV_OS: Export Local Continuity Index"},
-      {"command": "aiDevOs.resetLocalSessionState", "title": "AI_DEV_OS: Reset Local Session State"}
+      {"command": "aiDevOs.resetLocalSessionState", "title": "AI_DEV_OS: Reset Local Session State"},
+      {"command": "aiDevOs.showPersistenceBudget", "title": "AI_DEV_OS: Show Persistence Budget"},
+      {"command": "aiDevOs.rotateCheckpoints", "title": "AI_DEV_OS: Rotate Checkpoints"},
+      {"command": "aiDevOs.validatePersistenceSchema", "title": "AI_DEV_OS: Validate Persistence Schema"},
+      {"command": "aiDevOs.migrateLocalPersistence", "title": "AI_DEV_OS: Migrate Local Persistence"},
+      {"command": "aiDevOs.cleanupExpiredContinuity", "title": "AI_DEV_OS: Cleanup Expired Continuity"}
     ],
     "views": {
       "explorer": [

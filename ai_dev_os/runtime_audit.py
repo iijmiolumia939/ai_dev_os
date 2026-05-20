@@ -15,6 +15,11 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
+from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
+from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
+from ai_dev_os.persistence_governance.schema_evolution import SchemaEvolutionPolicy
+from ai_dev_os.persistence_governance.schema_migration import SchemaMigrationPolicy
 from ai_dev_os.prompt_modes.context_depth import ContextDepthPolicy
 from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
@@ -325,6 +330,17 @@ class WorkspacePersistenceAuditReport:
 
 
 @dataclass(frozen=True)
+class PersistenceGovernanceAuditReport:
+    retention_policy_active: bool
+    persistence_budget_active: bool
+    schema_evolution_active: bool
+    schema_migration_active: bool
+    checkpoint_rotation_active: bool
+    estimated_avoided_stale_persistence_growth: int
+    estimated_avoided_checkpoint_explosion: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -347,6 +363,7 @@ class RuntimeEnforcementAuditReport:
     vscode_integration: VSCodeIntegrationAuditReport
     session_boundary: SessionBoundaryAuditReport
     workspace_persistence: WorkspacePersistenceAuditReport
+    persistence_governance: PersistenceGovernanceAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1357,6 +1374,46 @@ def audit_workspace_persistence() -> WorkspacePersistenceAuditReport:
     )
 
 
+def audit_persistence_governance() -> PersistenceGovernanceAuditReport:
+    checkpoint_ids = tuple(f"checkpoint-{index}" for index in range(10))
+    retention = RetentionPolicy().apply(
+        checkpoint_generations=checkpoint_ids,
+        continuity_lineage=tuple(f"lineage-{index}" for index in range(12)),
+        stale_rollovers=("stale-rollover-1", "stale-rollover-2", "stale-rollover-3"),
+        inactive_sprints=("inactive-1", "inactive-2", "inactive-3", "inactive-4"),
+        prompt_exports=tuple(f"prompt-export-{index}" for index in range(8)),
+        compact_bundles=tuple(f"compact-bundle-{index}" for index in range(10)),
+    )
+    budget = PersistenceBudgetPolicy().evaluate(
+        checkpoint_storage=18_000,
+        continuity_index_storage=9_000,
+        prompt_export_storage=11_000,
+        stale_persistence_storage=15_000,
+        schema_metadata_storage=2_000,
+    )
+    schema = SchemaEvolutionPolicy().evaluate(schema_version="1.1", current_version="0.9")
+    migration = SchemaMigrationPolicy().migrate(
+        state={"schema_version": "0.9", "raw_transcript": "excluded", "summary": "kept"},
+        from_version="0.9",
+        to_version="1.1",
+    )
+    rotation = CheckpointRotationPolicy().rotate(checkpoints=checkpoint_ids)
+    return PersistenceGovernanceAuditReport(
+        retention_policy_active=retention.cleanup_required
+        and retention.retention_pressure in {"medium", "high"},
+        persistence_budget_active=budget.compact_required and budget.current_budget_usage > 0,
+        schema_evolution_active=schema.migration_required
+        and "session-boundary.json" in schema.managed_files,
+        schema_migration_active=migration.version_upgraded
+        and not migration.raw_persistence_replay_allowed,
+        checkpoint_rotation_active=rotation.rotation_required
+        and bool(rotation.expired_checkpoints),
+        estimated_avoided_stale_persistence_growth=retention.estimated_saved_storage
+        + budget.stale_persistence_storage,
+        estimated_avoided_checkpoint_explosion=len(rotation.expired_checkpoints) * 512,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1380,6 +1437,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         vscode_integration=audit_vscode_integration(),
         session_boundary=audit_session_boundary(),
         workspace_persistence=audit_workspace_persistence(),
+        persistence_governance=audit_persistence_governance(),
     )
 
 
