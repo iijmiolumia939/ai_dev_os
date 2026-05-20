@@ -56,6 +56,7 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.provider_routing import ProviderRoutingRuntime
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
@@ -676,6 +677,30 @@ class ReasoningScopeAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderRoutingAuditReport:
+    provider_routing_active: bool
+    provider_capability_matrix_active: bool
+    provider_budget_policy_active: bool
+    provider_pressure_active: bool
+    provider_downgrade_active: bool
+    provider_observability_active: bool
+    estimated_avoided_premium_provider_burn: int
+    estimated_avoided_unnecessary_high_tier_usage: int
+    recommended_provider_class: str
+    provider_burn_pressure: str
+    premium_vs_cheap_ratio: float
+    no_real_billing_api: bool
+    no_hidden_provider_switching: bool
+    no_automatic_provider_execution: bool
+    no_provider_upload: bool
+    no_hidden_escalation: bool
+    provider_neutral: bool
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -713,6 +738,7 @@ class RuntimeEnforcementAuditReport:
     retrieval_budget: RetrievalBudgetAuditReport
     incremental_context: IncrementalContextAuditReport
     reasoning_scope: ReasoningScopeAuditReport
+    provider_routing: ProviderRoutingAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2524,6 +2550,46 @@ def audit_reasoning_scope() -> ReasoningScopeAuditReport:
     )
 
 
+def audit_provider_routing() -> ProviderRoutingAuditReport:
+    frame = ProviderRoutingRuntime().evaluate(
+        cognition_tier="MEDIUM",
+        implementation_patch=True,
+        compact_summary=True,
+        premium_units_used=9,
+        premium_reasoning_requests=2,
+        premium_escalations=1,
+        previous_distribution=("LOW:2", "MEDIUM:1"),
+    )
+    return ProviderRoutingAuditReport(
+        provider_routing_active=frame.provider_routing_active,
+        provider_capability_matrix_active=(
+            frame.capability_matrix.deterministic_provider_metadata_only
+        ),
+        provider_budget_policy_active=frame.budget_policy.deterministic_estimate
+        and not frame.budget_policy.billing_api_used,
+        provider_pressure_active=frame.pressure.provider_pressure in {"LOW", "MEDIUM", "HIGH"},
+        provider_downgrade_active=frame.downgrade.quality_floor_aware_downgrade,
+        provider_observability_active=frame.observability.no_real_billing_integration
+        and frame.observability.deterministic_estimated_burn_only,
+        estimated_avoided_premium_provider_burn=(frame.estimated_avoided_premium_provider_burn),
+        estimated_avoided_unnecessary_high_tier_usage=(
+            frame.estimated_avoided_unnecessary_high_tier_usage
+        ),
+        recommended_provider_class=frame.recommendation.recommended_provider_class,
+        provider_burn_pressure=frame.budget_policy.provider_burn_pressure,
+        premium_vs_cheap_ratio=frame.observability.premium_vs_cheap_ratio,
+        no_real_billing_api=frame.no_real_billing_api,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        no_automatic_provider_execution=frame.no_automatic_provider_execution,
+        no_provider_upload=frame.no_provider_upload,
+        no_hidden_escalation=frame.no_hidden_escalation,
+        provider_neutral=frame.provider_neutral,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2567,6 +2633,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         retrieval_budget=audit_retrieval_budget(),
         incremental_context=audit_incremental_context(),
         reasoning_scope=audit_reasoning_scope(),
+        provider_routing=audit_provider_routing(),
     )
 
 

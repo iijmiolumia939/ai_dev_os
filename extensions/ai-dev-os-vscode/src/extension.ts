@@ -6,6 +6,7 @@ import {registerGovernanceTrendCommands} from './commands/governanceTrendCommand
 import {registerIncrementalContextCommands} from './commands/incrementalContextCommands';
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
+import {registerProviderRoutingCommands} from './commands/providerRoutingCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
@@ -20,6 +21,12 @@ import {RateLimitedNotifications} from './notifications/rateLimitedNotifications
 import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
+import {
+  PremiumProviderStatusBar,
+  ProviderDowngradeStatusBar,
+  ProviderPressureStatusBar,
+  ProviderRoutingMonitor,
+} from './providerRouting/providerRouting';
 import {
   GovernancePresenceMonitor,
   GovernancePresenceStatusBar,
@@ -93,6 +100,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const retrievalBudgetStatus = new RetrievalBudgetStatusBar(retrievalBudget);
   const incrementalContext = new IncrementalContextMonitor();
   const incrementalContextStatus = new IncrementalContextStatusBar(incrementalContext);
+  const providerRouting = new ProviderRoutingMonitor();
+  const premiumProviderStatus = new PremiumProviderStatusBar(providerRouting);
+  const providerDowngradeStatus = new ProviderDowngradeStatusBar(providerRouting);
+  const providerPressureStatus = new ProviderPressureStatusBar(providerRouting);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -179,6 +190,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const compactReportingState = compactReportingStatus.refresh();
   const retrievalBudgetState = retrievalBudgetStatus.refresh();
   const incrementalContextState = incrementalContextStatus.refresh();
+  const providerRoutingState = premiumProviderStatus.refresh();
+  providerDowngradeStatus.refresh();
+  providerPressureStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -215,6 +229,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS replay pressure is high. Continue with delta context only.',
     );
   }
+  if (providerRoutingState.providerBurnPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-provider-routing-pressure-warning',
+      'AI_DEV_OS provider pressure is high. Review downgrade recommendations before premium use.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -249,6 +269,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     compactReportingStatus,
     retrievalBudgetStatus,
     incrementalContextStatus,
+    premiumProviderStatus,
+    providerDowngradeStatus,
+    providerPressureStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -305,6 +328,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     ...registerIncrementalContextCommands(
       incrementalContext,
       incrementalContextStatus,
+      notifications,
+    ),
+    ...registerProviderRoutingCommands(
+      providerRouting,
+      premiumProviderStatus,
+      providerDowngradeStatus,
+      providerPressureStatus,
       notifications,
     ),
   );

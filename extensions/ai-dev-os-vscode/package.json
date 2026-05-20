@@ -107,6 +107,11 @@
     "onCommand:aiDevOs.showReplayPressure",
     "onCommand:aiDevOs.compactIncrementalContext",
     "onCommand:aiDevOs.showIncrementalRecommendations",
+    "onCommand:aiDevOs.showProviderRouting",
+    "onCommand:aiDevOs.showProviderBudget",
+    "onCommand:aiDevOs.showDowngradeRecommendations",
+    "onCommand:aiDevOs.showProviderDistribution",
+    "onCommand:aiDevOs.compactProviderRouting",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -218,7 +223,12 @@
       {"command": "aiDevOs.showDeltaAudit", "title": "AI_DEV_OS: Show Delta Audit"},
       {"command": "aiDevOs.showReplayPressure", "title": "AI_DEV_OS: Show Replay Pressure"},
       {"command": "aiDevOs.compactIncrementalContext", "title": "AI_DEV_OS: Compact Incremental Context"},
-      {"command": "aiDevOs.showIncrementalRecommendations", "title": "AI_DEV_OS: Show Incremental Recommendations"}
+      {"command": "aiDevOs.showIncrementalRecommendations", "title": "AI_DEV_OS: Show Incremental Recommendations"},
+      {"command": "aiDevOs.showProviderRouting", "title": "AI_DEV_OS: Show Provider Routing"},
+      {"command": "aiDevOs.showProviderBudget", "title": "AI_DEV_OS: Show Provider Budget"},
+      {"command": "aiDevOs.showDowngradeRecommendations", "title": "AI_DEV_OS: Show Downgrade Recommendations"},
+      {"command": "aiDevOs.showProviderDistribution", "title": "AI_DEV_OS: Show Provider Distribution"},
+      {"command": "aiDevOs.compactProviderRouting", "title": "AI_DEV_OS: Compact Provider Routing"}
     ],
     "views": {
       "explorer": [
