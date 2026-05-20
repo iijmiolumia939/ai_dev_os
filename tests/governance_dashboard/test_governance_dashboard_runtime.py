@@ -119,7 +119,8 @@ def test_extension_bounded_observability_static() -> None:
 
     assert "fetch(" not in lowered
     assert "xmlhttprequest" not in lowered
-    assert "workbench.action.chat" not in lowered
+    assert "workbench.action.chat.submit" not in lowered
+    assert "workbench.action.chat.acceptinput" not in lowered
     assert "github.copilot" not in lowered
     assert "shutdown" not in lowered
     assert "git commit" not in lowered

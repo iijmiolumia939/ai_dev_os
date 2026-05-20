@@ -47,8 +47,9 @@ def test_vscode_persistence_has_no_network_telemetry_or_ui_automation() -> None:
         "https://",
         "http://",
         "telemetry",
-        "workbench.action.chat",
         "github.copilot",
+        "workbench.action.chat.submit",
+        "workbench.action.chat.acceptinput",
     )
     assert all(item not in source.lower() for item in forbidden)
 

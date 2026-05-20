@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import {ContinuityClipboard} from '../clipboard/continuityClipboard';
+import {BootstrapDraftResult, DraftInjectionClient} from '../handoff/draftInjectionClient';
 import {HandoffClient} from '../handoff/handoffClient';
 import {RateLimitedNotifications} from '../notifications/rateLimitedNotifications';
 import {BoundaryStateStore} from '../state/boundaryState';
@@ -9,6 +10,35 @@ function workspaceFolder(): string {
   return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
 }
 
+const chatOpenCommand = 'workbench.action.chat.open';
+const newChatCommand = 'workbench.action.chat.newChat';
+const enterReadyState = 'AI_DEV_OS ENTER_READY';
+const waitingForSendState = 'AI_DEV_OS WAITING_FOR_SEND';
+
+function previewText(result: BootstrapDraftResult): string {
+  return [
+    'AI_DEV_OS Bootstrap Draft Preview',
+    `Estimated tokens: ${result.preview.estimated_token_size}`,
+    `Target: ${result.target}`,
+    `Awaiting human send: ${result.awaiting_human_send}`,
+    '',
+    'Included continuity:',
+    ...result.preview.included_continuity.map(item => `- ${item}`),
+    '',
+    'Excluded stale context:',
+    ...result.preview.excluded_stale_context.map(item => `- ${item}`),
+    '',
+    'Sprint focus:',
+    result.preview.sprint_focus,
+    '',
+    'Architecture isolation:',
+    result.preview.architecture_isolation,
+    '',
+    'Draft:',
+    result.draft_text,
+  ].join('\n');
+}
+
 export function registerSessionCommands(
   context: vscode.ExtensionContext,
   store: BoundaryStateStore,
@@ -16,7 +46,44 @@ export function registerSessionCommands(
   view: SessionBoundaryViewProvider,
 ): vscode.Disposable[] {
   const handoff = new HandoffClient();
+  const drafts = new DraftInjectionClient();
   const clipboard = new ContinuityClipboard();
+  const enterOnlyStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 90);
+  enterOnlyStatus.text = enterReadyState;
+  enterOnlyStatus.tooltip = 'Bootstrap draft ready; press Enter/Send manually in chat.';
+  enterOnlyStatus.show();
+
+  const openDraftInChat = async (result: BootstrapDraftResult): Promise<boolean> => {
+    enterOnlyStatus.text = result.preview.enter_ready_state || enterReadyState;
+    try {
+      try {
+        await vscode.commands.executeCommand(newChatCommand);
+      } catch {
+        // 古い VS Code でも、表示中の chat surface への prefill は継続する。
+      }
+      await vscode.commands.executeCommand(chatOpenCommand, {
+        query: result.draft_text,
+        isPartialQuery: true,
+      });
+      enterOnlyStatus.text = result.preview.waiting_for_send_state || waitingForSendState;
+      return true;
+    } catch {
+      await clipboard.copy(result.draft_text);
+      enterOnlyStatus.text = result.preview.waiting_for_send_state || waitingForSendState;
+      return false;
+    }
+  };
+
+  const generateBootstrapDraft = async (): Promise<BootstrapDraftResult> => {
+    const result = await drafts.generate(workspaceFolder());
+    await store.update({
+      lastExportedContinuityBundle: result.draft_text,
+      pendingRolloverState: true,
+      currentEnforcementState: 'ROLLOVER_REQUIRED',
+      lastRolloverTimestamp: Date.now(),
+    });
+    return result;
+  };
 
   const sessionAudit = vscode.commands.registerCommand('aiDevOs.sessionAudit', async () => {
     const state = store.read();
@@ -87,6 +154,69 @@ export function registerSessionCommands(
     },
   );
 
+  const startNewSprintSession = vscode.commands.registerCommand(
+    'aiDevOs.startNewSprintSession',
+    async () => {
+      const result = await generateBootstrapDraft();
+      const opened = await openDraftInChat(result);
+      if (opened) {
+        await notifications.info(
+          'bootstrap-draft-opened',
+          'AI_DEV_OS bootstrap draft is open. Press Enter/Send when ready.',
+        );
+      } else {
+        await notifications.warn(
+          'bootstrap-draft-clipboard-fallback',
+          'AI_DEV_OS bootstrap draft copied because chat prefill was unavailable.',
+        );
+      }
+      view.refresh();
+    },
+  );
+
+  const openBootstrapChat = vscode.commands.registerCommand(
+    'aiDevOs.openBootstrapChat',
+    async () => {
+      const result = await generateBootstrapDraft();
+      await openDraftInChat(result);
+      view.refresh();
+    },
+  );
+
+  const previewBootstrapDraft = vscode.commands.registerCommand(
+    'aiDevOs.previewBootstrapDraft',
+    async () => {
+      const result = await generateBootstrapDraft();
+      const document = await vscode.workspace.openTextDocument({
+        language: 'markdown',
+        content: previewText(result),
+      });
+      await vscode.window.showTextDocument(document, {preview: false});
+      view.refresh();
+    },
+  );
+
+  const retryDraftInjection = vscode.commands.registerCommand(
+    'aiDevOs.retryDraftInjection',
+    async () => {
+      const result = await generateBootstrapDraft();
+      await openDraftInChat(result);
+      await notifications.info(
+        'bootstrap-draft-retry',
+        'AI_DEV_OS bootstrap draft injection retried; final send remains manual.',
+      );
+      view.refresh();
+    },
+  );
+
+  const showEnterOnlyState = vscode.commands.registerCommand(
+    'aiDevOs.showEnterOnlyState',
+    async () => {
+      await vscode.window.showInformationMessage(enterOnlyStatus.text);
+      view.refresh();
+    },
+  );
+
   const compactCurrentSession = vscode.commands.registerCommand(
     'aiDevOs.compactCurrentSession',
     async () => {
@@ -123,8 +253,14 @@ export function registerSessionCommands(
     openNewSessionPrompt,
     confirmSessionRollover,
     showBoundaryState,
+    startNewSprintSession,
+    openBootstrapChat,
+    previewBootstrapDraft,
+    retryDraftInjection,
+    showEnterOnlyState,
     compactCurrentSession,
     showStaleWarning,
+    enterOnlyStatus,
     vscode.window.registerTreeDataProvider('aiDevOsSessionBoundary', view),
   ];
 }

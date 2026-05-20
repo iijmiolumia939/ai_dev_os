@@ -72,8 +72,9 @@ def test_vscode_simplification_has_no_network_or_chat_automation() -> None:
         "xmlhttprequest",
         "https://",
         "http://",
-        "workbench.action.chat",
         "github.copilot",
+        "workbench.action.chat.submit",
+        "workbench.action.chat.acceptinput",
         "git commit",
         "git push",
     )

@@ -49,8 +49,9 @@ def test_tc_presence_05_extension_visibility_has_no_hidden_chat_or_network_contr
         "XMLHttpRequest",
         "https://",
         "http://",
-        "workbench.action.chat",
         "github.copilot",
+        "workbench.action.chat.submit",
+        "workbench.action.chat.acceptinput",
         "playwright",
         "selenium",
     )

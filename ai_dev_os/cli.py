@@ -45,6 +45,7 @@ from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
 from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPolicy
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
+from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
 from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
 from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
@@ -175,6 +176,8 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _session_boundary(args.workspace, args.sprint)["handoff_confirmation"]
     if command == "session-boundary-handoff":
         return _session_boundary_handoff(args.workspace, args.sprint)
+    if command == "bootstrap-draft":
+        return _bootstrap_draft(args.workspace, args.sprint)
     if command == "persistence-store":
         return _workspace_persistence(args.workspace, args.sprint)["persistence_store"]
     if command == "restore-session-state":
@@ -638,6 +641,14 @@ def _session_boundary_handoff(workspace: str, sprint: str):
         "rollover_state": boundary["rollover_state"],
         "handoff_confirmation": boundary["handoff_confirmation"],
     }
+
+
+def _bootstrap_draft(workspace: str, sprint: str):
+    project_name = Path(workspace).resolve().name or "workspace"
+    return DraftInjectionPolicy().build(
+        project_name=project_name,
+        sprint_id=sprint,
+    )
 
 
 def _workspace_persistence(workspace: str, sprint: str):

@@ -49,7 +49,8 @@ def test_extension_no_network_dependency_or_chat_ui_automation() -> None:
 
     forbidden = ("fetch(", "XMLHttpRequest", "https://", "http://", "playwright", "selenium")
     assert all(item not in source for item in forbidden)
-    assert "workbench.action.chat" not in source
+    assert "workbench.action.chat.submit" not in source
+    assert "workbench.action.chat.acceptInput" not in source
     assert "github.copilot" not in source.lower()
 
 

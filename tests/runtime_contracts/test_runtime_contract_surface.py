@@ -68,5 +68,6 @@ def test_vscode_runtime_graph_has_no_network_or_chat_automation() -> None:
     forbidden = ("fetch(", "XMLHttpRequest", "https://", "http://", "playwright", "selenium")
 
     assert all(item not in source for item in forbidden)
-    assert "workbench.action.chat" not in source
+    assert "workbench.action.chat.submit" not in source
+    assert "workbench.action.chat.acceptInput" not in source
     assert "github.copilot" not in source.lower()

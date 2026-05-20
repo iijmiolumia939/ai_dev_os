@@ -65,6 +65,7 @@ from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
 from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
+from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
 from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
 from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
@@ -475,6 +476,23 @@ class VSCodePresenceAuditReport:
 
 
 @dataclass(frozen=True)
+class DraftInjectionAuditReport:
+    draft_injection_active: bool
+    chat_prefill_active: bool
+    chat_launch_active: bool
+    chat_target_detection_active: bool
+    enter_only_rollover_active: bool
+    clipboard_fallback_active: bool
+    no_auto_send: bool
+    no_hidden_continuation: bool
+    no_background_message_dispatch: bool
+    no_silent_prompt_mutation: bool
+    estimated_avoided_handoff_friction: int
+    estimated_avoided_stale_continuity_replay: int
+    status_bar_states: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class ConsumerRolloutAuditReport:
     consumer_rollout_active: bool
     rollout_audit_active: bool
@@ -523,6 +541,7 @@ class RuntimeEnforcementAuditReport:
     governance_core: GovernanceCoreAuditReport
     release_readiness: ReleaseReadinessAuditReport
     vscode_presence: VSCodePresenceAuditReport
+    draft_injection: DraftInjectionAuditReport
     consumer_rollout: ConsumerRolloutAuditReport
 
 
@@ -1888,6 +1907,31 @@ def audit_vscode_presence() -> VSCodePresenceAuditReport:
     )
 
 
+def audit_draft_injection() -> DraftInjectionAuditReport:
+    frame = DraftInjectionPolicy().build(
+        project_name="workspace",
+        sprint_id="next",
+        requested_target="vscode_chat",
+    )
+    avoided_friction = 900 if frame.draft_prefilled and frame.awaiting_human_send else 300
+    avoided_stale = len(frame.preview.excluded_stale_context) * 420
+    return DraftInjectionAuditReport(
+        draft_injection_active=frame.draft_prefilled and frame.continuity_injected,
+        chat_prefill_active=frame.draft_prefilled,
+        chat_launch_active=frame.chat_opened,
+        chat_target_detection_active=frame.target == "vscode_chat",
+        enter_only_rollover_active=frame.awaiting_human_send and not frame.auto_send,
+        clipboard_fallback_active=frame.clipboard_fallback_active,
+        no_auto_send=not frame.auto_send,
+        no_hidden_continuation=not frame.hidden_continuation,
+        no_background_message_dispatch=not frame.background_message_dispatch,
+        no_silent_prompt_mutation=not frame.silent_prompt_mutation,
+        estimated_avoided_handoff_friction=avoided_friction,
+        estimated_avoided_stale_continuity_replay=avoided_stale,
+        status_bar_states=frame.status_bar_states,
+    )
+
+
 def audit_consumer_rollout() -> ConsumerRolloutAuditReport:
     consumer_repo = _default_consumer_repo()
     audit = ConsumerRolloutAuditPolicy().evaluate(consumer_repo, platform_repo=".")
@@ -1953,6 +1997,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         governance_core=audit_governance_core(),
         release_readiness=audit_release_readiness(),
         vscode_presence=audit_vscode_presence(),
+        draft_injection=audit_draft_injection(),
         consumer_rollout=audit_consumer_rollout(),
     )
 
