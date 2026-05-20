@@ -62,6 +62,12 @@
     "onCommand:aiDevOs.showPrimitiveReuse",
     "onCommand:aiDevOs.showBoundedRetention",
     "onCommand:aiDevOs.showCompactExportStatus",
+    "onCommand:aiDevOs.showGovernancePresence",
+    "onCommand:aiDevOs.showRuntimeHeartbeat",
+    "onCommand:aiDevOs.checkExtensionVersion",
+    "onCommand:aiDevOs.showPresenceStatus",
+    "onCommand:aiDevOs.showStaleExtensionWarning",
+    "onCommand:aiDevOs.refreshGovernancePresence",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -124,7 +130,13 @@
       {"command": "aiDevOs.showSharedPrimitives", "title": "AI_DEV_OS: Show Shared Primitives"},
       {"command": "aiDevOs.showPrimitiveReuse", "title": "AI_DEV_OS: Show Primitive Reuse"},
       {"command": "aiDevOs.showBoundedRetention", "title": "AI_DEV_OS: Show Bounded Retention"},
-      {"command": "aiDevOs.showCompactExportStatus", "title": "AI_DEV_OS: Show Compact Export Status"}
+      {"command": "aiDevOs.showCompactExportStatus", "title": "AI_DEV_OS: Show Compact Export Status"},
+      {"command": "aiDevOs.showGovernancePresence", "title": "AI_DEV_OS: Show Governance Presence"},
+      {"command": "aiDevOs.showRuntimeHeartbeat", "title": "AI_DEV_OS: Show Runtime Heartbeat"},
+      {"command": "aiDevOs.checkExtensionVersion", "title": "AI_DEV_OS: Check Extension Version"},
+      {"command": "aiDevOs.showPresenceStatus", "title": "AI_DEV_OS: Show Presence Status"},
+      {"command": "aiDevOs.showStaleExtensionWarning", "title": "AI_DEV_OS: Show Stale Extension Warning"},
+      {"command": "aiDevOs.refreshGovernancePresence", "title": "AI_DEV_OS: Refresh Governance Presence"}
     ],
     "views": {
       "explorer": [

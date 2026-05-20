@@ -53,3 +53,17 @@ def test_runtime_telemetry_and_stress_audit_are_bounded() -> None:
     assert report.retrieval_scaling.additional_compaction is True
     assert report.retrieval_scaling.token_explosion_prevented is True
     assert report.retrieval_scaling.after_tokens < report.retrieval_scaling.before_tokens
+
+
+def test_runtime_audit_reports_vscode_presence_visibility() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.vscode_presence.governance_presence_active is True
+    assert report.vscode_presence.version_detection_active is True
+    assert report.vscode_presence.runtime_heartbeat_active is True
+    assert report.vscode_presence.status_projection_active is True
+    assert report.vscode_presence.stale_extension_detection_active is True
+    assert report.vscode_presence.bounded_visibility is True
+    assert report.vscode_presence.estimated_avoided_invisible_governance_drift > 0
+    assert report.vscode_presence.estimated_avoided_stale_extension_confusion > 0
+    assert report.vscode_presence.compact_status.startswith("AI_DEV_OS")

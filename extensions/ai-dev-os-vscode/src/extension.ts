@@ -13,6 +13,12 @@ import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/g
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
+import {
+  GovernancePresenceMonitor,
+  GovernancePresenceStatusBar,
+  RuntimeHeartbeatStatusBar,
+  registerGovernancePresenceCommands,
+} from './presence/governancePresence';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
@@ -54,6 +60,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const runtimeOverlapView = new RuntimeOverlapViewProvider(runtimeSimplification);
   const contractOverlapView = new ContractOverlapViewProvider(runtimeSimplification);
   const mergeCandidateView = new MergeCandidateViewProvider(runtimeSimplification);
+  const presence = new GovernancePresenceMonitor(context);
+  const presenceStatus = new GovernancePresenceStatusBar(presence);
+  const heartbeatStatus = new RuntimeHeartbeatStatusBar(presence);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -62,6 +71,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const coreState = governanceCoreStatus.refresh();
   const runtimeGraphState = architectureStatus.refresh();
   const simplificationState = simplificationStatus.refresh();
+  const presenceState = await presenceStatus.refresh(restored, healthState, runtimeGraphState);
+  await heartbeatStatus.refresh(restored, healthState, runtimeGraphState);
   await store.update(persistence.toBoundaryState(restored));
   if (restored.rollover_state.rollover_pending || restored.stale_warning_state.stale_session_detected) {
     await notifications.warn(
@@ -120,6 +131,18 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `AI_DEV_OS governance core primitive reuse targets: ${coreState.reuseTargets.length}.`,
     );
   }
+  if (presenceState.staleExtension.staleExtensionDetected) {
+    await notifications.warn(
+      'startup-presence-stale-extension',
+      'AI_DEV_OS installed extension is stale or missing visibility capabilities.',
+    );
+  }
+  if (presenceState.heartbeat.staleHeartbeat) {
+    await notifications.warn(
+      'startup-presence-heartbeat-warning',
+      'AI_DEV_OS runtime heartbeat is stale or unavailable.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -143,6 +166,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     governanceCoreStatus,
     architectureStatus,
     simplificationStatus,
+    presenceStatus,
+    heartbeatStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -177,6 +202,15 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       runtimeOverlapView,
       contractOverlapView,
       mergeCandidateView,
+    ),
+    ...registerGovernancePresenceCommands(
+      presence,
+      presenceStatus,
+      heartbeatStatus,
+      notifications,
+      restored,
+      healthState,
+      runtimeGraphState,
     ),
   );
 }

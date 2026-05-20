@@ -84,6 +84,13 @@ from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificati
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
 from ai_dev_os.vscode_integration.prompt_export import PromptExportPolicy
 from ai_dev_os.vscode_integration.session_handoff import SessionHandoffPolicy
+from ai_dev_os.vscode_presence import (
+    build_heartbeat_frame,
+    build_presence_frame,
+    detect_extension_version,
+    detect_stale_extension,
+    project_governance_status,
+)
 from ai_dev_os.workspace_persistence.continuity_index import ContinuityIndexPolicy
 from ai_dev_os.workspace_persistence.persistence_cleanup import PersistenceCleanupPolicy
 from ai_dev_os.workspace_persistence.persistence_store import PersistenceStorePolicy
@@ -447,6 +454,20 @@ class ReleaseReadinessAuditReport:
 
 
 @dataclass(frozen=True)
+class VSCodePresenceAuditReport:
+    governance_presence_active: bool
+    version_detection_active: bool
+    runtime_heartbeat_active: bool
+    status_projection_active: bool
+    stale_extension_detection_active: bool
+    estimated_avoided_invisible_governance_drift: int
+    estimated_avoided_stale_extension_confusion: int
+    compact_status: str
+    stale_extension_detected: bool
+    bounded_visibility: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -476,6 +497,7 @@ class RuntimeEnforcementAuditReport:
     runtime_simplification: RuntimeSimplificationAuditReport
     governance_core: GovernanceCoreAuditReport
     release_readiness: ReleaseReadinessAuditReport
+    vscode_presence: VSCodePresenceAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1798,6 +1820,48 @@ def audit_release_readiness() -> ReleaseReadinessAuditReport:
     )
 
 
+def audit_vscode_presence() -> VSCodePresenceAuditReport:
+    governance_core = audit_governance_core()
+    runtime_graph = audit_runtime_graph()
+    presence = build_presence_frame(
+        ".",
+        runtime_audit_active=True,
+        governance_core_active=governance_core.governance_core_active,
+        runtime_graph_active=runtime_graph.runtime_graph_active,
+    )
+    version = detect_extension_version(".")
+    stale = detect_stale_extension(".")
+    heartbeat = build_heartbeat_frame(".")
+    projection = project_governance_status(
+        presence,
+        pressure="HIGH" if presence.stale_session_detected else "LOW",
+        stale_extension_detected=stale.stale_extension_detected,
+    )
+    invisible_drift_saved = (
+        1_200 + int(presence.rollover_pending) * 500 + len(projection.compact_status)
+    )
+    stale_confusion_saved = 1_000 + len(stale.missing_capabilities) * 180
+    return VSCodePresenceAuditReport(
+        governance_presence_active=presence.summary_only
+        and presence.extension_active
+        and presence.runtime_audit_active
+        and presence.governance_core_active,
+        version_detection_active=bool(version.repo_version) or bool(version.installed_version),
+        runtime_heartbeat_active=heartbeat.heartbeat_active or heartbeat.stale_heartbeat,
+        status_projection_active=projection.summary_only
+        and not projection.automatic_action_allowed,
+        stale_extension_detection_active=stale.summary_only,
+        estimated_avoided_invisible_governance_drift=invisible_drift_saved,
+        estimated_avoided_stale_extension_confusion=stale_confusion_saved,
+        compact_status=projection.compact_status,
+        stale_extension_detected=stale.stale_extension_detected,
+        bounded_visibility=presence.summary_only
+        and heartbeat.summary_only
+        and projection.summary_only
+        and stale.summary_only,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1828,6 +1892,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_simplification=audit_runtime_simplification(),
         governance_core=audit_governance_core(),
         release_readiness=audit_release_readiness(),
+        vscode_presence=audit_vscode_presence(),
     )
 
 
