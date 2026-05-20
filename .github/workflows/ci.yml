@@ -38,7 +38,7 @@ jobs:
       - name: Bootstrap validation
         run: python -m ai_dev_os.bootstrap.init_project --type scientific --name ci-scientific-project --runtime-type scientific --scientific-mode --output-dir _tmp_bootstrap_check
       - name: Installed namespace smoke
-        run: python -c "import ai_dev_os, ai_dev_os.bootstrap, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.governance_health, ai_dev_os.governance_trends, ai_dev_os.persistence_governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.workspace_persistence, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
+        run: python -c "import ai_dev_os, ai_dev_os.bootstrap, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.governance_health, ai_dev_os.governance_trends, ai_dev_os.persistence_governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.runtime_graph, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.workspace_persistence, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
       - name: Tests
         run: python -m pytest
       - name: Retrieval scaling validation
@@ -81,6 +81,10 @@ jobs:
         run: python -m pytest tests/governance_trends
       - name: Governance drift validation
         run: python -m pytest tests/governance_drift
+      - name: Runtime graph validation
+        run: python -m pytest tests/runtime_graph
+      - name: Runtime contract validation
+        run: python -m pytest tests/runtime_contracts
       - name: VSCode extension compile check
         working-directory: extensions/ai-dev-os-vscode
         run: |
@@ -106,4 +110,4 @@ jobs:
           python -m pip install -e .[scientific]
           python -m pip install -e .[routing]
       - name: Import smoke
-        run: python -c "import ai_dev_os, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.governance_health, ai_dev_os.governance_trends, ai_dev_os.persistence_governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.providers, ai_dev_os.workspace_persistence, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"
+        run: python -c "import ai_dev_os, ai_dev_os.cli, ai_dev_os.context_subset, ai_dev_os.copilot_usage, ai_dev_os.governance, ai_dev_os.governance_health, ai_dev_os.governance_trends, ai_dev_os.persistence_governance, ai_dev_os.prompt_modes, ai_dev_os.repository_intelligence, ai_dev_os.retrieval, ai_dev_os.runtime_graph, ai_dev_os.session_boundary, ai_dev_os.session_lifecycle, ai_dev_os.session_orchestrator, ai_dev_os.telemetry, ai_dev_os.integrations, ai_dev_os.providers, ai_dev_os.workspace_persistence, ai_dev_os.workspace_snapshot, ai_dev_os.vscode_integration"

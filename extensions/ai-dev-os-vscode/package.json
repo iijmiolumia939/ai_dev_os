@@ -45,8 +45,16 @@
     "onCommand:aiDevOs.showDashboardDelta",
     "onCommand:aiDevOs.compactGovernanceWindow",
     "onCommand:aiDevOs.resetGovernanceTrendWindow",
+    "onCommand:aiDevOs.showRuntimeGraph",
+    "onCommand:aiDevOs.showRuntimeClusters",
+    "onCommand:aiDevOs.showContractSurface",
+    "onCommand:aiDevOs.showArchitecturePressure",
+    "onCommand:aiDevOs.showOversizedRuntimeWarnings",
+    "onCommand:aiDevOs.compactRuntimeGraph",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
+    "onView:aiDevOsRuntimeGraph",
+    "onView:aiDevOsRuntimeClusters",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -82,7 +90,13 @@
       {"command": "aiDevOs.showGovernanceRegression", "title": "AI_DEV_OS: Show Governance Regression"},
       {"command": "aiDevOs.showDashboardDelta", "title": "AI_DEV_OS: Show Dashboard Delta"},
       {"command": "aiDevOs.compactGovernanceWindow", "title": "AI_DEV_OS: Compact Governance Window"},
-      {"command": "aiDevOs.resetGovernanceTrendWindow", "title": "AI_DEV_OS: Reset Governance Trend Window"}
+      {"command": "aiDevOs.resetGovernanceTrendWindow", "title": "AI_DEV_OS: Reset Governance Trend Window"},
+      {"command": "aiDevOs.showRuntimeGraph", "title": "AI_DEV_OS: Show Runtime Graph"},
+      {"command": "aiDevOs.showRuntimeClusters", "title": "AI_DEV_OS: Show Runtime Clusters"},
+      {"command": "aiDevOs.showContractSurface", "title": "AI_DEV_OS: Show Contract Surface"},
+      {"command": "aiDevOs.showArchitecturePressure", "title": "AI_DEV_OS: Show Architecture Pressure"},
+      {"command": "aiDevOs.showOversizedRuntimeWarnings", "title": "AI_DEV_OS: Show Oversized Runtime Warnings"},
+      {"command": "aiDevOs.compactRuntimeGraph", "title": "AI_DEV_OS: Compact Runtime Graph"}
     ],
     "views": {
       "explorer": [
@@ -97,6 +111,14 @@
         {
           "id": "aiDevOsGovernanceTrends",
           "name": "AI_DEV_OS Governance Trends"
+        },
+        {
+          "id": "aiDevOsRuntimeGraph",
+          "name": "AI_DEV_OS Runtime Graph"
+        },
+        {
+          "id": "aiDevOsRuntimeClusters",
+          "name": "AI_DEV_OS Runtime Clusters"
         }
       ]
     },

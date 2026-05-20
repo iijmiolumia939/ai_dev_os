@@ -3,15 +3,19 @@ import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
+import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
+import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {BoundaryStateStore} from './state/boundaryState';
 import {GovernanceDashboardViewProvider} from './views/governanceDashboardView';
 import {GovernanceTrendViewProvider} from './views/governanceTrendView';
+import {RuntimeClusterViewProvider} from './views/runtimeClusterView';
+import {RuntimeGraphViewProvider} from './views/runtimeGraphView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
@@ -26,11 +30,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceTrend = new GovernanceTrendMonitor(governanceHealth);
   const governanceTrendStatus = new GovernanceTrendStatusBar(governanceTrend);
   const governanceTrendView = new GovernanceTrendViewProvider(governanceTrend);
+  const runtimeGraph = new RuntimeGraphMonitor();
+  const architectureStatus = new ArchitecturePressureStatusBar(runtimeGraph);
+  const runtimeGraphView = new RuntimeGraphViewProvider(runtimeGraph);
+  const runtimeClusterView = new RuntimeClusterViewProvider(runtimeGraph);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
   const healthState = await governanceStatus.refresh();
   const trendState = await governanceTrendStatus.refresh();
+  const runtimeGraphState = architectureStatus.refresh();
   await store.update(persistence.toBoundaryState(restored));
   if (restored.rollover_state.rollover_pending || restored.stale_warning_state.stale_session_detected) {
     await notifications.warn(
@@ -66,6 +75,17 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       `AI_DEV_OS governance trend is ${trendState.trendLevel}. Review dashboard delta.`,
     );
   }
+  if (runtimeGraphState.oversizedRuntimes.length > 0) {
+    await notifications.warn(
+      'startup-runtime-oversized-warning',
+      `AI_DEV_OS oversized runtime clusters: ${runtimeGraphState.oversizedRuntimes.join(', ')}.`,
+    );
+  } else if (runtimeGraphState.crossBoundaryWarnings.length > 0) {
+    await notifications.warn(
+      'startup-runtime-cross-boundary-warning',
+      'AI_DEV_OS runtime graph has cross-boundary pressure. Review the compact graph.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -76,8 +96,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceDashboard', governanceView),
     vscode.window.registerTreeDataProvider('aiDevOsGovernanceTrends', governanceTrendView),
+    vscode.window.registerTreeDataProvider('aiDevOsRuntimeGraph', runtimeGraphView),
+    vscode.window.registerTreeDataProvider('aiDevOsRuntimeClusters', runtimeClusterView),
     governanceStatus,
     governanceTrendStatus,
+    architectureStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -89,6 +112,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       governanceTrendStatus,
       notifications,
       governanceTrendView,
+    ),
+    ...registerRuntimeGraphCommands(
+      runtimeGraph,
+      architectureStatus,
+      notifications,
+      runtimeGraphView,
+      runtimeClusterView,
     ),
   );
 }

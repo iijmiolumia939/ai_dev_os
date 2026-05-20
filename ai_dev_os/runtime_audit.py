@@ -50,6 +50,7 @@ from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPoli
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
+from ai_dev_os.runtime_graph import RuntimeGraphPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
 from ai_dev_os.session_boundary.handoff_confirmation import HandoffConfirmationPolicy
 from ai_dev_os.session_boundary.rollover_state import RolloverStatePolicy
@@ -378,6 +379,22 @@ class GovernanceTrendsAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimeGraphAuditReport:
+    runtime_graph_active: bool
+    runtime_discovery_active: bool
+    dependency_graph_active: bool
+    contract_surface_active: bool
+    runtime_clustering_active: bool
+    architecture_pressure_active: bool
+    estimated_avoided_architecture_cognition_tokens: int
+    estimated_avoided_runtime_explosion_drift: int
+    bounded_dependency_graph: bool
+    summary_only_dependency_metadata: bool
+    local_only_architecture_cognition: bool
+    hidden_telemetry_used: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -403,6 +420,7 @@ class RuntimeEnforcementAuditReport:
     persistence_governance: PersistenceGovernanceAuditReport
     governance_health: GovernanceHealthAuditReport
     governance_trends: GovernanceTrendsAuditReport
+    runtime_graph: RuntimeGraphAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1590,6 +1608,41 @@ def audit_governance_trends() -> GovernanceTrendsAuditReport:
     )
 
 
+def audit_runtime_graph() -> RuntimeGraphAuditReport:
+    frame = RuntimeGraphPolicy().evaluate(".", max_edges=24)
+    discovery = frame.discovery
+    graph = frame.dependency_graph
+    contract = frame.contract_surface
+    clusters = frame.runtime_clusters
+    pressure = frame.architecture_pressure
+    avoided_cognition = (
+        discovery.runtime_count * 140
+        + graph.edge_count * 90
+        + min(contract.contract_surface_size, 80) * 24
+    )
+    avoided_drift = (
+        len(graph.cross_boundary_edges) * 160
+        + len(clusters.oversized_clusters) * 500
+        + (700 if pressure.simplification_recommended else 250)
+    )
+    return RuntimeGraphAuditReport(
+        runtime_graph_active=frame.runtime_graph_active,
+        runtime_discovery_active=discovery.deterministic_discovery
+        and not discovery.full_source_indexing_used,
+        dependency_graph_active=graph.bounded_graph_size and not graph.full_repository_graph_used,
+        contract_surface_active=not contract.full_signature_replay_used
+        and not contract.raw_ast_export_used,
+        runtime_clustering_active=clusters.bounded_clusters and clusters.summary_only,
+        architecture_pressure_active=pressure.bounded_architecture_maintained,
+        estimated_avoided_architecture_cognition_tokens=avoided_cognition,
+        estimated_avoided_runtime_explosion_drift=avoided_drift,
+        bounded_dependency_graph=graph.edge_count <= graph.max_edge_limit,
+        summary_only_dependency_metadata=frame.summary_only_dependency_cognition,
+        local_only_architecture_cognition=True,
+        hidden_telemetry_used=frame.hidden_telemetry_used,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1616,6 +1669,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         persistence_governance=audit_persistence_governance(),
         governance_health=audit_governance_health(),
         governance_trends=audit_governance_trends(),
+        runtime_graph=audit_runtime_graph(),
     )
 
 
