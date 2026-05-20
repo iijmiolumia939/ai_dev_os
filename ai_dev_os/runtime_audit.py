@@ -15,6 +15,11 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
+from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
+from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
+from ai_dev_os.governance_health.risk_aggregation import GovernanceRiskPolicy
+from ai_dev_os.governance_health.stability_assessment import GovernanceStabilityPolicy
 from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
 from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
 from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
@@ -341,6 +346,18 @@ class PersistenceGovernanceAuditReport:
 
 
 @dataclass(frozen=True)
+class GovernanceHealthAuditReport:
+    governance_health_active: bool
+    governance_pressure_active: bool
+    governance_risk_active: bool
+    governance_dashboard_active: bool
+    governance_stability_active: bool
+    estimated_avoided_governance_drift: int
+    estimated_avoided_stale_governance_accumulation: int
+    estimated_avoided_hidden_context_pressure: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -364,6 +381,7 @@ class RuntimeEnforcementAuditReport:
     session_boundary: SessionBoundaryAuditReport
     workspace_persistence: WorkspacePersistenceAuditReport
     persistence_governance: PersistenceGovernanceAuditReport
+    governance_health: GovernanceHealthAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -1414,6 +1432,84 @@ def audit_persistence_governance() -> PersistenceGovernanceAuditReport:
     )
 
 
+def audit_governance_health() -> GovernanceHealthAuditReport:
+    pressure = GovernancePressurePolicy().aggregate(
+        retrieval_pressure="medium",
+        persistence_pressure="high",
+        session_pressure="high",
+        architecture_pressure="medium",
+        provider_pressure="low",
+        continuity_pressure="high",
+        checkpoint_pressure="high",
+        stale_context_pressure="high",
+    )
+    risk = GovernanceRiskPolicy().aggregate(
+        stale_continuity_risk=True,
+        hidden_context_drift=True,
+        architecture_contamination=False,
+        retrieval_explosion=False,
+        persistence_explosion=True,
+        checkpoint_explosion=True,
+        provider_lock_in_risk=False,
+        governance_runtime_drift=True,
+        prompt_mode_drift=False,
+    )
+    health = GovernanceHealthPolicy().score(
+        session_lifecycle="high",
+        stale_context_pressure="high",
+        persistence_pressure="high",
+        retrieval_scaling_pressure="medium",
+        provider_simulation_pressure="low",
+        architecture_isolation_pressure="medium",
+        schema_migration_pressure="medium",
+        checkpoint_rotation_pressure="high",
+        workspace_contamination_risk=False,
+    )
+    dashboard = GovernanceDashboardPolicy().build(
+        health=health,
+        pressure=pressure,
+        risk=risk,
+        stale_session_active=True,
+        persistence_budget_state="high",
+        checkpoint_pressure="high",
+        architecture_isolation_required=False,
+        workspace_dirty=False,
+        rollout_stability="stable rollout",
+    )
+    stability = GovernanceStabilityPolicy().assess(
+        bounded_governance_maintained=True,
+        uncontrolled_expansion_detected=False,
+        stale_governance_accumulation=True,
+        governance_oscillation=False,
+        repeated_rollover_instability=True,
+        persistence_instability=True,
+        retrieval_instability=False,
+    )
+    return GovernanceHealthAuditReport(
+        governance_health_active=health.governance_health_state
+        in {
+            "HEALTHY",
+            "STABLE_WARNING",
+            "HIGH_PRESSURE",
+            "CRITICAL_GOVERNANCE",
+        },
+        governance_pressure_active=pressure.aggregate_pressure
+        in {
+            "low",
+            "medium",
+            "high",
+            "critical",
+        },
+        governance_risk_active=bool(risk.active_risks),
+        governance_dashboard_active=dashboard.summary_only
+        and not dashboard.raw_runtime_replay_allowed,
+        governance_stability_active=stability.bounded_governance_maintained,
+        estimated_avoided_governance_drift=len(risk.active_risks) * 700,
+        estimated_avoided_stale_governance_accumulation=len(dashboard.active_warnings) * 500,
+        estimated_avoided_hidden_context_pressure=health.pressure_average * 20,
+    )
+
+
 def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
@@ -1438,6 +1534,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         session_boundary=audit_session_boundary(),
         workspace_persistence=audit_workspace_persistence(),
         persistence_governance=audit_persistence_governance(),
+        governance_health=audit_governance_health(),
     )
 
 

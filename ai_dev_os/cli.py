@@ -11,6 +11,11 @@ from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
 from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
 from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
 from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
+from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
+from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
+from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
+from ai_dev_os.governance_health.risk_aggregation import GovernanceRiskPolicy
+from ai_dev_os.governance_health.stability_assessment import GovernanceStabilityPolicy
 from ai_dev_os.persistence_governance.checkpoint_rotation import CheckpointRotationPolicy
 from ai_dev_os.persistence_governance.persistence_budget import PersistenceBudgetPolicy
 from ai_dev_os.persistence_governance.retention_policy import RetentionPolicy
@@ -176,6 +181,18 @@ def _dispatch(args: argparse.Namespace) -> Any:
         return _persistence_governance(args.workspace, args.sprint)["schema_migration"]
     if command == "checkpoint-rotation":
         return _persistence_governance(args.workspace, args.sprint)["checkpoint_rotation"]
+    if command == "governance-health":
+        return _governance_health(args.workspace, args.sprint)["health"]
+    if command == "governance-pressure":
+        return _governance_health(args.workspace, args.sprint)["pressure"]
+    if command == "governance-risks":
+        return _governance_health(args.workspace, args.sprint)["risk"]
+    if command == "governance-dashboard":
+        return _governance_health(args.workspace, args.sprint)["dashboard"]
+    if command == "governance-stability":
+        return _governance_health(args.workspace, args.sprint)["stability"]
+    if command == "architecture-isolation-state":
+        return _prompt_modes(args.workspace, args.sprint)["session_mode"]
     raise SystemExit(f"unsupported command: {command}")
 
 
@@ -689,6 +706,84 @@ def _persistence_governance(workspace: str, sprint: str):
         "schema_migration": migration,
         "checkpoint_rotation": rotation,
         "workspace_persistence": persistence,
+    }
+
+
+def _governance_health(workspace: str, sprint: str):
+    boundary = _session_boundary(workspace, sprint)
+    persistence = _persistence_governance(workspace, sprint)
+    subset = _context_subset(workspace, sprint)
+    modes = _prompt_modes(workspace, sprint)
+    workspace_state = _workspace_snapshot(workspace, sprint)
+    persistence_pressure = persistence["persistence_budget"].retention_pressure
+    checkpoint_pressure = "high" if persistence["checkpoint_rotation"].rotation_required else "low"
+    stale_pressure = "high" if boundary["stale_session"].stale_session_detected else "low"
+    architecture_pressure = "high" if modes["session_mode"].isolation_required else "low"
+    retrieval_pressure = (
+        "medium" if "rollout_continuity" in subset["continuity_scope"].included_context else "low"
+    )
+    provider_pressure = "low"
+    pressure = GovernancePressurePolicy().aggregate(
+        retrieval_pressure=retrieval_pressure,
+        persistence_pressure=persistence_pressure,
+        session_pressure=stale_pressure,
+        architecture_pressure=architecture_pressure,
+        provider_pressure=provider_pressure,
+        continuity_pressure="medium" if boundary["rollover_state"].rollover_pending else "low",
+        checkpoint_pressure=checkpoint_pressure,
+        stale_context_pressure=stale_pressure,
+    )
+    risk = GovernanceRiskPolicy().aggregate(
+        stale_continuity_risk=boundary["stale_session"].stale_session_detected,
+        hidden_context_drift=boundary["stale_session"].stale_generation_mismatch,
+        architecture_contamination=modes["session_mode"].isolation_required,
+        retrieval_explosion=retrieval_pressure == "high",
+        persistence_explosion=persistence_pressure == "high",
+        checkpoint_explosion=persistence["checkpoint_rotation"].rotation_required,
+        provider_lock_in_risk=False,
+        governance_runtime_drift=False,
+        prompt_mode_drift=modes["session_mode"].isolation_required,
+    )
+    health = GovernanceHealthPolicy().score(
+        session_lifecycle=stale_pressure,
+        stale_context_pressure=stale_pressure,
+        persistence_pressure=persistence_pressure,
+        retrieval_scaling_pressure=retrieval_pressure,
+        provider_simulation_pressure=provider_pressure,
+        architecture_isolation_pressure=architecture_pressure,
+        schema_migration_pressure=(
+            "medium" if persistence["schema_evolution"].migration_required else "low"
+        ),
+        checkpoint_rotation_pressure=checkpoint_pressure,
+        workspace_contamination_risk=workspace_state["architecture_hotspots"].risk_severity
+        in {"high", "critical"},
+    )
+    stability = GovernanceStabilityPolicy().assess(
+        bounded_governance_maintained=True,
+        uncontrolled_expansion_detected=False,
+        stale_governance_accumulation=boundary["stale_session"].stale_session_detected,
+        governance_oscillation=False,
+        repeated_rollover_instability=boundary["rollover_state"].rollover_pending,
+        persistence_instability=persistence_pressure == "high",
+        retrieval_instability=retrieval_pressure == "high",
+    )
+    dashboard = GovernanceDashboardPolicy().build(
+        health=health,
+        pressure=pressure,
+        risk=risk,
+        stale_session_active=boundary["stale_session"].stale_session_detected,
+        persistence_budget_state=persistence_pressure,
+        checkpoint_pressure=checkpoint_pressure,
+        architecture_isolation_required=modes["session_mode"].isolation_required,
+        workspace_dirty=False,
+        rollout_stability=workspace_state["rollout_tracking"].rollout_stage,
+    )
+    return {
+        "health": health,
+        "pressure": pressure,
+        "risk": risk,
+        "dashboard": dashboard,
+        "stability": stability,
     }
 
 

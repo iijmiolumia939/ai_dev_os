@@ -28,6 +28,14 @@
     "onCommand:aiDevOs.validatePersistenceSchema",
     "onCommand:aiDevOs.migrateLocalPersistence",
     "onCommand:aiDevOs.cleanupExpiredContinuity",
+    "onCommand:aiDevOs.showGovernanceDashboard",
+    "onCommand:aiDevOs.showGovernanceHealth",
+    "onCommand:aiDevOs.showGovernanceRisks",
+    "onCommand:aiDevOs.showGovernancePressure",
+    "onCommand:aiDevOs.runGovernanceStabilityAudit",
+    "onCommand:aiDevOs.compactGovernanceContext",
+    "onCommand:aiDevOs.showArchitectureIsolationState",
+    "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsSessionBoundary"
   ],
   "main": "./out/extension.js",
@@ -50,13 +58,24 @@
       {"command": "aiDevOs.rotateCheckpoints", "title": "AI_DEV_OS: Rotate Checkpoints"},
       {"command": "aiDevOs.validatePersistenceSchema", "title": "AI_DEV_OS: Validate Persistence Schema"},
       {"command": "aiDevOs.migrateLocalPersistence", "title": "AI_DEV_OS: Migrate Local Persistence"},
-      {"command": "aiDevOs.cleanupExpiredContinuity", "title": "AI_DEV_OS: Cleanup Expired Continuity"}
+      {"command": "aiDevOs.cleanupExpiredContinuity", "title": "AI_DEV_OS: Cleanup Expired Continuity"},
+      {"command": "aiDevOs.showGovernanceDashboard", "title": "AI_DEV_OS: Show Governance Dashboard"},
+      {"command": "aiDevOs.showGovernanceHealth", "title": "AI_DEV_OS: Show Governance Health"},
+      {"command": "aiDevOs.showGovernanceRisks", "title": "AI_DEV_OS: Show Governance Risks"},
+      {"command": "aiDevOs.showGovernancePressure", "title": "AI_DEV_OS: Show Governance Pressure"},
+      {"command": "aiDevOs.runGovernanceStabilityAudit", "title": "AI_DEV_OS: Run Governance Stability Audit"},
+      {"command": "aiDevOs.compactGovernanceContext", "title": "AI_DEV_OS: Compact Governance Context"},
+      {"command": "aiDevOs.showArchitectureIsolationState", "title": "AI_DEV_OS: Show Architecture Isolation State"}
     ],
     "views": {
       "explorer": [
         {
           "id": "aiDevOsSessionBoundary",
           "name": "AI_DEV_OS Session Boundary"
+        },
+        {
+          "id": "aiDevOsGovernanceDashboard",
+          "name": "AI_DEV_OS Governance Dashboard"
         }
       ]
     },
