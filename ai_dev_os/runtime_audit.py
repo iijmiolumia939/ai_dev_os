@@ -60,6 +60,7 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.provider_local import LocalProviderRuntime
 from ai_dev_os.provider_routing import ProviderRoutingRuntime
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
@@ -706,6 +707,43 @@ class ProviderRoutingAuditReport:
 
 
 @dataclass(frozen=True)
+class LocalProviderAuditReport:
+    local_provider_active: bool
+    ollama_provider_active: bool
+    local_provider_health: str
+    local_provider_budget: str
+    local_provider_fallback: str
+    estimated_avoided_premium_tokens: int
+    estimated_local_execution_ratio: float
+    routing_distribution: dict[str, int]
+    primary_coding_model: str
+    governance_compression_model: str
+    fallback_coding_model: str
+    primary_model_gpu_operational: bool
+    fallback_model_operational: bool
+    qwen_coder_14b_coding: bool
+    qwen_coder_14b_summaries: bool
+    qwen_coder_14b_architecture: bool
+    qwen_coder_14b_governance: bool
+    gemma3_12b_compression: bool
+    gemma3_12b_governance_summaries: bool
+    gemma3_12b_coding: str
+    low_execution_provider: str
+    governance_compression_provider: str
+    high_provider: str
+    compact_prompts_required: bool
+    local_patch_only: bool
+    adjacent_runtime_retrieval_only: bool
+    bounded_context_windows: bool
+    no_repo_wide_local_reasoning: bool
+    no_giant_continuity_replay: bool
+    no_recursive_local_execution: bool
+    no_hidden_autonomous_loops: bool
+    no_unrestricted_repository_mutation: bool
+    human_confirmed_execution_authority: bool
+
+
+@dataclass(frozen=True)
 class DevExecutionAuditReport:
     dev_execution_active: bool
     execution_plan_active: bool
@@ -881,6 +919,7 @@ class RuntimeEnforcementAuditReport:
     retrieval_budget: RetrievalBudgetAuditReport
     incremental_context: IncrementalContextAuditReport
     reasoning_scope: ReasoningScopeAuditReport
+    local_provider: LocalProviderAuditReport
     provider_routing: ProviderRoutingAuditReport
     dev_execution: DevExecutionAuditReport
     dev_loop: DevLoopAuditReport
@@ -2738,6 +2777,45 @@ def audit_provider_routing() -> ProviderRoutingAuditReport:
     )
 
 
+def audit_local_provider() -> LocalProviderAuditReport:
+    frame = LocalProviderRuntime().evaluate()
+    return LocalProviderAuditReport(
+        local_provider_active=frame.local_provider_active,
+        ollama_provider_active=frame.ollama_provider_active,
+        local_provider_health=frame.local_provider_health,
+        local_provider_budget=frame.local_provider_budget,
+        local_provider_fallback=frame.local_provider_fallback,
+        estimated_avoided_premium_tokens=frame.estimated_avoided_premium_tokens,
+        estimated_local_execution_ratio=frame.estimated_local_execution_ratio,
+        routing_distribution=frame.routing.routing_distribution,
+        primary_coding_model=frame.capability.primary_coding_model,
+        governance_compression_model=frame.capability.governance_compression_model,
+        fallback_coding_model=frame.capability.fallback_coding_model,
+        primary_model_gpu_operational=frame.health.primary_model_gpu_operational,
+        fallback_model_operational=frame.health.fallback_model_operational,
+        qwen_coder_14b_coding=frame.capability.qwen_coder_14b_coding,
+        qwen_coder_14b_summaries=frame.capability.qwen_coder_14b_summaries,
+        qwen_coder_14b_architecture=frame.capability.qwen_coder_14b_architecture,
+        qwen_coder_14b_governance=frame.capability.qwen_coder_14b_governance,
+        gemma3_12b_compression=frame.capability.gemma3_12b_compression,
+        gemma3_12b_governance_summaries=frame.capability.gemma3_12b_governance_summaries,
+        gemma3_12b_coding=frame.capability.gemma3_12b_coding,
+        low_execution_provider=frame.routing.low_execution_provider,
+        governance_compression_provider=frame.routing.governance_compression_provider,
+        high_provider=frame.routing.high_provider,
+        compact_prompts_required=frame.budget.compact_prompts_required,
+        local_patch_only=frame.budget.local_patch_only,
+        adjacent_runtime_retrieval_only="adjacent_runtime_retrieval_only" in frame.constraints,
+        bounded_context_windows=frame.budget.bounded_context_windows,
+        no_repo_wide_local_reasoning=frame.no_repo_wide_local_reasoning,
+        no_giant_continuity_replay=frame.no_giant_continuity_replay,
+        no_recursive_local_execution=frame.no_recursive_local_execution,
+        no_hidden_autonomous_loops=frame.no_hidden_autonomous_loops,
+        no_unrestricted_repository_mutation=frame.no_unrestricted_repository_mutation,
+        human_confirmed_execution_authority=frame.budget.human_confirmed_execution_authority,
+    )
+
+
 def audit_dev_execution() -> DevExecutionAuditReport:
     frame = DevelopmentExecutionRuntime().evaluate()
     return DevExecutionAuditReport(
@@ -2948,6 +3026,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         retrieval_budget=audit_retrieval_budget(),
         incremental_context=audit_incremental_context(),
         reasoning_scope=audit_reasoning_scope(),
+        local_provider=audit_local_provider(),
         provider_routing=audit_provider_routing(),
         dev_execution=audit_dev_execution(),
         dev_loop=audit_dev_loop(),

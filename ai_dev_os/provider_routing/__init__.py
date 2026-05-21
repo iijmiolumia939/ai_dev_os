@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ai_dev_os.output_compression import CompactCompletionInput, CompactCompletionPolicy
+from ai_dev_os.provider_local import LocalProviderFrame, LocalProviderRuntime
 from ai_dev_os.provider_routing.provider_budget_policy import (
     ProviderBudgetFrame,
     ProviderBudgetPolicy,
@@ -51,6 +52,7 @@ class ProviderRoutingRuntimeFrame:
     compaction: ProviderCompactionFrame
     recommendation: ProviderRecommendationFrame
     observability: ProviderObservabilityFrame
+    local_provider: LocalProviderFrame
     provider_routing_active: bool
     provider_neutral: bool
     deterministic: bool
@@ -149,6 +151,7 @@ class ProviderRoutingRuntime:
             samples,
             previous_distribution=previous_distribution,
         )
+        local_provider = LocalProviderRuntime().evaluate()
         scope = ReasoningScopeRuntime().evaluate(
             task_name="provider routing runtime",
             complexity=cognition_tier,
@@ -196,6 +199,7 @@ class ProviderRoutingRuntime:
                 not routing.automatic_provider_execution,
                 compaction.summary_only,
                 observability.no_real_billing_integration,
+                local_provider.local_provider_active,
                 scope.reasoning_scope_active,
                 retrieval.retrieval_budget_active,
                 completion.compact,
@@ -210,6 +214,7 @@ class ProviderRoutingRuntime:
             compaction=compaction,
             recommendation=recommendation,
             observability=observability,
+            local_provider=local_provider,
             provider_routing_active=active,
             provider_neutral=True,
             deterministic=True,
@@ -258,4 +263,6 @@ __all__ = [
     "ProviderRoutingRuntime",
     "ProviderRoutingRuntimeFrame",
     "ProviderUsageSample",
+    "LocalProviderFrame",
+    "LocalProviderRuntime",
 ]

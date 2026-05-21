@@ -8,6 +8,7 @@ import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
 import {registerIncrementalContextCommands} from './commands/incrementalContextCommands';
+import {registerLocalProviderCommands} from './commands/localProviderCommands';
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
 import {registerProviderRoutingCommands} from './commands/providerRoutingCommands';
@@ -26,6 +27,13 @@ import {RateLimitedNotifications} from './notifications/rateLimitedNotifications
 import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
 import {PersistenceGovernance} from './persistence/governance';
 import {LocalPersistenceStore} from './persistence/localPersistence';
+import {
+  LocalBudgetOkStatusBar,
+  LocalProviderMonitor,
+  LocalProviderReadyStatusBar,
+  OllamaActiveStatusBar,
+  PremiumEscalationStatusBar,
+} from './localProvider/localProvider';
 import {
   PremiumProviderStatusBar,
   ProviderDowngradeStatusBar,
@@ -144,6 +152,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const premiumProviderStatus = new PremiumProviderStatusBar(providerRouting);
   const providerDowngradeStatus = new ProviderDowngradeStatusBar(providerRouting);
   const providerPressureStatus = new ProviderPressureStatusBar(providerRouting);
+  const localProvider = new LocalProviderMonitor();
+  const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
+  const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
+  const localBudgetOkStatus = new LocalBudgetOkStatusBar(localProvider);
+  const premiumEscalationStatus = new PremiumEscalationStatusBar(localProvider);
   const devLoop = new SprintDevLoopMonitor();
   const sprintActiveStatus = new SprintActiveStatusBar(devLoop);
   const sprintRolloverStatus = new SprintRolloverStatusBar(devLoop);
@@ -258,6 +271,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const providerRoutingState = premiumProviderStatus.refresh();
   providerDowngradeStatus.refresh();
   providerPressureStatus.refresh();
+  const localProviderState = localProviderReadyStatus.refresh();
+  ollamaActiveStatus.refresh();
+  localBudgetOkStatus.refresh();
+  premiumEscalationStatus.refresh();
   const devLoopState = sprintActiveStatus.refresh();
   sprintRolloverStatus.refresh();
   sprintPressureStatus.refresh();
@@ -318,6 +335,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await notifications.warn(
       'startup-provider-routing-pressure-warning',
       'AI_DEV_OS provider pressure is high. Review downgrade recommendations before premium use.',
+    );
+  }
+  if (!localProviderState.localBudgetOk) {
+    await notifications.warn(
+      'startup-local-provider-budget-warning',
+      'AI_DEV_OS local provider budget is not ready. Compact local execution before routing LOW tasks.',
     );
   }
   if (devLoopState.sprintPressure === 'HIGH') {
@@ -390,6 +413,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     premiumProviderStatus,
     providerDowngradeStatus,
     providerPressureStatus,
+    localProviderReadyStatus,
+    ollamaActiveStatus,
+    localBudgetOkStatus,
+    premiumEscalationStatus,
     sprintActiveStatus,
     sprintRolloverStatus,
     sprintPressureStatus,
@@ -473,6 +500,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       premiumProviderStatus,
       providerDowngradeStatus,
       providerPressureStatus,
+      notifications,
+    ),
+    ...registerLocalProviderCommands(
+      localProvider,
+      localProviderReadyStatus,
+      ollamaActiveStatus,
+      localBudgetOkStatus,
+      premiumEscalationStatus,
       notifications,
     ),
     ...registerDevLoopCommands(

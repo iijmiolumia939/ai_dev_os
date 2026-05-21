@@ -45,10 +45,14 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.compactIncrementalContext",
         "aiDevOs.showIncrementalRecommendations",
         "aiDevOs.showProviderRouting",
+        "aiDevOs.showLocalProviders",
+        "aiDevOs.testOllamaProvider",
         "aiDevOs.showProviderBudget",
+        "aiDevOs.showLocalProviderBudget",
         "aiDevOs.showDowngradeRecommendations",
         "aiDevOs.showProviderDistribution",
         "aiDevOs.compactProviderRouting",
+        "aiDevOs.compactLocalExecution",
         "aiDevOs.generateSprintPlan",
         "aiDevOs.showSprintLifecycle",
         "aiDevOs.generateNextSprint",
@@ -89,6 +93,16 @@ def test_provider_routing_status_bars_are_declared() -> None:
     assert "AI_DEV_OS DOWNGRADE_READY" in source
     assert "AI_DEV_OS PROVIDER_PRESSURE" in source
     assert "registerProviderRoutingCommands" in source
+
+
+def test_local_provider_status_bars_are_declared() -> None:
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.ts"))
+
+    assert "AI_DEV_OS LOCAL_PROVIDER_READY" in source
+    assert "AI_DEV_OS OLLAMA_ACTIVE" in source
+    assert "AI_DEV_OS LOCAL_BUDGET_OK" in source
+    assert "AI_DEV_OS PREMIUM_ESCALATION" in source
+    assert "registerLocalProviderCommands" in source
 
 
 def test_sprint_dev_loop_status_bars_are_declared() -> None:

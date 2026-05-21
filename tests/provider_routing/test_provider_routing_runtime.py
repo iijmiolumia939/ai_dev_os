@@ -92,6 +92,8 @@ def test_tc_providerrouting_06_runtime_integrates_existing_governance_surfaces()
     assert frame.compact_completion_integration_active is True
     assert frame.runtime_audit_integration_active is True
     assert frame.session_orchestrator_integration_active is True
+    assert frame.local_provider.local_provider_active is True
+    assert frame.local_provider.routing.low_execution_provider == "ollama:qwen2.5-coder:7b"
 
 
 def test_tc_providerrouting_07_runtime_audit_reports_provider_routing_flags() -> None:

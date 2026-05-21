@@ -182,3 +182,28 @@ def test_runtime_audit_reports_reasoning_scope_controls() -> None:
     assert report.runtime_simplification.reasoning_scope_active is True
     assert report.governance_health.reasoning_scope_active is True
     assert report.governance_trends.reasoning_scope_active is True
+
+
+def test_runtime_audit_reports_local_provider_controls() -> None:
+    report = run_runtime_enforcement_audit()
+
+    assert report.local_provider.local_provider_active is True
+    assert report.local_provider.ollama_provider_active is True
+    assert report.local_provider.local_provider_health == "DEGRADED_FALLBACK_READY"
+    assert report.local_provider.local_provider_budget == "LOCAL_BUDGET_OK"
+    assert report.local_provider.primary_coding_model == "qwen2.5-coder:14b"
+    assert report.local_provider.governance_compression_model == "gemma3:12b"
+    assert report.local_provider.fallback_coding_model == "qwen2.5-coder:7b"
+    assert report.local_provider.primary_model_gpu_operational is False
+    assert report.local_provider.fallback_model_operational is True
+    assert report.local_provider.qwen_coder_14b_architecture is False
+    assert report.local_provider.qwen_coder_14b_governance is False
+    assert report.local_provider.gemma3_12b_compression is True
+    assert report.local_provider.low_execution_provider == "ollama:qwen2.5-coder:7b"
+    assert report.local_provider.high_provider == "GPT-5.5 premium provider"
+    assert report.local_provider.compact_prompts_required is True
+    assert report.local_provider.local_patch_only is True
+    assert report.local_provider.adjacent_runtime_retrieval_only is True
+    assert report.local_provider.no_recursive_local_execution is True
+    assert report.local_provider.human_confirmed_execution_authority is True
+    assert report.local_provider.estimated_avoided_premium_tokens > 0
