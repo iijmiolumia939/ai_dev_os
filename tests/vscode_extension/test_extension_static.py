@@ -55,6 +55,12 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.generateSprintBootstrap",
         "aiDevOs.showSprintGovernance",
         "aiDevOs.compactSprintClosure",
+        "aiDevOs.showSprintMemory",
+        "aiDevOs.showSprintPatterns",
+        "aiDevOs.showSprintFailures",
+        "aiDevOs.showSprintEfficiency",
+        "aiDevOs.compactSprintMemory",
+        "aiDevOs.cleanupSprintMemory",
     }.issubset(commands)
 
 
@@ -75,6 +81,16 @@ def test_sprint_dev_loop_status_bars_are_declared() -> None:
     assert "AI_DEV_OS SPRINT_PRESSURE" in source
     assert "AI_DEV_OS LOCAL_PATCH_REQUIRED" in source
     assert "registerDevLoopCommands" in source
+
+
+def test_sprint_memory_status_bars_are_declared() -> None:
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.ts"))
+
+    assert "AI_DEV_OS SPRINT_MEMORY" in source
+    assert "AI_DEV_OS MEMORY_PRESSURE" in source
+    assert "AI_DEV_OS PATTERN_STABLE" in source
+    assert "AI_DEV_OS MEMORY_EVICTION" in source
+    assert "registerSprintMemoryCommands" in source
 
 
 def test_extension_has_local_state_without_telemetry() -> None:

@@ -118,6 +118,12 @@
     "onCommand:aiDevOs.generateSprintBootstrap",
     "onCommand:aiDevOs.showSprintGovernance",
     "onCommand:aiDevOs.compactSprintClosure",
+    "onCommand:aiDevOs.showSprintMemory",
+    "onCommand:aiDevOs.showSprintPatterns",
+    "onCommand:aiDevOs.showSprintFailures",
+    "onCommand:aiDevOs.showSprintEfficiency",
+    "onCommand:aiDevOs.compactSprintMemory",
+    "onCommand:aiDevOs.cleanupSprintMemory",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -240,7 +246,13 @@
       {"command": "aiDevOs.generateNextSprint", "title": "AI_DEV_OS: Generate Next Sprint"},
       {"command": "aiDevOs.generateSprintBootstrap", "title": "AI_DEV_OS: Generate Sprint Bootstrap"},
       {"command": "aiDevOs.showSprintGovernance", "title": "AI_DEV_OS: Show Sprint Governance"},
-      {"command": "aiDevOs.compactSprintClosure", "title": "AI_DEV_OS: Compact Sprint Closure"}
+      {"command": "aiDevOs.compactSprintClosure", "title": "AI_DEV_OS: Compact Sprint Closure"},
+      {"command": "aiDevOs.showSprintMemory", "title": "AI_DEV_OS: Show Sprint Memory"},
+      {"command": "aiDevOs.showSprintPatterns", "title": "AI_DEV_OS: Show Sprint Patterns"},
+      {"command": "aiDevOs.showSprintFailures", "title": "AI_DEV_OS: Show Sprint Failures"},
+      {"command": "aiDevOs.showSprintEfficiency", "title": "AI_DEV_OS: Show Sprint Efficiency"},
+      {"command": "aiDevOs.compactSprintMemory", "title": "AI_DEV_OS: Compact Sprint Memory"},
+      {"command": "aiDevOs.cleanupSprintMemory", "title": "AI_DEV_OS: Cleanup Sprint Memory"}
     ],
     "views": {
       "explorer": [

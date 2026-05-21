@@ -114,6 +114,7 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
 from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
@@ -724,6 +725,32 @@ class DevLoopAuditReport:
 
 
 @dataclass(frozen=True)
+class SprintMemoryAuditReport:
+    sprint_memory_active: bool
+    sprint_pattern_active: bool
+    sprint_outcome_active: bool
+    sprint_provider_pattern_active: bool
+    sprint_retrieval_pattern_active: bool
+    sprint_governance_pattern_active: bool
+    sprint_compression_active: bool
+    sprint_eviction_active: bool
+    estimated_avoided_manual_sprint_analysis: int
+    estimated_avoided_repeated_sprint_failures: int
+    provider_routing_distribution: dict[str, int]
+    memory_pressure: str
+    pattern_stable: bool
+    memory_eviction_required: bool
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_memory_only: bool
+    no_hidden_long_term_cognition: bool
+    no_autonomous_roadmap_learning: bool
+    no_hidden_provider_switching: bool
+    compact_governance_warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -763,6 +790,7 @@ class RuntimeEnforcementAuditReport:
     reasoning_scope: ReasoningScopeAuditReport
     provider_routing: ProviderRoutingAuditReport
     dev_loop: DevLoopAuditReport
+    sprint_memory: SprintMemoryAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2650,6 +2678,41 @@ def audit_dev_loop() -> DevLoopAuditReport:
     )
 
 
+def audit_sprint_memory() -> SprintMemoryAuditReport:
+    frame = SprintMemoryRuntime().evaluate()
+    memory_pressure = frame.governance_patterns.sprint_pressure_trend
+    return SprintMemoryAuditReport(
+        sprint_memory_active=frame.sprint_memory_active,
+        sprint_pattern_active=frame.sprint_pattern_active,
+        sprint_outcome_active=frame.sprint_outcome_active,
+        sprint_provider_pattern_active=frame.sprint_provider_pattern_active,
+        sprint_retrieval_pattern_active=frame.sprint_retrieval_pattern_active,
+        sprint_governance_pattern_active=frame.sprint_governance_pattern_active,
+        sprint_compression_active=frame.sprint_compression_active,
+        sprint_eviction_active=frame.sprint_eviction_active,
+        estimated_avoided_manual_sprint_analysis=(frame.estimated_avoided_manual_sprint_analysis),
+        estimated_avoided_repeated_sprint_failures=(
+            frame.estimated_avoided_repeated_sprint_failures
+        ),
+        provider_routing_distribution=frame.provider_routing_distribution,
+        memory_pressure=memory_pressure,
+        pattern_stable=frame.governance_patterns.sprint_stability == "STABLE",
+        memory_eviction_required=bool(
+            frame.eviction.evicted_stale_sprint_memory
+            or frame.eviction.evicted_oversized_sprint_memory
+            or frame.eviction.evicted_redundant_sprint_patterns
+        ),
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_memory_only=frame.bounded_memory_only,
+        no_hidden_long_term_cognition=frame.no_hidden_long_term_cognition,
+        no_autonomous_roadmap_learning=frame.no_autonomous_roadmap_learning,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        compact_governance_warnings=frame.governance_patterns.compact_governance_warnings,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2695,6 +2758,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         reasoning_scope=audit_reasoning_scope(),
         provider_routing=audit_provider_routing(),
         dev_loop=audit_dev_loop(),
+        sprint_memory=audit_sprint_memory(),
     )
 
 

@@ -14,6 +14,7 @@ import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommand
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
+import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
@@ -63,6 +64,13 @@ import {
   SprintPressureStatusBar,
   SprintRolloverStatusBar,
 } from './devLoop/devLoop';
+import {
+  MemoryEvictionStatusBar,
+  MemoryPressureStatusBar,
+  PatternStableStatusBar,
+  SprintMemoryMonitor,
+  SprintMemoryStatusBar,
+} from './sprintMemory/sprintMemory';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -117,6 +125,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const sprintRolloverStatus = new SprintRolloverStatusBar(devLoop);
   const sprintPressureStatus = new SprintPressureStatusBar(devLoop);
   const localPatchRequiredStatus = new LocalPatchRequiredStatusBar(devLoop);
+  const sprintMemory = new SprintMemoryMonitor();
+  const sprintMemoryStatus = new SprintMemoryStatusBar(sprintMemory);
+  const memoryPressureStatus = new MemoryPressureStatusBar(sprintMemory);
+  const patternStableStatus = new PatternStableStatusBar(sprintMemory);
+  const memoryEvictionStatus = new MemoryEvictionStatusBar(sprintMemory);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -210,6 +223,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   sprintRolloverStatus.refresh();
   sprintPressureStatus.refresh();
   localPatchRequiredStatus.refresh();
+  const sprintMemoryState = sprintMemoryStatus.refresh();
+  memoryPressureStatus.refresh();
+  patternStableStatus.refresh();
+  memoryEvictionStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -258,6 +275,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS sprint pressure is high. Compact sprint closure before generating the next sprint.',
     );
   }
+  if (sprintMemoryState.memoryPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-sprint-memory-pressure-warning',
+      'AI_DEV_OS sprint memory pressure is high. Cleanup stale sprint memory before continuing.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -299,6 +322,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     sprintRolloverStatus,
     sprintPressureStatus,
     localPatchRequiredStatus,
+    sprintMemoryStatus,
+    memoryPressureStatus,
+    patternStableStatus,
+    memoryEvictionStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -370,6 +397,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       sprintRolloverStatus,
       sprintPressureStatus,
       localPatchRequiredStatus,
+      notifications,
+    ),
+    ...registerSprintMemoryCommands(
+      sprintMemory,
+      sprintMemoryStatus,
+      memoryPressureStatus,
+      patternStableStatus,
+      memoryEvictionStatus,
       notifications,
     ),
   );
