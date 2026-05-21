@@ -73,6 +73,12 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showProviderEscalationPolicy",
         "aiDevOs.showAntiExplosionPolicy",
         "aiDevOs.compactPolicySummary",
+        "aiDevOs.generateExecutionPlan",
+        "aiDevOs.showExecutionCheckpoints",
+        "aiDevOs.showValidationSequence",
+        "aiDevOs.showRollbackGuidance",
+        "aiDevOs.showExecutionStability",
+        "aiDevOs.compactExecutionSummary",
     }.issubset(commands)
 
 
@@ -123,6 +129,16 @@ def test_development_policy_status_bars_are_declared() -> None:
     assert "AI_DEV_OS ESCALATION_PRESSURE" in source
     assert "AI_DEV_OS REALISM_PROTECTED" in source
     assert "registerDevPolicyCommands" in source
+
+
+def test_development_execution_status_bars_are_declared() -> None:
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.ts"))
+
+    assert "AI_DEV_OS EXECUTION_ACTIVE" in source
+    assert "AI_DEV_OS CHECKPOINT_READY" in source
+    assert "AI_DEV_OS VALIDATION_STABLE" in source
+    assert "AI_DEV_OS ROLLBACK_SAFE" in source
+    assert "registerDevExecutionCommands" in source
 
 
 def test_extension_has_local_state_without_telemetry() -> None:

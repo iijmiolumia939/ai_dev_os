@@ -22,6 +22,7 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.dev_execution import DevelopmentExecutionRuntime
 from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
@@ -705,6 +706,38 @@ class ProviderRoutingAuditReport:
 
 
 @dataclass(frozen=True)
+class DevExecutionAuditReport:
+    dev_execution_active: bool
+    execution_plan_active: bool
+    execution_checkpoint_active: bool
+    execution_validation_active: bool
+    execution_rollback_active: bool
+    execution_pacing_active: bool
+    execution_scope_active: bool
+    execution_failure_active: bool
+    execution_eviction_active: bool
+    estimated_avoided_execution_overhead: int
+    estimated_avoided_execution_explosion: int
+    provider_routing_distribution: dict[str, int]
+    execution_pressure: str
+    validation_pressure: str
+    rollback_pressure: str
+    pacing_pressure: str
+    scope_pressure: str
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_execution_only: bool
+    human_confirmed_execution_only: bool
+    no_autonomous_coding_authority: bool
+    no_hidden_repository_mutation: bool
+    no_recursive_execution_expansion: bool
+    no_giant_execution_replay: bool
+    no_validation_bypass: bool
+    compact_pressure_warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class DevLoopAuditReport:
     dev_loop_active: bool
     sprint_planning_active: bool
@@ -849,6 +882,7 @@ class RuntimeEnforcementAuditReport:
     incremental_context: IncrementalContextAuditReport
     reasoning_scope: ReasoningScopeAuditReport
     provider_routing: ProviderRoutingAuditReport
+    dev_execution: DevExecutionAuditReport
     dev_loop: DevLoopAuditReport
     sprint_memory: SprintMemoryAuditReport
     dev_strategy: DevStrategyAuditReport
@@ -2704,6 +2738,40 @@ def audit_provider_routing() -> ProviderRoutingAuditReport:
     )
 
 
+def audit_dev_execution() -> DevExecutionAuditReport:
+    frame = DevelopmentExecutionRuntime().evaluate()
+    return DevExecutionAuditReport(
+        dev_execution_active=frame.dev_execution_active,
+        execution_plan_active=frame.execution_plan_active,
+        execution_checkpoint_active=frame.execution_checkpoint_active,
+        execution_validation_active=frame.execution_validation_active,
+        execution_rollback_active=frame.execution_rollback_active,
+        execution_pacing_active=frame.execution_pacing_active,
+        execution_scope_active=frame.execution_scope_active,
+        execution_failure_active=frame.execution_failure_active,
+        execution_eviction_active=frame.execution_eviction_active,
+        estimated_avoided_execution_overhead=frame.estimated_avoided_execution_overhead,
+        estimated_avoided_execution_explosion=frame.estimated_avoided_execution_explosion,
+        provider_routing_distribution=frame.provider_routing_distribution,
+        execution_pressure=frame.pressure.execution_pressure,
+        validation_pressure=frame.pressure.validation_pressure,
+        rollback_pressure=frame.pressure.rollback_pressure,
+        pacing_pressure=frame.pressure.pacing_pressure,
+        scope_pressure=frame.pressure.scope_pressure,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_execution_only=frame.bounded_execution_only,
+        human_confirmed_execution_only=frame.human_confirmed_execution_only,
+        no_autonomous_coding_authority=frame.no_autonomous_coding_authority,
+        no_hidden_repository_mutation=frame.no_hidden_repository_mutation,
+        no_recursive_execution_expansion=frame.no_recursive_execution_expansion,
+        no_giant_execution_replay=frame.no_giant_execution_replay,
+        no_validation_bypass=frame.no_validation_bypass,
+        compact_pressure_warnings=frame.pressure.compact_pressure_warnings,
+    )
+
+
 def audit_dev_loop() -> DevLoopAuditReport:
     frame = SprintDevLoopRuntime().evaluate(
         objective_seed="AI Development Loop Runtime",
@@ -2881,6 +2949,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         incremental_context=audit_incremental_context(),
         reasoning_scope=audit_reasoning_scope(),
         provider_routing=audit_provider_routing(),
+        dev_execution=audit_dev_execution(),
         dev_loop=audit_dev_loop(),
         sprint_memory=audit_sprint_memory(),
         dev_strategy=audit_dev_strategy(),

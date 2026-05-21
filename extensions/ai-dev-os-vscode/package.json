@@ -136,6 +136,12 @@
     "onCommand:aiDevOs.showProviderEscalationPolicy",
     "onCommand:aiDevOs.showAntiExplosionPolicy",
     "onCommand:aiDevOs.compactPolicySummary",
+    "onCommand:aiDevOs.generateExecutionPlan",
+    "onCommand:aiDevOs.showExecutionCheckpoints",
+    "onCommand:aiDevOs.showValidationSequence",
+    "onCommand:aiDevOs.showRollbackGuidance",
+    "onCommand:aiDevOs.showExecutionStability",
+    "onCommand:aiDevOs.compactExecutionSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -276,7 +282,13 @@
       {"command": "aiDevOs.showEmbodimentRealismPolicy", "title": "AI_DEV_OS: Show Embodiment Realism Policy"},
       {"command": "aiDevOs.showProviderEscalationPolicy", "title": "AI_DEV_OS: Show Provider Escalation Policy"},
       {"command": "aiDevOs.showAntiExplosionPolicy", "title": "AI_DEV_OS: Show Anti-Explosion Policy"},
-      {"command": "aiDevOs.compactPolicySummary", "title": "AI_DEV_OS: Compact Policy Summary"}
+      {"command": "aiDevOs.compactPolicySummary", "title": "AI_DEV_OS: Compact Policy Summary"},
+      {"command": "aiDevOs.generateExecutionPlan", "title": "AI_DEV_OS: Generate Execution Plan"},
+      {"command": "aiDevOs.showExecutionCheckpoints", "title": "AI_DEV_OS: Show Execution Checkpoints"},
+      {"command": "aiDevOs.showValidationSequence", "title": "AI_DEV_OS: Show Validation Sequence"},
+      {"command": "aiDevOs.showRollbackGuidance", "title": "AI_DEV_OS: Show Rollback Guidance"},
+      {"command": "aiDevOs.showExecutionStability", "title": "AI_DEV_OS: Show Execution Stability"},
+      {"command": "aiDevOs.compactExecutionSummary", "title": "AI_DEV_OS: Compact Execution Summary"}
     ],
     "views": {
       "explorer": [
