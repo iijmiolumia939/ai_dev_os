@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
@@ -55,6 +56,13 @@ import {RuntimeGraphViewProvider} from './views/runtimeGraphView';
 import {RuntimeOverlapViewProvider} from './views/runtimeOverlapView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
 import {SharedPrimitiveViewProvider} from './views/sharedPrimitiveView';
+import {
+  LocalPatchRequiredStatusBar,
+  SprintActiveStatusBar,
+  SprintDevLoopMonitor,
+  SprintPressureStatusBar,
+  SprintRolloverStatusBar,
+} from './devLoop/devLoop';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -104,6 +112,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const premiumProviderStatus = new PremiumProviderStatusBar(providerRouting);
   const providerDowngradeStatus = new ProviderDowngradeStatusBar(providerRouting);
   const providerPressureStatus = new ProviderPressureStatusBar(providerRouting);
+  const devLoop = new SprintDevLoopMonitor();
+  const sprintActiveStatus = new SprintActiveStatusBar(devLoop);
+  const sprintRolloverStatus = new SprintRolloverStatusBar(devLoop);
+  const sprintPressureStatus = new SprintPressureStatusBar(devLoop);
+  const localPatchRequiredStatus = new LocalPatchRequiredStatusBar(devLoop);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -193,6 +206,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const providerRoutingState = premiumProviderStatus.refresh();
   providerDowngradeStatus.refresh();
   providerPressureStatus.refresh();
+  const devLoopState = sprintActiveStatus.refresh();
+  sprintRolloverStatus.refresh();
+  sprintPressureStatus.refresh();
+  localPatchRequiredStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -235,6 +252,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS provider pressure is high. Review downgrade recommendations before premium use.',
     );
   }
+  if (devLoopState.sprintPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-sprint-pressure-warning',
+      'AI_DEV_OS sprint pressure is high. Compact sprint closure before generating the next sprint.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -272,6 +295,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     premiumProviderStatus,
     providerDowngradeStatus,
     providerPressureStatus,
+    sprintActiveStatus,
+    sprintRolloverStatus,
+    sprintPressureStatus,
+    localPatchRequiredStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -335,6 +362,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       premiumProviderStatus,
       providerDowngradeStatus,
       providerPressureStatus,
+      notifications,
+    ),
+    ...registerDevLoopCommands(
+      devLoop,
+      sprintActiveStatus,
+      sprintRolloverStatus,
+      sprintPressureStatus,
+      localPatchRequiredStatus,
       notifications,
     ),
   );

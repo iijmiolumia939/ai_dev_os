@@ -22,6 +22,7 @@ from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
 from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
+from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -701,6 +702,28 @@ class ProviderRoutingAuditReport:
 
 
 @dataclass(frozen=True)
+class DevLoopAuditReport:
+    dev_loop_active: bool
+    sprint_planning_active: bool
+    sprint_lifecycle_active: bool
+    sprint_rollover_active: bool
+    sprint_bootstrap_active: bool
+    sprint_governance_active: bool
+    estimated_avoided_manual_orchestration_tokens: int
+    estimated_avoided_sprint_explosion: int
+    provider_routing_distribution: dict[str, int]
+    local_patch_required: bool
+    bounded_cognition_only: bool
+    human_confirmed_orchestration_only: bool
+    no_autonomous_roadmap_expansion: bool
+    no_hidden_provider_switching: bool
+    no_giant_continuity_replay: bool
+    compact_bootstrap_payload: bool
+    lifecycle_state: str
+    compact_governance_warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -739,6 +762,7 @@ class RuntimeEnforcementAuditReport:
     incremental_context: IncrementalContextAuditReport
     reasoning_scope: ReasoningScopeAuditReport
     provider_routing: ProviderRoutingAuditReport
+    dev_loop: DevLoopAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2590,6 +2614,42 @@ def audit_provider_routing() -> ProviderRoutingAuditReport:
     )
 
 
+def audit_dev_loop() -> DevLoopAuditReport:
+    frame = SprintDevLoopRuntime().evaluate(
+        objective_seed="AI Development Loop Runtime",
+        lifecycle_state="VALIDATING",
+        validation_passed=True,
+        sprint_age_days=16,
+        continuity_tokens=4_200,
+        stale_sprints=("sprint-39", "sprint-40"),
+    )
+    return DevLoopAuditReport(
+        dev_loop_active=frame.dev_loop_active,
+        sprint_planning_active=frame.planning.no_repo_wide_sprint_synthesis
+        and frame.planning.local_patch_recommendation,
+        sprint_lifecycle_active=frame.lifecycle.bounded_transition,
+        sprint_rollover_active=frame.rollover.rollover_ready
+        and frame.rollover.infinite_sprint_chaining_prevented,
+        sprint_bootstrap_active=frame.bootstrap.enter_only_continuation_workflow
+        and frame.bootstrap.bounded_bootstrap_payload,
+        sprint_governance_active=frame.governance.human_confirmed_orchestration_only,
+        estimated_avoided_manual_orchestration_tokens=(
+            frame.estimated_avoided_manual_orchestration_tokens
+        ),
+        estimated_avoided_sprint_explosion=frame.estimated_avoided_sprint_explosion,
+        provider_routing_distribution=frame.provider_routing_distribution,
+        local_patch_required=frame.scope.local_patch_required,
+        bounded_cognition_only=frame.bounded_cognition_only,
+        human_confirmed_orchestration_only=frame.human_confirmed_orchestration_only,
+        no_autonomous_roadmap_expansion=frame.no_autonomous_roadmap_expansion,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        no_giant_continuity_replay=frame.no_giant_continuity_replay,
+        compact_bootstrap_payload=frame.bootstrap.bounded_bootstrap_payload,
+        lifecycle_state=frame.lifecycle.lifecycle_state,
+        compact_governance_warnings=frame.governance.compact_governance_warnings,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2634,6 +2694,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         incremental_context=audit_incremental_context(),
         reasoning_scope=audit_reasoning_scope(),
         provider_routing=audit_provider_routing(),
+        dev_loop=audit_dev_loop(),
     )
 
 
