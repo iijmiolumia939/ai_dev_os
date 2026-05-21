@@ -60,6 +60,7 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.provider_experimental import ProviderExperimentalRuntime
 from ai_dev_os.provider_local import LocalProviderRuntime
 from ai_dev_os.provider_routing import ProviderRoutingRuntime
 from ai_dev_os.providers.cost_simulation import simulate_cost
@@ -915,6 +916,34 @@ class DevPolicyAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderExperimentalAuditReport:
+    experimental_provider_active: bool
+    openmythos_provider_active: bool
+    provider_benchmark_active: bool
+    provider_comparison_active: bool
+    provider_drift_active: bool
+    provider_governance_active: bool
+    provider_benchmark_summary_active: bool
+    provider_benchmark_eviction_active: bool
+    openmythos_load_result: str
+    vram_runtime_stability: str
+    provider_comparison_summary: str
+    governance_adherence_observation: str
+    architecture_drift_observation: str
+    estimated_reasoning_depth_gain: int
+    estimated_governance_instability_risk: int
+    estimated_architecture_drift_risk: int
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    rollback_safe: bool
+    no_architecture_authority: bool
+    no_governance_authority: bool
+    no_anti_explosion_authority: bool
+    no_autonomous_execution_authority: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -960,6 +989,7 @@ class RuntimeEnforcementAuditReport:
     sprint_memory: SprintMemoryAuditReport
     dev_strategy: DevStrategyAuditReport
     dev_policy: DevPolicyAuditReport
+    provider_experimental: ProviderExperimentalAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2811,6 +2841,36 @@ def audit_provider_routing() -> ProviderRoutingAuditReport:
     )
 
 
+def audit_provider_experimental() -> ProviderExperimentalAuditReport:
+    frame = ProviderExperimentalRuntime().evaluate()
+    return ProviderExperimentalAuditReport(
+        experimental_provider_active=frame.experimental_provider_active,
+        openmythos_provider_active=frame.openmythos_provider_active,
+        provider_benchmark_active=frame.provider_benchmark_active,
+        provider_comparison_active=frame.provider_comparison_active,
+        provider_drift_active=frame.provider_drift_active,
+        provider_governance_active=frame.governance.provider_governance_active,
+        provider_benchmark_summary_active=frame.summary.provider_benchmark_summary_active,
+        provider_benchmark_eviction_active=frame.eviction.provider_benchmark_eviction_active,
+        openmythos_load_result=frame.openmythos.load_result,
+        vram_runtime_stability=frame.openmythos.vram_runtime_stability,
+        provider_comparison_summary="; ".join(frame.comparison.providers),
+        governance_adherence_observation=frame.summary.governance_adherence_observation,
+        architecture_drift_observation=frame.summary.architecture_drift_observation,
+        estimated_reasoning_depth_gain=frame.estimated_reasoning_depth_gain,
+        estimated_governance_instability_risk=frame.estimated_governance_instability_risk,
+        estimated_architecture_drift_risk=frame.estimated_architecture_drift_risk,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        rollback_safe=frame.experimental.rollback_safe,
+        no_architecture_authority=frame.openmythos.no_architecture_authority,
+        no_governance_authority=frame.openmythos.no_governance_authority,
+        no_anti_explosion_authority=frame.openmythos.no_anti_explosion_authority,
+        no_autonomous_execution_authority=frame.openmythos.no_autonomous_execution_authority,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3106,6 +3166,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         sprint_memory=audit_sprint_memory(),
         dev_strategy=audit_dev_strategy(),
         dev_policy=audit_dev_policy(),
+        provider_experimental=audit_provider_experimental(),
     )
 
 

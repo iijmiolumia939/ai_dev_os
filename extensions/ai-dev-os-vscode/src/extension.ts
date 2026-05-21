@@ -11,6 +11,7 @@ import {registerIncrementalContextCommands} from './commands/incrementalContextC
 import {registerLocalProviderCommands} from './commands/localProviderCommands';
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
+import {registerProviderExperimentalCommands} from './commands/providerExperimentalCommands';
 import {registerProviderRoutingCommands} from './commands/providerRoutingCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
@@ -41,6 +42,13 @@ import {
   ProviderPressureStatusBar,
   ProviderRoutingMonitor,
 } from './providerRouting/providerRouting';
+import {
+  BenchmarkActiveStatusBar,
+  DriftRiskStatusBar,
+  ExperimentalProviderStatusBar,
+  GovernanceStableStatusBar,
+  ProviderExperimentalMonitor,
+} from './providerExperimental/providerExperimental';
 import {
   GovernancePresenceMonitor,
   GovernancePresenceStatusBar,
@@ -160,6 +168,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const premiumProviderStatus = new PremiumProviderStatusBar(providerRouting);
   const providerDowngradeStatus = new ProviderDowngradeStatusBar(providerRouting);
   const providerPressureStatus = new ProviderPressureStatusBar(providerRouting);
+  const providerExperimental = new ProviderExperimentalMonitor();
+  const experimentalProviderStatus = new ExperimentalProviderStatusBar(providerExperimental);
+  const driftRiskStatus = new DriftRiskStatusBar(providerExperimental);
+  const governanceStableStatus = new GovernanceStableStatusBar(providerExperimental);
+  const benchmarkActiveStatus = new BenchmarkActiveStatusBar(providerExperimental);
   const localProvider = new LocalProviderMonitor();
   const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
   const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
@@ -284,6 +297,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const providerRoutingState = premiumProviderStatus.refresh();
   providerDowngradeStatus.refresh();
   providerPressureStatus.refresh();
+  experimentalProviderStatus.refresh();
+  driftRiskStatus.refresh();
+  governanceStableStatus.refresh();
+  benchmarkActiveStatus.refresh();
   const localProviderState = localProviderReadyStatus.refresh();
   ollamaActiveStatus.refresh();
   localBudgetOkStatus.refresh();
@@ -436,6 +453,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     premiumProviderStatus,
     providerDowngradeStatus,
     providerPressureStatus,
+    experimentalProviderStatus,
+    driftRiskStatus,
+    governanceStableStatus,
+    benchmarkActiveStatus,
     localProviderReadyStatus,
     ollamaActiveStatus,
     localBudgetOkStatus,
@@ -527,6 +548,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       premiumProviderStatus,
       providerDowngradeStatus,
       providerPressureStatus,
+      notifications,
+    ),
+    ...registerProviderExperimentalCommands(
+      providerExperimental,
+      experimentalProviderStatus,
+      driftRiskStatus,
+      governanceStableStatus,
+      benchmarkActiveStatus,
       notifications,
     ),
     ...registerLocalProviderCommands(
