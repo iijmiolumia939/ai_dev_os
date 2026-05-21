@@ -119,6 +119,7 @@ from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolic
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
+from ai_dev_os.subagent_execution import SubagentExecutionRuntime
 from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
 from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
@@ -744,6 +745,38 @@ class LocalProviderAuditReport:
 
 
 @dataclass(frozen=True)
+class SubagentExecutionAuditReport:
+    subagent_execution_active: bool
+    subagent_routing_active: bool
+    subagent_payload_active: bool
+    subagent_validation_active: bool
+    subagent_fallback_active: bool
+    subagent_governance_active: bool
+    subagent_scope_active: bool
+    subagent_eviction_active: bool
+    estimated_avoided_premium_subagent_tokens: int
+    estimated_avoided_recursive_agent_explosion: int
+    provider_routing_distribution: dict[str, int]
+    local_subagent_routing_result: str
+    low_governance_routing_result: str
+    medium_routing_result: str
+    high_routing_result: str
+    fallback_activation_summary: str
+    delegated_cognition_pressure: str
+    swarm_pressure: str
+    local_only_for_low_local: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_delegation_only: bool
+    human_confirmed_delegation_only: bool
+    no_autonomous_agent_swarms: bool
+    no_recursive_subagent_spawning: bool
+    no_hidden_provider_switching: bool
+    no_repo_wide_delegated_cognition: bool
+    no_autonomous_repository_mutation: bool
+
+
+@dataclass(frozen=True)
 class DevExecutionAuditReport:
     dev_execution_active: bool
     execution_plan_active: bool
@@ -920,6 +953,7 @@ class RuntimeEnforcementAuditReport:
     incremental_context: IncrementalContextAuditReport
     reasoning_scope: ReasoningScopeAuditReport
     local_provider: LocalProviderAuditReport
+    subagent_execution: SubagentExecutionAuditReport
     provider_routing: ProviderRoutingAuditReport
     dev_execution: DevExecutionAuditReport
     dev_loop: DevLoopAuditReport
@@ -2816,6 +2850,44 @@ def audit_local_provider() -> LocalProviderAuditReport:
     )
 
 
+def audit_subagent_execution() -> SubagentExecutionAuditReport:
+    frame = SubagentExecutionRuntime().evaluate()
+    return SubagentExecutionAuditReport(
+        subagent_execution_active=frame.subagent_execution_active,
+        subagent_routing_active=frame.subagent_routing_active,
+        subagent_payload_active=frame.subagent_payload_active,
+        subagent_validation_active=frame.subagent_validation_active,
+        subagent_fallback_active=frame.subagent_fallback_active,
+        subagent_governance_active=frame.subagent_governance_active,
+        subagent_scope_active=frame.subagent_scope_active,
+        subagent_eviction_active=frame.subagent_eviction_active,
+        estimated_avoided_premium_subagent_tokens=(
+            frame.estimated_avoided_premium_subagent_tokens
+        ),
+        estimated_avoided_recursive_agent_explosion=(
+            frame.estimated_avoided_recursive_agent_explosion
+        ),
+        provider_routing_distribution=frame.routing.provider_routing_distribution,
+        local_subagent_routing_result=frame.routing.low_local_provider,
+        low_governance_routing_result=frame.routing.low_governance_provider,
+        medium_routing_result=frame.routing.medium_provider,
+        high_routing_result=frame.routing.high_provider,
+        fallback_activation_summary=frame.fallback.active_fallback_provider,
+        delegated_cognition_pressure=frame.pressure.delegated_cognition_pressure,
+        swarm_pressure=frame.pressure.swarm_pressure,
+        local_only_for_low_local=frame.local_only_for_low_local,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_delegation_only=frame.bounded_delegation_only,
+        human_confirmed_delegation_only=frame.human_confirmed_delegation_only,
+        no_autonomous_agent_swarms=frame.no_autonomous_agent_swarms,
+        no_recursive_subagent_spawning=frame.no_recursive_subagent_spawning,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        no_repo_wide_delegated_cognition=frame.no_repo_wide_delegated_cognition,
+        no_autonomous_repository_mutation=frame.no_autonomous_repository_mutation,
+    )
+
+
 def audit_dev_execution() -> DevExecutionAuditReport:
     frame = DevelopmentExecutionRuntime().evaluate()
     return DevExecutionAuditReport(
@@ -3027,6 +3099,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         incremental_context=audit_incremental_context(),
         reasoning_scope=audit_reasoning_scope(),
         local_provider=audit_local_provider(),
+        subagent_execution=audit_subagent_execution(),
         provider_routing=audit_provider_routing(),
         dev_execution=audit_dev_execution(),
         dev_loop=audit_dev_loop(),

@@ -19,6 +19,7 @@ import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
+import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
@@ -103,6 +104,13 @@ import {
   SprintMemoryMonitor,
   SprintMemoryStatusBar,
 } from './sprintMemory/sprintMemory';
+import {
+  FallbackReadyStatusBar,
+  LocalDelegationStatusBar,
+  SubagentActiveStatusBar,
+  SubagentExecutionMonitor,
+  SwarmBlockedStatusBar,
+} from './subagentExecution/subagentExecution';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -182,6 +190,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const checkpointReadyStatus = new CheckpointReadyStatusBar(devExecution);
   const validationStableStatus = new ValidationStableStatusBar(devExecution);
   const rollbackSafeStatus = new RollbackSafeStatusBar(devExecution);
+  const subagentExecution = new SubagentExecutionMonitor();
+  const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
+  const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
+  const fallbackReadyStatus = new FallbackReadyStatusBar(subagentExecution);
+  const swarmBlockedStatus = new SwarmBlockedStatusBar(subagentExecution);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -295,6 +308,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   checkpointReadyStatus.refresh();
   validationStableStatus.refresh();
   rollbackSafeStatus.refresh();
+  const subagentState = subagentActiveStatus.refresh();
+  localDelegationStatus.refresh();
+  fallbackReadyStatus.refresh();
+  swarmBlockedStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -376,6 +393,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS development execution pressure is high. Compact execution summary before continuing.',
     );
   }
+  if (!subagentState.swarmBlocked || !subagentState.fallbackReady) {
+    await notifications.warn(
+      'startup-subagent-execution-warning',
+      'AI_DEV_OS subagent delegation is not bounded. Compact delegation summary before continuing.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -437,6 +460,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     checkpointReadyStatus,
     validationStableStatus,
     rollbackSafeStatus,
+    subagentActiveStatus,
+    localDelegationStatus,
+    fallbackReadyStatus,
+    swarmBlockedStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -548,6 +575,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       checkpointReadyStatus,
       validationStableStatus,
       rollbackSafeStatus,
+      notifications,
+    ),
+    ...registerSubagentExecutionCommands(
+      subagentExecution,
+      subagentActiveStatus,
+      localDelegationStatus,
+      fallbackReadyStatus,
+      swarmBlockedStatus,
       notifications,
     ),
   );

@@ -40,6 +40,7 @@ from ai_dev_os.provider_routing.provider_routing_policy import (
 )
 from ai_dev_os.reasoning_scope import ReasoningScopeRuntime
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
+from ai_dev_os.subagent_execution import SubagentExecutionFrame, SubagentExecutionRuntime
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,7 @@ class ProviderRoutingRuntimeFrame:
     recommendation: ProviderRecommendationFrame
     observability: ProviderObservabilityFrame
     local_provider: LocalProviderFrame
+    subagent_execution: SubagentExecutionFrame
     provider_routing_active: bool
     provider_neutral: bool
     deterministic: bool
@@ -152,6 +154,7 @@ class ProviderRoutingRuntime:
             previous_distribution=previous_distribution,
         )
         local_provider = LocalProviderRuntime().evaluate()
+        subagent_execution = SubagentExecutionRuntime().evaluate()
         scope = ReasoningScopeRuntime().evaluate(
             task_name="provider routing runtime",
             complexity=cognition_tier,
@@ -200,6 +203,7 @@ class ProviderRoutingRuntime:
                 compaction.summary_only,
                 observability.no_real_billing_integration,
                 local_provider.local_provider_active,
+                subagent_execution.subagent_routing_active,
                 scope.reasoning_scope_active,
                 retrieval.retrieval_budget_active,
                 completion.compact,
@@ -215,6 +219,7 @@ class ProviderRoutingRuntime:
             recommendation=recommendation,
             observability=observability,
             local_provider=local_provider,
+            subagent_execution=subagent_execution,
             provider_routing_active=active,
             provider_neutral=True,
             deterministic=True,
@@ -265,4 +270,6 @@ __all__ = [
     "ProviderUsageSample",
     "LocalProviderFrame",
     "LocalProviderRuntime",
+    "SubagentExecutionFrame",
+    "SubagentExecutionRuntime",
 ]
