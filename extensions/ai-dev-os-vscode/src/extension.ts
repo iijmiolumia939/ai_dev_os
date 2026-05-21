@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
@@ -57,6 +58,13 @@ import {RuntimeGraphViewProvider} from './views/runtimeGraphView';
 import {RuntimeOverlapViewProvider} from './views/runtimeOverlapView';
 import {SessionBoundaryViewProvider} from './views/sessionBoundaryView';
 import {SharedPrimitiveViewProvider} from './views/sharedPrimitiveView';
+import {
+  CostPressureStatusBar,
+  DevStrategyMonitor,
+  ProviderEfficiencyStatusBar,
+  RoadmapPressureStatusBar,
+  StrategyStableStatusBar,
+} from './devStrategy/devStrategy';
 import {
   LocalPatchRequiredStatusBar,
   SprintActiveStatusBar,
@@ -130,6 +138,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const memoryPressureStatus = new MemoryPressureStatusBar(sprintMemory);
   const patternStableStatus = new PatternStableStatusBar(sprintMemory);
   const memoryEvictionStatus = new MemoryEvictionStatusBar(sprintMemory);
+  const devStrategy = new DevStrategyMonitor();
+  const strategyStableStatus = new StrategyStableStatusBar(devStrategy);
+  const costPressureStatus = new CostPressureStatusBar(devStrategy);
+  const providerEfficiencyStatus = new ProviderEfficiencyStatusBar(devStrategy);
+  const roadmapPressureStatus = new RoadmapPressureStatusBar(devStrategy);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -227,6 +240,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   memoryPressureStatus.refresh();
   patternStableStatus.refresh();
   memoryEvictionStatus.refresh();
+  const strategyState = strategyStableStatus.refresh();
+  costPressureStatus.refresh();
+  providerEfficiencyStatus.refresh();
+  roadmapPressureStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -281,6 +298,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS sprint memory pressure is high. Cleanup stale sprint memory before continuing.',
     );
   }
+  if (strategyState.roadmapPressure === 'HIGH' || strategyState.costPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-development-strategy-pressure-warning',
+      'AI_DEV_OS development strategy pressure is high. Compact strategy summary before planning.',
+    );
+  }
   context.subscriptions.push(...registerSessionCommands(context, store, notifications, view));
   context.subscriptions.push(
     ...registerPersistenceCommands(store, persistence, notifications, view),
@@ -326,6 +349,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     memoryPressureStatus,
     patternStableStatus,
     memoryEvictionStatus,
+    strategyStableStatus,
+    costPressureStatus,
+    providerEfficiencyStatus,
+    roadmapPressureStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -405,6 +432,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       memoryPressureStatus,
       patternStableStatus,
       memoryEvictionStatus,
+      notifications,
+    ),
+    ...registerDevStrategyCommands(
+      devStrategy,
+      strategyStableStatus,
+      costPressureStatus,
+      providerEfficiencyStatus,
+      roadmapPressureStatus,
       notifications,
     ),
   );

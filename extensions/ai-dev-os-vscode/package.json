@@ -124,6 +124,12 @@
     "onCommand:aiDevOs.showSprintEfficiency",
     "onCommand:aiDevOs.compactSprintMemory",
     "onCommand:aiDevOs.cleanupSprintMemory",
+    "onCommand:aiDevOs.showDevelopmentStrategy",
+    "onCommand:aiDevOs.showCostReductionStrategy",
+    "onCommand:aiDevOs.showGovernanceStabilityStrategy",
+    "onCommand:aiDevOs.showProviderEfficiencyStrategy",
+    "onCommand:aiDevOs.showSprintDensityStrategy",
+    "onCommand:aiDevOs.compactStrategySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -252,7 +258,13 @@
       {"command": "aiDevOs.showSprintFailures", "title": "AI_DEV_OS: Show Sprint Failures"},
       {"command": "aiDevOs.showSprintEfficiency", "title": "AI_DEV_OS: Show Sprint Efficiency"},
       {"command": "aiDevOs.compactSprintMemory", "title": "AI_DEV_OS: Compact Sprint Memory"},
-      {"command": "aiDevOs.cleanupSprintMemory", "title": "AI_DEV_OS: Cleanup Sprint Memory"}
+      {"command": "aiDevOs.cleanupSprintMemory", "title": "AI_DEV_OS: Cleanup Sprint Memory"},
+      {"command": "aiDevOs.showDevelopmentStrategy", "title": "AI_DEV_OS: Show Development Strategy"},
+      {"command": "aiDevOs.showCostReductionStrategy", "title": "AI_DEV_OS: Show Cost Reduction Strategy"},
+      {"command": "aiDevOs.showGovernanceStabilityStrategy", "title": "AI_DEV_OS: Show Governance Stability Strategy"},
+      {"command": "aiDevOs.showProviderEfficiencyStrategy", "title": "AI_DEV_OS: Show Provider Efficiency Strategy"},
+      {"command": "aiDevOs.showSprintDensityStrategy", "title": "AI_DEV_OS: Show Sprint Density Strategy"},
+      {"command": "aiDevOs.compactStrategySummary", "title": "AI_DEV_OS: Compact Strategy Summary"}
     ],
     "views": {
       "explorer": [

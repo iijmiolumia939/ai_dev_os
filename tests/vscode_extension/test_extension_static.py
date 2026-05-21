@@ -61,6 +61,12 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showSprintEfficiency",
         "aiDevOs.compactSprintMemory",
         "aiDevOs.cleanupSprintMemory",
+        "aiDevOs.showDevelopmentStrategy",
+        "aiDevOs.showCostReductionStrategy",
+        "aiDevOs.showGovernanceStabilityStrategy",
+        "aiDevOs.showProviderEfficiencyStrategy",
+        "aiDevOs.showSprintDensityStrategy",
+        "aiDevOs.compactStrategySummary",
     }.issubset(commands)
 
 
@@ -91,6 +97,16 @@ def test_sprint_memory_status_bars_are_declared() -> None:
     assert "AI_DEV_OS PATTERN_STABLE" in source
     assert "AI_DEV_OS MEMORY_EVICTION" in source
     assert "registerSprintMemoryCommands" in source
+
+
+def test_development_strategy_status_bars_are_declared() -> None:
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.ts"))
+
+    assert "AI_DEV_OS STRATEGY_STABLE" in source
+    assert "AI_DEV_OS COST_PRESSURE" in source
+    assert "AI_DEV_OS PROVIDER_EFFICIENCY" in source
+    assert "AI_DEV_OS ROADMAP_PRESSURE" in source
+    assert "registerDevStrategyCommands" in source
 
 
 def test_extension_has_local_state_without_telemetry() -> None:

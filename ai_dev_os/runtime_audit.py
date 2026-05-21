@@ -23,6 +23,7 @@ from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
 from ai_dev_os.dev_loop import SprintDevLoopRuntime
+from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -751,6 +752,34 @@ class SprintMemoryAuditReport:
 
 
 @dataclass(frozen=True)
+class DevStrategyAuditReport:
+    dev_strategy_active: bool
+    strategy_priority_active: bool
+    cost_reduction_strategy_active: bool
+    governance_stability_strategy_active: bool
+    provider_efficiency_strategy_active: bool
+    sprint_density_strategy_active: bool
+    embodiment_focus_strategy_active: bool
+    strategy_eviction_active: bool
+    estimated_avoided_strategy_overhead: int
+    estimated_avoided_roadmap_explosion: int
+    provider_routing_distribution: dict[str, int]
+    strategy_pressure: str
+    cost_pressure: str
+    roadmap_pressure: str
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_strategy_only: bool
+    human_confirmed_strategy_only: bool
+    no_autonomous_roadmap_generation: bool
+    no_recursive_future_sprint_synthesis: bool
+    no_hidden_provider_switching: bool
+    no_giant_strategic_replay: bool
+    compact_pressure_warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -791,6 +820,7 @@ class RuntimeEnforcementAuditReport:
     provider_routing: ProviderRoutingAuditReport
     dev_loop: DevLoopAuditReport
     sprint_memory: SprintMemoryAuditReport
+    dev_strategy: DevStrategyAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2713,6 +2743,36 @@ def audit_sprint_memory() -> SprintMemoryAuditReport:
     )
 
 
+def audit_dev_strategy() -> DevStrategyAuditReport:
+    frame = DevelopmentStrategyRuntime().evaluate()
+    return DevStrategyAuditReport(
+        dev_strategy_active=frame.dev_strategy_active,
+        strategy_priority_active=frame.strategy_priority_active,
+        cost_reduction_strategy_active=frame.cost_reduction_strategy_active,
+        governance_stability_strategy_active=frame.governance_stability_strategy_active,
+        provider_efficiency_strategy_active=frame.provider_efficiency_strategy_active,
+        sprint_density_strategy_active=frame.sprint_density_strategy_active,
+        embodiment_focus_strategy_active=frame.embodiment_focus_strategy_active,
+        strategy_eviction_active=frame.strategy_eviction_active,
+        estimated_avoided_strategy_overhead=frame.estimated_avoided_strategy_overhead,
+        estimated_avoided_roadmap_explosion=frame.estimated_avoided_roadmap_explosion,
+        provider_routing_distribution=frame.provider_routing_distribution,
+        strategy_pressure=frame.pressure.strategy_pressure,
+        cost_pressure=frame.pressure.cost_pressure,
+        roadmap_pressure=frame.pressure.roadmap_pressure,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_strategy_only=frame.bounded_strategy_only,
+        human_confirmed_strategy_only=frame.human_confirmed_strategy_only,
+        no_autonomous_roadmap_generation=frame.no_autonomous_roadmap_generation,
+        no_recursive_future_sprint_synthesis=frame.no_recursive_future_sprint_synthesis,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        no_giant_strategic_replay=frame.no_giant_strategic_replay,
+        compact_pressure_warnings=frame.pressure.compact_pressure_warnings,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2759,6 +2819,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_routing=audit_provider_routing(),
         dev_loop=audit_dev_loop(),
         sprint_memory=audit_sprint_memory(),
+        dev_strategy=audit_dev_strategy(),
     )
 
 
