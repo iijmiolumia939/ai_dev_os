@@ -9,9 +9,7 @@ SUBAGENT_EXECUTION_REQUIREMENT_IDS = tuple(
     "NFR-ARCH-40",
     "NFR-SEC-11",
 )
-SUBAGENT_EXECUTION_TEST_IDS = tuple(
-    f"TC-SUBAGENTEXEC-{index:02d}" for index in range(1, 15)
-)
+SUBAGENT_EXECUTION_TEST_IDS = tuple(f"TC-SUBAGENTEXEC-{index:02d}" for index in range(1, 15))
 
 DELEGATABLE_TASKS = (
     "repetitive_tests",
@@ -351,7 +349,10 @@ class SubagentExecutionRuntime:
             payload_pressure="LOW",
             scope_pressure="LOW",
             swarm_pressure="BLOCKED" if recursive_attempts else "LOW",
-            compact_pressure_warnings=("recursive_delegation_blocked", "oversized_payload_compacted"),
+            compact_pressure_warnings=(
+                "recursive_delegation_blocked",
+                "oversized_payload_compacted",
+            ),
             bounded_delegation_only=True,
         )
         recommendation = SubagentRecommendationFrame(
