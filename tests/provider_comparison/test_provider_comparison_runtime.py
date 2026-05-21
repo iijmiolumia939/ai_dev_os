@@ -16,10 +16,12 @@ def test_tc_providercomparison_01_comparison_is_deterministic_and_non_executing(
         "token efficiency",
         "output stability",
         "governance adherence",
+        "LOCAL_PATCH compliance",
         "compactness",
         "runtime drift",
         "hallucination rate",
         "repetitive reliability",
+        "recursive reasoning tendency",
     }
 
 
@@ -33,3 +35,13 @@ def test_tc_providercomparison_02_drift_risk_stays_guarded_without_model() -> No
     assert frame.drift.drift_risk == "LOW_NOT_LOADED"
     assert frame.summary.estimated_reasoning_depth_benefit == "unmeasured_model_unavailable"
     assert frame.summary.estimated_instability_risk == "low_until_model_loaded"
+
+
+def test_tc_providercomparison_03_fallback_blocks_hidden_provider_switching() -> None:
+    frame = ProviderExperimentalRuntime().evaluate()
+
+    assert frame.fallback.fallback_active is True
+    assert frame.fallback.fallback_route == "qwen2.5-coder:7b"
+    assert frame.fallback.no_hidden_provider_switching is True
+    assert frame.comparison.no_hidden_provider_switching is True
+    assert frame.comparison.no_real_provider_execution is True

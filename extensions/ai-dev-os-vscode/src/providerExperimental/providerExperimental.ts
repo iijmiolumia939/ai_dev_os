@@ -5,6 +5,8 @@ export type DriftRisk = 'LOW_NOT_LOADED' | 'MEDIUM_EXPERIMENTAL';
 export interface ProviderExperimentalState {
   experimentalProviderActive: true;
   openMythosProviderActive: boolean;
+  openMythosGgufActive: boolean;
+  openMythosConversionActive: boolean;
   providerBenchmarkActive: boolean;
   providerComparisonActive: boolean;
   providerDriftActive: true;
@@ -12,6 +14,8 @@ export interface ProviderExperimentalState {
   governanceStable: true;
   compactSummary: string;
   openMythosLoadResult: string;
+  ggufConversionResult: string;
+  openMythosFallbackRoute: string;
   vramRuntimeStability: string;
   estimatedReasoningDepthGain: number;
   estimatedGovernanceInstabilityRisk: number;
@@ -31,13 +35,17 @@ export class ProviderExperimentalMonitor {
     return {
       experimentalProviderActive: true,
       openMythosProviderActive: false,
+      openMythosGgufActive: false,
+      openMythosConversionActive: true,
       providerBenchmarkActive: this.benchmarkActive,
       providerComparisonActive: true,
       providerDriftActive: true,
       driftRisk: 'LOW_NOT_LOADED',
       governanceStable: true,
-      compactSummary: 'OpenMythos unavailable; bounded benchmark harness active; no routing changed.',
-      openMythosLoadResult: 'unavailable:model_manifest_missing',
+      compactSummary: 'OpenMythos HF GGUF unavailable; conversion fallback guarded; no routing changed.',
+      openMythosLoadResult: 'unavailable:hf_repository_not_gguf',
+      ggufConversionResult: 'guarded:not_converted_custom_open_mythos_architecture',
+      openMythosFallbackRoute: 'qwen2.5-coder:7b',
       vramRuntimeStability: 'not_loaded',
       estimatedReasoningDepthGain: 0,
       estimatedGovernanceInstabilityRisk: 2,
@@ -71,8 +79,8 @@ export class ExperimentalProviderStatusBar {
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS EXPERIMENTAL_PROVIDER ${state.experimentalProviderActive ? 'ON' : 'OFF'}`;
-    this.item.tooltip = `OpenMythos ${state.openMythosLoadResult}; rollback-safe ${state.rollbackSafe}`;
+    this.item.text = `AI_DEV_OS OPENMYTHOS_ACTIVE ${state.openMythosProviderActive ? 'YES' : 'NO'}`;
+    this.item.tooltip = `OpenMythos ${state.openMythosLoadResult}; fallback ${state.openMythosFallbackRoute}`;
     this.item.show();
     return state;
   }
@@ -91,8 +99,8 @@ export class DriftRiskStatusBar {
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS DRIFT_RISK ${state.driftRisk}`;
-    this.item.tooltip = `Architecture drift risk ${state.estimatedArchitectureDriftRisk}; governance risk ${state.estimatedGovernanceInstabilityRisk}`;
+    this.item.text = `AI_DEV_OS DRIFT_GUARDED ${state.driftRisk}`;
+    this.item.tooltip = `Architecture drift risk ${state.estimatedArchitectureDriftRisk}; recursive drift guarded`;
     this.item.show();
     return state;
   }
@@ -111,7 +119,7 @@ export class GovernanceStableStatusBar {
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS GOVERNANCE_STABLE ${state.governanceStable ? 'YES' : 'NO'}`;
+    this.item.text = `AI_DEV_OS GOVERNANCE_PROTECTED ${state.governanceStable ? 'YES' : 'NO'}`;
     this.item.tooltip = `No governance authority ${state.noGovernanceAuthority}; no architecture authority ${state.noArchitectureAuthority}`;
     this.item.show();
     return state;
@@ -131,8 +139,8 @@ export class BenchmarkActiveStatusBar {
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS BENCHMARK_ACTIVE ${state.providerBenchmarkActive ? 'YES' : 'NO'}`;
-    this.item.tooltip = `Summary-only ${state.summaryOnly}; local-only ${state.localOnly}`;
+    this.item.text = `AI_DEV_OS GGUF_EXPERIMENTAL ${state.openMythosConversionActive ? 'ON' : 'OFF'}`;
+    this.item.tooltip = `GGUF ${state.ggufConversionResult}; summary-only ${state.summaryOnly}`;
     this.item.show();
     return state;
   }

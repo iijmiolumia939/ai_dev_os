@@ -919,6 +919,13 @@ class DevPolicyAuditReport:
 class ProviderExperimentalAuditReport:
     experimental_provider_active: bool
     openmythos_provider_active: bool
+    openmythos_loaded: bool
+    openmythos_gguf_active: bool
+    openmythos_conversion_active: bool
+    openmythos_runtime_stability: str
+    openmythos_drift_risk: str
+    openmythos_reasoning_depth_signal: str
+    openmythos_governance_adherence: str
     provider_benchmark_active: bool
     provider_comparison_active: bool
     provider_drift_active: bool
@@ -926,6 +933,12 @@ class ProviderExperimentalAuditReport:
     provider_benchmark_summary_active: bool
     provider_benchmark_eviction_active: bool
     openmythos_load_result: str
+    openmythos_direct_hf_result: str
+    openmythos_weighted_hf_result: str
+    openmythos_gguf_conversion_result: str
+    openmythos_quantization: str
+    openmythos_ollama_model: str
+    openmythos_fallback_route: str
     vram_runtime_stability: str
     provider_comparison_summary: str
     governance_adherence_observation: str
@@ -2846,6 +2859,13 @@ def audit_provider_experimental() -> ProviderExperimentalAuditReport:
     return ProviderExperimentalAuditReport(
         experimental_provider_active=frame.experimental_provider_active,
         openmythos_provider_active=frame.openmythos_provider_active,
+        openmythos_loaded=frame.openmythos_loaded,
+        openmythos_gguf_active=frame.openmythos_gguf_active,
+        openmythos_conversion_active=frame.openmythos_conversion_active,
+        openmythos_runtime_stability=frame.openmythos_runtime_stability,
+        openmythos_drift_risk=frame.openmythos_drift_risk,
+        openmythos_reasoning_depth_signal=frame.openmythos_reasoning_depth_signal,
+        openmythos_governance_adherence=frame.openmythos_governance_adherence,
         provider_benchmark_active=frame.provider_benchmark_active,
         provider_comparison_active=frame.provider_comparison_active,
         provider_drift_active=frame.provider_drift_active,
@@ -2853,6 +2873,12 @@ def audit_provider_experimental() -> ProviderExperimentalAuditReport:
         provider_benchmark_summary_active=frame.summary.provider_benchmark_summary_active,
         provider_benchmark_eviction_active=frame.eviction.provider_benchmark_eviction_active,
         openmythos_load_result=frame.openmythos.load_result,
+        openmythos_direct_hf_result=frame.gguf.direct_ollama_result,
+        openmythos_weighted_hf_result=frame.gguf.weighted_ollama_result,
+        openmythos_gguf_conversion_result=frame.conversion.conversion_result,
+        openmythos_quantization=frame.quantization.preferred_quantization,
+        openmythos_ollama_model=frame.conversion.ollama_model_name,
+        openmythos_fallback_route=frame.fallback.fallback_route,
         vram_runtime_stability=frame.openmythos.vram_runtime_stability,
         provider_comparison_summary="; ".join(frame.comparison.providers),
         governance_adherence_observation=frame.summary.governance_adherence_observation,

@@ -34,3 +34,17 @@ def test_tc_providerbenchmark_02_retains_compact_summaries_only() -> None:
     assert frame.eviction.evicts_raw_outputs is True
     assert frame.eviction.evicts_unbounded_context is True
     assert frame.eviction.compact_summary_retained is True
+
+
+def test_tc_providerbenchmark_03_conversion_pipeline_uses_isolated_dependencies() -> None:
+    frame = ProviderExperimentalRuntime().evaluate()
+
+    assert frame.conversion.local_patch_only is True
+    assert frame.conversion.isolated_dependencies_only is True
+    assert frame.conversion.stable_runtime_dependencies_unchanged is True
+    assert "transformers>=4.40,<5" in frame.conversion.dependencies
+    assert "safetensors>=0.4,<1" in frame.conversion.dependencies
+    assert "huggingface_hub>=0.23,<1" in frame.conversion.dependencies
+    assert "llama.cpp convert_hf_to_gguf.py" in frame.conversion.conversion_tooling
+    assert frame.model_validation.adjacent_runtime_retrieval_only is True
+    assert frame.model_validation.compact_prompts_only is True

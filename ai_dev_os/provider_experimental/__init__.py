@@ -2,6 +2,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from ai_dev_os.provider_experimental.openmythos_conversion import (
+    ExperimentalFallbackFrame,
+    ExperimentalModelValidationFrame,
+    ExperimentalQuantizationFrame,
+    GGUFCompatibilityFrame,
+    OpenMythosConversionFrame,
+    OpenMythosConversionRuntime,
+)
+
 BENCHMARK_CATEGORIES = (
     "LOCAL_PATCH adherence",
     "compact continuity discipline",
@@ -39,10 +48,12 @@ COMPARISON_METRICS = (
     "token efficiency",
     "output stability",
     "governance adherence",
+    "LOCAL_PATCH compliance",
     "compactness",
     "runtime drift",
     "hallucination rate",
     "repetitive reliability",
+    "recursive reasoning tendency",
 )
 
 
@@ -173,8 +184,20 @@ class ProviderExperimentalRuntimeFrame:
     governance: ProviderGovernanceFrame
     summary: ProviderBenchmarkSummaryFrame
     eviction: ProviderBenchmarkEvictionFrame
+    conversion: OpenMythosConversionFrame
+    gguf: GGUFCompatibilityFrame
+    model_validation: ExperimentalModelValidationFrame
+    quantization: ExperimentalQuantizationFrame
+    fallback: ExperimentalFallbackFrame
     experimental_provider_active: bool
     openmythos_provider_active: bool
+    openmythos_loaded: bool
+    openmythos_gguf_active: bool
+    openmythos_conversion_active: bool
+    openmythos_runtime_stability: str
+    openmythos_drift_risk: str
+    openmythos_reasoning_depth_signal: str
+    openmythos_governance_adherence: str
     provider_benchmark_active: bool
     provider_comparison_active: bool
     provider_drift_active: bool
@@ -190,9 +213,11 @@ class ProviderExperimentalRuntime:
     def evaluate(
         self,
         *,
-        openmythos_load_result: str = "unavailable:model_manifest_missing",
+        openmythos_load_result: str = "unavailable:hf_repository_not_gguf",
         openmythos_loaded: bool = False,
+        openmythos_gguf_active: bool = False,
     ) -> ProviderExperimentalRuntimeFrame:
+        conversion_runtime = OpenMythosConversionRuntime().evaluate()
         experimental = ExperimentalProviderFrame(
             experimental_provider_active=True,
             branch_isolated=True,
@@ -206,9 +231,9 @@ class ProviderExperimentalRuntime:
             rollback_safe=True,
         )
         openmythos = OpenMythosProviderFrame(
-            openmythos_provider_active=openmythos_loaded,
+            openmythos_provider_active=openmythos_loaded and openmythos_gguf_active,
             provider_name="OpenMythos",
-            ollama_model="openmythos",
+            ollama_model=conversion_runtime.conversion.ollama_model_name,
             load_result=openmythos_load_result,
             vram_runtime_stability="not_loaded" if not openmythos_loaded else "bounded",
             reasoning_depth_profile="experimental_recurrent_depth",
@@ -288,7 +313,7 @@ class ProviderExperimentalRuntime:
         summary = ProviderBenchmarkSummaryFrame(
             provider_benchmark_summary_active=True,
             compact_summary=(
-                "OpenMythos unavailable; bounded benchmark harness active; "
+                "OpenMythos HF GGUF unavailable; conversion fallback guarded; "
                 "no production routing changed."
             ),
             openmythos_load_result=openmythos_load_result,
@@ -323,8 +348,20 @@ class ProviderExperimentalRuntime:
             governance=governance,
             summary=summary,
             eviction=eviction,
+            conversion=conversion_runtime.conversion,
+            gguf=conversion_runtime.compatibility,
+            model_validation=conversion_runtime.validation,
+            quantization=conversion_runtime.quantization,
+            fallback=conversion_runtime.fallback,
             experimental_provider_active=experimental.experimental_provider_active,
             openmythos_provider_active=openmythos.openmythos_provider_active,
+            openmythos_loaded=openmythos_loaded,
+            openmythos_gguf_active=openmythos_gguf_active,
+            openmythos_conversion_active=conversion_runtime.conversion.conversion_active,
+            openmythos_runtime_stability=openmythos.vram_runtime_stability,
+            openmythos_drift_risk=drift.drift_risk,
+            openmythos_reasoning_depth_signal=summary.estimated_reasoning_depth_benefit,
+            openmythos_governance_adherence=summary.governance_adherence_observation,
             provider_benchmark_active=benchmark.provider_benchmark_active,
             provider_comparison_active=comparison.provider_comparison_active,
             provider_drift_active=drift.provider_drift_active,
@@ -344,7 +381,12 @@ __all__ = [
     "COMPARISON_PROVIDERS",
     "FORBIDDEN_BENCHMARK_TASKS",
     "ExperimentalProviderFrame",
+    "ExperimentalFallbackFrame",
+    "ExperimentalModelValidationFrame",
+    "ExperimentalQuantizationFrame",
+    "GGUFCompatibilityFrame",
     "OpenMythosProviderFrame",
+    "OpenMythosConversionFrame",
     "ProviderBenchmarkEvictionFrame",
     "ProviderBenchmarkFrame",
     "ProviderBenchmarkSummaryFrame",
