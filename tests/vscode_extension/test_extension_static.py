@@ -67,6 +67,12 @@ def test_extension_commands_are_declared() -> None:
         "aiDevOs.showProviderEfficiencyStrategy",
         "aiDevOs.showSprintDensityStrategy",
         "aiDevOs.compactStrategySummary",
+        "aiDevOs.showDevelopmentPolicies",
+        "aiDevOs.showArchitectureProtection",
+        "aiDevOs.showEmbodimentRealismPolicy",
+        "aiDevOs.showProviderEscalationPolicy",
+        "aiDevOs.showAntiExplosionPolicy",
+        "aiDevOs.compactPolicySummary",
     }.issubset(commands)
 
 
@@ -107,6 +113,16 @@ def test_development_strategy_status_bars_are_declared() -> None:
     assert "AI_DEV_OS PROVIDER_EFFICIENCY" in source
     assert "AI_DEV_OS ROADMAP_PRESSURE" in source
     assert "registerDevStrategyCommands" in source
+
+
+def test_development_policy_status_bars_are_declared() -> None:
+    source = "\n".join(path.read_text(encoding="utf-8") for path in (ROOT / "src").rglob("*.ts"))
+
+    assert "AI_DEV_OS POLICY_STABLE" in source
+    assert "AI_DEV_OS GOVERNANCE_PRESSURE" in source
+    assert "AI_DEV_OS ESCALATION_PRESSURE" in source
+    assert "AI_DEV_OS REALISM_PROTECTED" in source
+    assert "registerDevPolicyCommands" in source
 
 
 def test_extension_has_local_state_without_telemetry() -> None:

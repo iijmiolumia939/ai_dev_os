@@ -130,6 +130,12 @@
     "onCommand:aiDevOs.showProviderEfficiencyStrategy",
     "onCommand:aiDevOs.showSprintDensityStrategy",
     "onCommand:aiDevOs.compactStrategySummary",
+    "onCommand:aiDevOs.showDevelopmentPolicies",
+    "onCommand:aiDevOs.showArchitectureProtection",
+    "onCommand:aiDevOs.showEmbodimentRealismPolicy",
+    "onCommand:aiDevOs.showProviderEscalationPolicy",
+    "onCommand:aiDevOs.showAntiExplosionPolicy",
+    "onCommand:aiDevOs.compactPolicySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -264,7 +270,13 @@
       {"command": "aiDevOs.showGovernanceStabilityStrategy", "title": "AI_DEV_OS: Show Governance Stability Strategy"},
       {"command": "aiDevOs.showProviderEfficiencyStrategy", "title": "AI_DEV_OS: Show Provider Efficiency Strategy"},
       {"command": "aiDevOs.showSprintDensityStrategy", "title": "AI_DEV_OS: Show Sprint Density Strategy"},
-      {"command": "aiDevOs.compactStrategySummary", "title": "AI_DEV_OS: Compact Strategy Summary"}
+      {"command": "aiDevOs.compactStrategySummary", "title": "AI_DEV_OS: Compact Strategy Summary"},
+      {"command": "aiDevOs.showDevelopmentPolicies", "title": "AI_DEV_OS: Show Development Policies"},
+      {"command": "aiDevOs.showArchitectureProtection", "title": "AI_DEV_OS: Show Architecture Protection"},
+      {"command": "aiDevOs.showEmbodimentRealismPolicy", "title": "AI_DEV_OS: Show Embodiment Realism Policy"},
+      {"command": "aiDevOs.showProviderEscalationPolicy", "title": "AI_DEV_OS: Show Provider Escalation Policy"},
+      {"command": "aiDevOs.showAntiExplosionPolicy", "title": "AI_DEV_OS: Show Anti-Explosion Policy"},
+      {"command": "aiDevOs.compactPolicySummary", "title": "AI_DEV_OS: Compact Policy Summary"}
     ],
     "views": {
       "explorer": [

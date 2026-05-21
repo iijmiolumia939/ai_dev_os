@@ -23,6 +23,7 @@ from ai_dev_os.copilot_usage.inline_first import InlineFirstPolicy
 from ai_dev_os.copilot_usage.session_policy import SessionCostPolicy, SessionState
 from ai_dev_os.copilot_usage.skill_compaction import SkillCompactionPolicy, SkillInstruction
 from ai_dev_os.dev_loop import SprintDevLoopRuntime
+from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
@@ -780,6 +781,36 @@ class DevStrategyAuditReport:
 
 
 @dataclass(frozen=True)
+class DevPolicyAuditReport:
+    dev_policy_active: bool
+    architecture_policy_active: bool
+    embodiment_realism_policy_active: bool
+    provider_escalation_policy_active: bool
+    bounded_cognition_policy_active: bool
+    anti_explosion_policy_active: bool
+    rollout_safety_policy_active: bool
+    policy_eviction_active: bool
+    estimated_avoided_policy_overhead: int
+    estimated_avoided_governance_explosion: int
+    provider_routing_distribution: dict[str, int]
+    policy_pressure: str
+    governance_pressure: str
+    escalation_pressure: str
+    realism_pressure: str
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    bounded_policy_only: bool
+    human_confirmed_governance_only: bool
+    no_autonomous_enforcement: bool
+    no_repository_mutation_authority: bool
+    no_hidden_provider_switching: bool
+    no_recursive_governance_expansion: bool
+    no_giant_policy_replay: bool
+    compact_pressure_warnings: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -821,6 +852,7 @@ class RuntimeEnforcementAuditReport:
     dev_loop: DevLoopAuditReport
     sprint_memory: SprintMemoryAuditReport
     dev_strategy: DevStrategyAuditReport
+    dev_policy: DevPolicyAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2773,6 +2805,38 @@ def audit_dev_strategy() -> DevStrategyAuditReport:
     )
 
 
+def audit_dev_policy() -> DevPolicyAuditReport:
+    frame = DevelopmentPolicyRuntime().evaluate()
+    return DevPolicyAuditReport(
+        dev_policy_active=frame.dev_policy_active,
+        architecture_policy_active=frame.architecture_policy_active,
+        embodiment_realism_policy_active=frame.embodiment_realism_policy_active,
+        provider_escalation_policy_active=frame.provider_escalation_policy_active,
+        bounded_cognition_policy_active=frame.bounded_cognition_policy_active,
+        anti_explosion_policy_active=frame.anti_explosion_policy_active,
+        rollout_safety_policy_active=frame.rollout_safety_policy_active,
+        policy_eviction_active=frame.policy_eviction_active,
+        estimated_avoided_policy_overhead=frame.estimated_avoided_policy_overhead,
+        estimated_avoided_governance_explosion=frame.estimated_avoided_governance_explosion,
+        provider_routing_distribution=frame.provider_routing_distribution,
+        policy_pressure=frame.pressure.policy_pressure,
+        governance_pressure=frame.pressure.governance_pressure,
+        escalation_pressure=frame.pressure.escalation_pressure,
+        realism_pressure=frame.pressure.realism_pressure,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        bounded_policy_only=frame.bounded_policy_only,
+        human_confirmed_governance_only=frame.human_confirmed_governance_only,
+        no_autonomous_enforcement=frame.no_autonomous_enforcement,
+        no_repository_mutation_authority=frame.no_repository_mutation_authority,
+        no_hidden_provider_switching=frame.no_hidden_provider_switching,
+        no_recursive_governance_expansion=frame.no_recursive_governance_expansion,
+        no_giant_policy_replay=frame.no_giant_policy_replay,
+        compact_pressure_warnings=frame.pressure.compact_pressure_warnings,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
@@ -2820,6 +2884,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         dev_loop=audit_dev_loop(),
         sprint_memory=audit_sprint_memory(),
         dev_strategy=audit_dev_strategy(),
+        dev_policy=audit_dev_policy(),
     )
 
 
