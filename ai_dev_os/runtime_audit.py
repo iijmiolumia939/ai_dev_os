@@ -4,6 +4,8 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_dev_os.adaptive_provider_routing import AdaptiveProviderRoutingRuntime
+from ai_dev_os.cognitive_memory_pressure import CognitiveMemoryPressureRuntime
 from ai_dev_os.consumer_rollout import (
     CompatibilityProjectionPolicy,
     ConsumerRolloutAuditPolicy,
@@ -26,6 +28,7 @@ from ai_dev_os.dev_execution import DevelopmentExecutionRuntime
 from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
+from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -60,8 +63,11 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.provider_experimental import ProviderExperimentalRuntime
+from ai_dev_os.provider_fatigue import ProviderFatigueRuntime
 from ai_dev_os.provider_local import LocalProviderRuntime
 from ai_dev_os.provider_routing import ProviderRoutingRuntime
+from ai_dev_os.provider_stability import ProviderStabilityRuntime
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
@@ -915,6 +921,176 @@ class DevPolicyAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderExperimentalAuditReport:
+    experimental_provider_active: bool
+    openmythos_provider_active: bool
+    openmythos_loaded: bool
+    openmythos_gguf_active: bool
+    openmythos_conversion_active: bool
+    openmythos_runtime_stability: str
+    openmythos_drift_risk: str
+    openmythos_reasoning_depth_signal: str
+    openmythos_governance_adherence: str
+    provider_benchmark_active: bool
+    provider_comparison_active: bool
+    provider_drift_active: bool
+    provider_governance_active: bool
+    provider_benchmark_summary_active: bool
+    provider_benchmark_eviction_active: bool
+    openmythos_load_result: str
+    openmythos_direct_hf_result: str
+    openmythos_weighted_hf_result: str
+    openmythos_gguf_conversion_result: str
+    openmythos_quantization: str
+    openmythos_ollama_model: str
+    openmythos_fallback_route: str
+    vram_runtime_stability: str
+    provider_comparison_summary: str
+    governance_adherence_observation: str
+    architecture_drift_observation: str
+    estimated_reasoning_depth_gain: int
+    estimated_governance_instability_risk: int
+    estimated_architecture_drift_risk: int
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+    rollback_safe: bool
+    no_architecture_authority: bool
+    no_governance_authority: bool
+    no_anti_explosion_authority: bool
+    no_autonomous_execution_authority: bool
+
+
+@dataclass(frozen=True)
+class ProviderStabilityAuditReport:
+    provider_stability_active: bool
+    long_session_drift_active: bool
+    governance_decay_active: bool
+    compactness_retention_active: bool
+    retrieval_radius_active: bool
+    hallucination_pressure_active: bool
+    stability_benchmark_active: bool
+    provider_stability_comparison: tuple[str, ...]
+    governance_adherence_ranking: tuple[str, ...]
+    compactness_retention_ranking: tuple[str, ...]
+    drift_resistance_ranking: tuple[str, ...]
+    local_patch_adherence_ranking: tuple[str, ...]
+    repetitive_reliability_ranking: tuple[str, ...]
+    retrieval_discipline_ranking: tuple[str, ...]
+    estimated_long_session_degradation: dict[str, int]
+    estimated_provider_stability_gain: int
+    estimated_recursive_drift_risk: str
+    openmythos_placeholder_only: bool
+    no_real_openmythos_execution: bool
+    no_hidden_provider_switching: bool
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+
+
+@dataclass(frozen=True)
+class AdaptiveProviderRoutingAuditReport:
+    adaptive_provider_routing_active: bool
+    drift_aware_routing_active: bool
+    governance_weighted_routing_active: bool
+    long_session_routing_active: bool
+    routing_confidence_active: bool
+    provider_recommendation_ranking: tuple[str, ...]
+    stability_weighted_ranking: tuple[str, ...]
+    governance_weighted_ranking: tuple[str, ...]
+    routing_confidence_summary: tuple[str, ...]
+    drift_aware_routing_result: str
+    governance_weighted_routing_result: str
+    estimated_avoided_provider_drift: int
+    estimated_avoided_recursive_routing: int
+    estimated_avoided_premium_burn: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    no_hidden_provider_switching: bool
+    no_recursive_routing_loops: bool
+    no_unrestricted_provider_escalation: bool
+    automatic_switching_allowed: bool
+    governance_runtime_bypassed: bool
+
+
+@dataclass(frozen=True)
+class ProviderFatigueAuditReport:
+    provider_fatigue_active: bool
+    escalation_fatigue_active: bool
+    fallback_oscillation_active: bool
+    compactness_decay_active: bool
+    long_session_pressure_active: bool
+    fatigue_confidence_active: bool
+    provider_recovery_active: bool
+    provider_fatigue_summary: tuple[str, ...]
+    escalation_fatigue_warning: str
+    fallback_oscillation_summary: str
+    compactness_decay_recommendation: str
+    recovery_recommendation: str
+    estimated_avoided_provider_exhaustion: int
+    estimated_avoided_recursive_fatigue: int
+    estimated_avoided_premium_burn: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    autonomous_provider_replacement: bool
+    recursive_reroute_loops_blocked: bool
+    governance_runtime_bypassed: bool
+    hidden_escalation_switching: bool
+
+
+@dataclass(frozen=True)
+class CognitiveMemoryPressureAuditReport:
+    cognitive_memory_pressure_active: bool
+    continuity_inflation_active: bool
+    retrieval_overload_active: bool
+    summary_entropy_active: bool
+    context_fragmentation_active: bool
+    memory_pressure_summary: str
+    continuity_inflation_summary: str
+    retrieval_overload_summary: str
+    summary_entropy_summary: str
+    continuity_recovery_recommendation: str
+    estimated_avoided_context_explosion: int
+    estimated_avoided_summary_entropy: int
+    estimated_avoided_retrieval_overload: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    autonomous_cognition_erasure: bool
+    recursive_continuity_mutation: bool
+    governance_runtime_bypassed: bool
+    hidden_context_mutation: bool
+    retrieval_scope_expansion_allowed: bool
+    automatic_context_expansion: bool
+
+
+@dataclass(frozen=True)
+class ExecutionContinuationAuditReport:
+    execution_continuation_active: bool
+    continuation_budget_active: bool
+    continuation_governance_active: bool
+    continuation_checkpoint_active: bool
+    continuation_termination_active: bool
+    continuation_summary: str
+    governance_summary: str
+    checkpoint_summary: str
+    termination_summary: str
+    estimated_avoided_execution_stalls: int
+    estimated_avoided_recursive_loops: int
+    estimated_avoided_agent_explosions: int
+    deterministic: bool
+    bounded: bool
+    rollback_safe: bool
+    local_only: bool
+    summary_only: bool
+    governance_rules_mutated: bool
+    hidden_background_execution_blocked: bool
+    recursive_execution_loops_blocked: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -960,6 +1136,12 @@ class RuntimeEnforcementAuditReport:
     sprint_memory: SprintMemoryAuditReport
     dev_strategy: DevStrategyAuditReport
     dev_policy: DevPolicyAuditReport
+    provider_experimental: ProviderExperimentalAuditReport
+    provider_stability: ProviderStabilityAuditReport
+    adaptive_provider_routing: AdaptiveProviderRoutingAuditReport
+    provider_fatigue: ProviderFatigueAuditReport
+    cognitive_memory_pressure: CognitiveMemoryPressureAuditReport
+    execution_continuation: ExecutionContinuationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2811,6 +2993,200 @@ def audit_provider_routing() -> ProviderRoutingAuditReport:
     )
 
 
+def audit_provider_experimental() -> ProviderExperimentalAuditReport:
+    frame = ProviderExperimentalRuntime().evaluate()
+    return ProviderExperimentalAuditReport(
+        experimental_provider_active=frame.experimental_provider_active,
+        openmythos_provider_active=frame.openmythos_provider_active,
+        openmythos_loaded=frame.openmythos_loaded,
+        openmythos_gguf_active=frame.openmythos_gguf_active,
+        openmythos_conversion_active=frame.openmythos_conversion_active,
+        openmythos_runtime_stability=frame.openmythos_runtime_stability,
+        openmythos_drift_risk=frame.openmythos_drift_risk,
+        openmythos_reasoning_depth_signal=frame.openmythos_reasoning_depth_signal,
+        openmythos_governance_adherence=frame.openmythos_governance_adherence,
+        provider_benchmark_active=frame.provider_benchmark_active,
+        provider_comparison_active=frame.provider_comparison_active,
+        provider_drift_active=frame.provider_drift_active,
+        provider_governance_active=frame.governance.provider_governance_active,
+        provider_benchmark_summary_active=frame.summary.provider_benchmark_summary_active,
+        provider_benchmark_eviction_active=frame.eviction.provider_benchmark_eviction_active,
+        openmythos_load_result=frame.openmythos.load_result,
+        openmythos_direct_hf_result=frame.gguf.direct_ollama_result,
+        openmythos_weighted_hf_result=frame.gguf.weighted_ollama_result,
+        openmythos_gguf_conversion_result=frame.conversion.conversion_result,
+        openmythos_quantization=frame.quantization.preferred_quantization,
+        openmythos_ollama_model=frame.conversion.ollama_model_name,
+        openmythos_fallback_route=frame.fallback.fallback_route,
+        vram_runtime_stability=frame.openmythos.vram_runtime_stability,
+        provider_comparison_summary="; ".join(frame.comparison.providers),
+        governance_adherence_observation=frame.summary.governance_adherence_observation,
+        architecture_drift_observation=frame.summary.architecture_drift_observation,
+        estimated_reasoning_depth_gain=frame.estimated_reasoning_depth_gain,
+        estimated_governance_instability_risk=frame.estimated_governance_instability_risk,
+        estimated_architecture_drift_risk=frame.estimated_architecture_drift_risk,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+        rollback_safe=frame.experimental.rollback_safe,
+        no_architecture_authority=frame.openmythos.no_architecture_authority,
+        no_governance_authority=frame.openmythos.no_governance_authority,
+        no_anti_explosion_authority=frame.openmythos.no_anti_explosion_authority,
+        no_autonomous_execution_authority=frame.openmythos.no_autonomous_execution_authority,
+    )
+
+
+def audit_provider_stability() -> ProviderStabilityAuditReport:
+    frame = ProviderStabilityRuntime().evaluate()
+    return ProviderStabilityAuditReport(
+        provider_stability_active=frame.provider_stability_active,
+        long_session_drift_active=frame.long_session_drift_active,
+        governance_decay_active=frame.governance_decay_active,
+        compactness_retention_active=frame.compactness_retention_active,
+        retrieval_radius_active=frame.retrieval_radius.retrieval_radius_active,
+        hallucination_pressure_active=frame.hallucination_pressure.hallucination_pressure_active,
+        stability_benchmark_active=frame.benchmark.stability_benchmark_active,
+        provider_stability_comparison=frame.benchmark.provider_stability_comparison,
+        governance_adherence_ranking=frame.governance_decay.governance_adherence_ranking,
+        compactness_retention_ranking=frame.compactness_retention.compactness_retention_ranking,
+        drift_resistance_ranking=frame.hallucination_pressure.drift_resistance_ranking,
+        local_patch_adherence_ranking=frame.benchmark.local_patch_adherence_ranking,
+        repetitive_reliability_ranking=frame.benchmark.repetitive_reliability_ranking,
+        retrieval_discipline_ranking=frame.retrieval_radius.retrieval_discipline_ranking,
+        estimated_long_session_degradation=(
+            frame.long_session_drift.estimated_long_session_degradation
+        ),
+        estimated_provider_stability_gain=frame.estimated_provider_stability_gain,
+        estimated_recursive_drift_risk=frame.estimated_recursive_drift_risk,
+        openmythos_placeholder_only=frame.stability.openmythos_placeholder_only,
+        no_real_openmythos_execution=frame.benchmark.no_real_openmythos_execution,
+        no_hidden_provider_switching=frame.benchmark.no_hidden_provider_switching,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+    )
+
+
+def audit_adaptive_provider_routing() -> AdaptiveProviderRoutingAuditReport:
+    frame = AdaptiveProviderRoutingRuntime().evaluate()
+    return AdaptiveProviderRoutingAuditReport(
+        adaptive_provider_routing_active=frame.adaptive_provider_routing_active,
+        drift_aware_routing_active=frame.drift_aware_routing_active,
+        governance_weighted_routing_active=frame.governance_weighted_routing_active,
+        long_session_routing_active=frame.long_session_routing_active,
+        routing_confidence_active=frame.routing_confidence_active,
+        provider_recommendation_ranking=frame.recommendation.provider_recommendation_ranking,
+        stability_weighted_ranking=frame.stability_weighted.stability_weighted_ranking,
+        governance_weighted_ranking=frame.governance_weighted.governance_weighted_ranking,
+        routing_confidence_summary=frame.confidence.routing_confidence_summary,
+        drift_aware_routing_result=frame.drift_aware.drift_aware_routing_result,
+        governance_weighted_routing_result=(
+            frame.governance_weighted.governance_weighted_routing_result
+        ),
+        estimated_avoided_provider_drift=frame.estimated_avoided_provider_drift,
+        estimated_avoided_recursive_routing=frame.estimated_avoided_recursive_routing,
+        estimated_avoided_premium_burn=frame.estimated_avoided_premium_burn,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        no_hidden_provider_switching=frame.adaptive.no_hidden_provider_switching,
+        no_recursive_routing_loops=frame.adaptive.no_recursive_routing_loops,
+        no_unrestricted_provider_escalation=frame.adaptive.no_unrestricted_provider_escalation,
+        automatic_switching_allowed=frame.recommendation.automatic_switching_allowed,
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+    )
+
+
+def audit_provider_fatigue() -> ProviderFatigueAuditReport:
+    frame = ProviderFatigueRuntime().evaluate()
+    return ProviderFatigueAuditReport(
+        provider_fatigue_active=frame.provider_fatigue_active,
+        escalation_fatigue_active=frame.escalation_fatigue_active,
+        fallback_oscillation_active=frame.fallback_oscillation_active,
+        compactness_decay_active=frame.compactness_decay_active,
+        long_session_pressure_active=frame.long_session_pressure_active,
+        fatigue_confidence_active=frame.confidence.fatigue_confidence_active,
+        provider_recovery_active=frame.recovery.provider_recovery_active,
+        provider_fatigue_summary=frame.confidence.fatigue_confidence_summary,
+        escalation_fatigue_warning=frame.escalation_fatigue.escalation_fatigue_warning,
+        fallback_oscillation_summary=(frame.fallback_oscillation.fallback_oscillation_summary),
+        compactness_decay_recommendation=(
+            frame.compactness_decay.bounded_compression_recommendation
+        ),
+        recovery_recommendation=frame.recovery.recovery_recommendation,
+        estimated_avoided_provider_exhaustion=(frame.estimated_avoided_provider_exhaustion),
+        estimated_avoided_recursive_fatigue=frame.estimated_avoided_recursive_fatigue,
+        estimated_avoided_premium_burn=frame.estimated_avoided_premium_burn,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        autonomous_provider_replacement=(frame.governance.autonomous_provider_replacement),
+        recursive_reroute_loops_blocked=(
+            frame.fallback_oscillation.recursive_reroute_loops_blocked
+        ),
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+        hidden_escalation_switching=frame.governance.hidden_escalation_switching,
+    )
+
+
+def audit_cognitive_memory_pressure() -> CognitiveMemoryPressureAuditReport:
+    frame = CognitiveMemoryPressureRuntime().evaluate()
+    return CognitiveMemoryPressureAuditReport(
+        cognitive_memory_pressure_active=frame.cognitive_memory_pressure_active,
+        continuity_inflation_active=frame.continuity_inflation_active,
+        retrieval_overload_active=frame.retrieval_overload_active,
+        summary_entropy_active=frame.summary_entropy_active,
+        context_fragmentation_active=frame.context_fragmentation_active,
+        memory_pressure_summary=frame.cognitive_memory_pressure.memory_pressure_summary,
+        continuity_inflation_summary=frame.continuity_inflation.inflation_warning,
+        retrieval_overload_summary=frame.retrieval_overload.retrieval_overload_summary,
+        summary_entropy_summary=frame.summary_entropy.summary_entropy_summary,
+        continuity_recovery_recommendation=(
+            frame.continuity_recovery.continuity_recovery_recommendation
+        ),
+        estimated_avoided_context_explosion=frame.estimated_avoided_context_explosion,
+        estimated_avoided_summary_entropy=frame.estimated_avoided_summary_entropy,
+        estimated_avoided_retrieval_overload=frame.estimated_avoided_retrieval_overload,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        autonomous_cognition_erasure=frame.governance.autonomous_cognition_erasure,
+        recursive_continuity_mutation=frame.governance.recursive_continuity_mutation,
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+        hidden_context_mutation=frame.governance.hidden_context_mutation,
+        retrieval_scope_expansion_allowed=frame.governance.retrieval_scope_expansion_allowed,
+        automatic_context_expansion=frame.governance.automatic_context_expansion,
+    )
+
+
+def audit_execution_continuation() -> ExecutionContinuationAuditReport:
+    frame = ExecutionContinuationRuntime().evaluate()
+    return ExecutionContinuationAuditReport(
+        execution_continuation_active=frame.execution_continuation_active,
+        continuation_budget_active=frame.continuation_budget_active,
+        continuation_governance_active=frame.continuation_governance_active,
+        continuation_checkpoint_active=frame.continuation_checkpoint_active,
+        continuation_termination_active=frame.continuation_termination_active,
+        continuation_summary=frame.continuation.continuation_summary,
+        governance_summary="LOCAL_PATCH_BOUNDED_RETRIEVAL_COMPACT_CONTINUITY",
+        checkpoint_summary=frame.checkpoint.execution_progress_summary,
+        termination_summary=frame.termination.termination_reason,
+        estimated_avoided_execution_stalls=frame.estimated_avoided_execution_stalls,
+        estimated_avoided_recursive_loops=frame.estimated_avoided_recursive_loops,
+        estimated_avoided_agent_explosions=frame.estimated_avoided_agent_explosions,
+        deterministic=frame.deterministic,
+        bounded=frame.bounded,
+        rollback_safe=frame.rollback_safe,
+        local_only=frame.local_only,
+        summary_only=frame.summary_only,
+        governance_rules_mutated=frame.governance.governance_rules_mutated,
+        hidden_background_execution_blocked=(
+            frame.governance.hidden_background_execution_blocked
+        ),
+        recursive_execution_loops_blocked=frame.governance.recursive_execution_loops_blocked,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3106,6 +3482,12 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         sprint_memory=audit_sprint_memory(),
         dev_strategy=audit_dev_strategy(),
         dev_policy=audit_dev_policy(),
+        provider_experimental=audit_provider_experimental(),
+        provider_stability=audit_provider_stability(),
+        adaptive_provider_routing=audit_adaptive_provider_routing(),
+        provider_fatigue=audit_provider_fatigue(),
+        cognitive_memory_pressure=audit_cognitive_memory_pressure(),
+        execution_continuation=audit_execution_continuation(),
     )
 
 

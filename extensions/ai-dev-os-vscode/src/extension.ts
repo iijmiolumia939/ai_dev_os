@@ -3,6 +3,7 @@ import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
+import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
@@ -11,6 +12,7 @@ import {registerIncrementalContextCommands} from './commands/incrementalContextC
 import {registerLocalProviderCommands} from './commands/localProviderCommands';
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
 import {registerPersistenceCommands} from './commands/persistenceCommands';
+import {registerProviderExperimentalCommands} from './commands/providerExperimentalCommands';
 import {registerProviderRoutingCommands} from './commands/providerRoutingCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
@@ -41,6 +43,25 @@ import {
   ProviderPressureStatusBar,
   ProviderRoutingMonitor,
 } from './providerRouting/providerRouting';
+import {
+  AdaptiveRoutingStatusBar,
+  BenchmarkActiveStatusBar,
+  CognitiveMemoryPressureStatusBar,
+  CompactnessDecayStatusBar,
+  ContinuityInflationStatusBar,
+  DriftAwareRoutingStatusBar,
+  DriftRiskStatusBar,
+  EntropyGuardedStatusBar,
+  ExperimentalProviderStatusBar,
+  FatigueEscalationPressureStatusBar,
+  FatigueLowStatusBar,
+  GovernanceWeightedRoutingStatusBar,
+  GovernanceStableStatusBar,
+  ProviderExperimentalMonitor,
+  RecoveryAvailableStatusBar,
+  RetrievalBoundedStatusBar,
+  StableLocalStatusBar,
+} from './providerExperimental/providerExperimental';
 import {
   GovernancePresenceMonitor,
   GovernancePresenceStatusBar,
@@ -76,6 +97,13 @@ import {
   RollbackSafeStatusBar,
   ValidationStableStatusBar,
 } from './devExecution/devExecution';
+import {
+  BoundedExecutionStatusBar,
+  ContinuationSafeStatusBar,
+  ExecutionContinuationMonitor,
+  ExecutionContinuingStatusBar,
+  LoopGuardedStatusBar,
+} from './executionContinuation/executionContinuation';
 import {
   DevPolicyMonitor,
   EscalationPressureStatusBar,
@@ -160,6 +188,23 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const premiumProviderStatus = new PremiumProviderStatusBar(providerRouting);
   const providerDowngradeStatus = new ProviderDowngradeStatusBar(providerRouting);
   const providerPressureStatus = new ProviderPressureStatusBar(providerRouting);
+  const providerExperimental = new ProviderExperimentalMonitor();
+  const experimentalProviderStatus = new ExperimentalProviderStatusBar(providerExperimental);
+  const driftRiskStatus = new DriftRiskStatusBar(providerExperimental);
+  const governanceStableStatus = new GovernanceStableStatusBar(providerExperimental);
+  const benchmarkActiveStatus = new BenchmarkActiveStatusBar(providerExperimental);
+  const adaptiveRoutingStatus = new AdaptiveRoutingStatusBar(providerExperimental);
+  const stableLocalStatus = new StableLocalStatusBar(providerExperimental);
+  const driftAwareRoutingStatus = new DriftAwareRoutingStatusBar(providerExperimental);
+  const governanceWeightedRoutingStatus = new GovernanceWeightedRoutingStatusBar(providerExperimental);
+  const fatigueLowStatus = new FatigueLowStatusBar(providerExperimental);
+  const fatigueEscalationPressureStatus = new FatigueEscalationPressureStatusBar(providerExperimental);
+  const compactnessDecayStatus = new CompactnessDecayStatusBar(providerExperimental);
+  const recoveryAvailableStatus = new RecoveryAvailableStatusBar(providerExperimental);
+  const cognitiveMemoryPressureStatus = new CognitiveMemoryPressureStatusBar(providerExperimental);
+  const continuityInflationStatus = new ContinuityInflationStatusBar(providerExperimental);
+  const retrievalBoundedStatus = new RetrievalBoundedStatusBar(providerExperimental);
+  const entropyGuardedStatus = new EntropyGuardedStatusBar(providerExperimental);
   const localProvider = new LocalProviderMonitor();
   const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
   const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
@@ -190,6 +235,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const checkpointReadyStatus = new CheckpointReadyStatusBar(devExecution);
   const validationStableStatus = new ValidationStableStatusBar(devExecution);
   const rollbackSafeStatus = new RollbackSafeStatusBar(devExecution);
+  const executionContinuation = new ExecutionContinuationMonitor();
+  const executionContinuingStatus = new ExecutionContinuingStatusBar(executionContinuation);
+  const continuationSafeStatus = new ContinuationSafeStatusBar(executionContinuation);
+  const loopGuardedStatus = new LoopGuardedStatusBar(executionContinuation);
+  const boundedExecutionStatus = new BoundedExecutionStatusBar(executionContinuation);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -284,6 +334,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const providerRoutingState = premiumProviderStatus.refresh();
   providerDowngradeStatus.refresh();
   providerPressureStatus.refresh();
+  experimentalProviderStatus.refresh();
+  driftRiskStatus.refresh();
+  governanceStableStatus.refresh();
+  benchmarkActiveStatus.refresh();
+  adaptiveRoutingStatus.refresh();
+  stableLocalStatus.refresh();
+  driftAwareRoutingStatus.refresh();
+  governanceWeightedRoutingStatus.refresh();
+  fatigueLowStatus.refresh();
+  fatigueEscalationPressureStatus.refresh();
+  compactnessDecayStatus.refresh();
+  recoveryAvailableStatus.refresh();
+  cognitiveMemoryPressureStatus.refresh();
+  continuityInflationStatus.refresh();
+  retrievalBoundedStatus.refresh();
+  entropyGuardedStatus.refresh();
   const localProviderState = localProviderReadyStatus.refresh();
   ollamaActiveStatus.refresh();
   localBudgetOkStatus.refresh();
@@ -308,6 +374,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   checkpointReadyStatus.refresh();
   validationStableStatus.refresh();
   rollbackSafeStatus.refresh();
+  executionContinuingStatus.refresh();
+  continuationSafeStatus.refresh();
+  loopGuardedStatus.refresh();
+  boundedExecutionStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -436,6 +506,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     premiumProviderStatus,
     providerDowngradeStatus,
     providerPressureStatus,
+    experimentalProviderStatus,
+    driftRiskStatus,
+    governanceStableStatus,
+    benchmarkActiveStatus,
+    adaptiveRoutingStatus,
+    stableLocalStatus,
+    driftAwareRoutingStatus,
+    governanceWeightedRoutingStatus,
+    fatigueLowStatus,
+    fatigueEscalationPressureStatus,
+    compactnessDecayStatus,
+    recoveryAvailableStatus,
+    cognitiveMemoryPressureStatus,
+    continuityInflationStatus,
+    retrievalBoundedStatus,
+    entropyGuardedStatus,
     localProviderReadyStatus,
     ollamaActiveStatus,
     localBudgetOkStatus,
@@ -460,6 +546,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     checkpointReadyStatus,
     validationStableStatus,
     rollbackSafeStatus,
+    executionContinuingStatus,
+    continuationSafeStatus,
+    loopGuardedStatus,
+    boundedExecutionStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -529,6 +619,26 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       providerPressureStatus,
       notifications,
     ),
+    ...registerProviderExperimentalCommands(
+      providerExperimental,
+      experimentalProviderStatus,
+      driftRiskStatus,
+      governanceStableStatus,
+      benchmarkActiveStatus,
+      adaptiveRoutingStatus,
+      stableLocalStatus,
+      driftAwareRoutingStatus,
+      governanceWeightedRoutingStatus,
+      fatigueLowStatus,
+      fatigueEscalationPressureStatus,
+      compactnessDecayStatus,
+      recoveryAvailableStatus,
+      cognitiveMemoryPressureStatus,
+      continuityInflationStatus,
+      retrievalBoundedStatus,
+      entropyGuardedStatus,
+      notifications,
+    ),
     ...registerLocalProviderCommands(
       localProvider,
       localProviderReadyStatus,
@@ -575,6 +685,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       checkpointReadyStatus,
       validationStableStatus,
       rollbackSafeStatus,
+      notifications,
+    ),
+    ...registerExecutionContinuationCommands(
+      executionContinuation,
+      executionContinuingStatus,
+      continuationSafeStatus,
+      loopGuardedStatus,
+      boundedExecutionStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(
