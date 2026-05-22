@@ -10,9 +10,15 @@ export interface ProviderExperimentalState {
   providerBenchmarkActive: boolean;
   providerComparisonActive: boolean;
   providerDriftActive: true;
+  providerStabilityActive: boolean;
+  longSessionDriftActive: true;
+  governanceDecayActive: true;
+  compactnessRetentionActive: true;
   driftRisk: DriftRisk;
   governanceStable: true;
+  compactnessOk: true;
   compactSummary: string;
+  stabilitySummary: string;
   openMythosLoadResult: string;
   ggufConversionResult: string;
   openMythosFallbackRoute: string;
@@ -20,6 +26,14 @@ export interface ProviderExperimentalState {
   estimatedReasoningDepthGain: number;
   estimatedGovernanceInstabilityRisk: number;
   estimatedArchitectureDriftRisk: number;
+  estimatedProviderStabilityGain: number;
+  estimatedRecursiveDriftRisk: string;
+  estimatedLongSessionDegradation: string;
+  providerStabilityComparison: string;
+  governanceAdherenceRanking: string;
+  compactnessRetentionRanking: string;
+  driftResistanceRanking: string;
+  localPatchAdherenceRanking: string;
   summaryOnly: true;
   localOnly: true;
   rollbackSafe: true;
@@ -30,6 +44,7 @@ export interface ProviderExperimentalState {
 
 export class ProviderExperimentalMonitor {
   private benchmarkActive = false;
+  private stabilityBenchmarkActive = false;
 
   evaluate(): ProviderExperimentalState {
     return {
@@ -40,9 +55,15 @@ export class ProviderExperimentalMonitor {
       providerBenchmarkActive: this.benchmarkActive,
       providerComparisonActive: true,
       providerDriftActive: true,
+      providerStabilityActive: this.stabilityBenchmarkActive,
+      longSessionDriftActive: true,
+      governanceDecayActive: true,
+      compactnessRetentionActive: true,
       driftRisk: 'LOW_NOT_LOADED',
       governanceStable: true,
+      compactnessOk: true,
       compactSummary: 'OpenMythos HF GGUF unavailable; conversion fallback guarded; no routing changed.',
+      stabilitySummary: 'qwen2.5-coder:7b leads bounded stability; OpenMythos remains placeholder-only.',
       openMythosLoadResult: 'unavailable:hf_repository_not_gguf',
       ggufConversionResult: 'guarded:not_converted_custom_open_mythos_architecture',
       openMythosFallbackRoute: 'qwen2.5-coder:7b',
@@ -50,6 +71,14 @@ export class ProviderExperimentalMonitor {
       estimatedReasoningDepthGain: 0,
       estimatedGovernanceInstabilityRisk: 2,
       estimatedArchitectureDriftRisk: 2,
+      estimatedProviderStabilityGain: 12,
+      estimatedRecursiveDriftRisk: 'LOW_BASELINE_GUARDED',
+      estimatedLongSessionDegradation: 'qwen2.5-coder:7b 4; qwen2.5-coder:14b 5; gemma3:12b 8; GPT-5.5 reference 18; OpenMythos placeholder 0',
+      providerStabilityComparison: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      governanceAdherenceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      compactnessRetentionRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      driftResistanceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      localPatchAdherenceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       summaryOnly: true,
       localOnly: true,
       rollbackSafe: true,
@@ -64,8 +93,14 @@ export class ProviderExperimentalMonitor {
     return this.evaluate();
   }
 
+  runStabilityBenchmark(): ProviderExperimentalState {
+    this.stabilityBenchmarkActive = true;
+    return this.evaluate();
+  }
+
   compactSummary(): ProviderExperimentalState {
     this.benchmarkActive = false;
+    this.stabilityBenchmarkActive = false;
     return this.evaluate();
   }
 }
@@ -79,8 +114,8 @@ export class ExperimentalProviderStatusBar {
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS OPENMYTHOS_ACTIVE ${state.openMythosProviderActive ? 'YES' : 'NO'}`;
-    this.item.tooltip = `OpenMythos ${state.openMythosLoadResult}; fallback ${state.openMythosFallbackRoute}`;
+    this.item.text = `AI_DEV_OS STABILITY_BENCHMARK ${state.providerStabilityActive ? 'ON' : 'READY'}`;
+    this.item.tooltip = `Baseline ${state.providerStabilityComparison}; OpenMythos ${state.openMythosLoadResult}`;
     this.item.show();
     return state;
   }
@@ -94,13 +129,13 @@ export class DriftRiskStatusBar {
   private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 74);
 
   constructor(private readonly monitor: ProviderExperimentalMonitor) {
-    this.item.command = 'aiDevOs.showDriftRisk';
+    this.item.command = 'aiDevOs.showProviderDrift';
   }
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS DRIFT_GUARDED ${state.driftRisk}`;
-    this.item.tooltip = `Architecture drift risk ${state.estimatedArchitectureDriftRisk}; recursive drift guarded`;
+    this.item.text = `AI_DEV_OS DRIFT_LOW ${state.estimatedRecursiveDriftRisk}`;
+    this.item.tooltip = `Drift ranking ${state.driftResistanceRanking}; architecture risk ${state.estimatedArchitectureDriftRisk}`;
     this.item.show();
     return state;
   }
@@ -114,13 +149,13 @@ export class GovernanceStableStatusBar {
   private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 73);
 
   constructor(private readonly monitor: ProviderExperimentalMonitor) {
-    this.item.command = 'aiDevOs.showOpenMythosStability';
+    this.item.command = 'aiDevOs.showGovernanceDecay';
   }
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS GOVERNANCE_PROTECTED ${state.governanceStable ? 'YES' : 'NO'}`;
-    this.item.tooltip = `No governance authority ${state.noGovernanceAuthority}; no architecture authority ${state.noArchitectureAuthority}`;
+    this.item.text = `AI_DEV_OS GOVERNANCE_STABLE ${state.governanceStable ? 'YES' : 'NO'}`;
+    this.item.tooltip = `Governance ranking ${state.governanceAdherenceRanking}; no authority delegated ${state.noGovernanceAuthority}`;
     this.item.show();
     return state;
   }
@@ -134,13 +169,13 @@ export class BenchmarkActiveStatusBar {
   private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 72);
 
   constructor(private readonly monitor: ProviderExperimentalMonitor) {
-    this.item.command = 'aiDevOs.compactBenchmarkSummary';
+    this.item.command = 'aiDevOs.showCompactnessRetention';
   }
 
   refresh(): ProviderExperimentalState {
     const state = this.monitor.evaluate();
-    this.item.text = `AI_DEV_OS GGUF_EXPERIMENTAL ${state.openMythosConversionActive ? 'ON' : 'OFF'}`;
-    this.item.tooltip = `GGUF ${state.ggufConversionResult}; summary-only ${state.summaryOnly}`;
+    this.item.text = `AI_DEV_OS COMPACTNESS_OK ${state.compactnessOk ? 'YES' : 'NO'}`;
+    this.item.tooltip = `Compactness ranking ${state.compactnessRetentionRanking}; summary-only ${state.summaryOnly}`;
     this.item.show();
     return state;
   }

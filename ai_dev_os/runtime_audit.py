@@ -63,6 +63,7 @@ from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
 from ai_dev_os.provider_experimental import ProviderExperimentalRuntime
 from ai_dev_os.provider_local import LocalProviderRuntime
 from ai_dev_os.provider_routing import ProviderRoutingRuntime
+from ai_dev_os.provider_stability import ProviderStabilityRuntime
 from ai_dev_os.providers.cost_simulation import simulate_cost
 from ai_dev_os.providers.fallback_simulation import simulate_fallback_chain
 from ai_dev_os.providers.mock_provider import simulate_provider_request
@@ -957,6 +958,33 @@ class ProviderExperimentalAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderStabilityAuditReport:
+    provider_stability_active: bool
+    long_session_drift_active: bool
+    governance_decay_active: bool
+    compactness_retention_active: bool
+    retrieval_radius_active: bool
+    hallucination_pressure_active: bool
+    stability_benchmark_active: bool
+    provider_stability_comparison: tuple[str, ...]
+    governance_adherence_ranking: tuple[str, ...]
+    compactness_retention_ranking: tuple[str, ...]
+    drift_resistance_ranking: tuple[str, ...]
+    local_patch_adherence_ranking: tuple[str, ...]
+    repetitive_reliability_ranking: tuple[str, ...]
+    retrieval_discipline_ranking: tuple[str, ...]
+    estimated_long_session_degradation: dict[str, int]
+    estimated_provider_stability_gain: int
+    estimated_recursive_drift_risk: str
+    openmythos_placeholder_only: bool
+    no_real_openmythos_execution: bool
+    no_hidden_provider_switching: bool
+    local_only: bool
+    deterministic: bool
+    summary_only: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1003,6 +1031,7 @@ class RuntimeEnforcementAuditReport:
     dev_strategy: DevStrategyAuditReport
     dev_policy: DevPolicyAuditReport
     provider_experimental: ProviderExperimentalAuditReport
+    provider_stability: ProviderStabilityAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2897,6 +2926,37 @@ def audit_provider_experimental() -> ProviderExperimentalAuditReport:
     )
 
 
+def audit_provider_stability() -> ProviderStabilityAuditReport:
+    frame = ProviderStabilityRuntime().evaluate()
+    return ProviderStabilityAuditReport(
+        provider_stability_active=frame.provider_stability_active,
+        long_session_drift_active=frame.long_session_drift_active,
+        governance_decay_active=frame.governance_decay_active,
+        compactness_retention_active=frame.compactness_retention_active,
+        retrieval_radius_active=frame.retrieval_radius.retrieval_radius_active,
+        hallucination_pressure_active=frame.hallucination_pressure.hallucination_pressure_active,
+        stability_benchmark_active=frame.benchmark.stability_benchmark_active,
+        provider_stability_comparison=frame.benchmark.provider_stability_comparison,
+        governance_adherence_ranking=frame.governance_decay.governance_adherence_ranking,
+        compactness_retention_ranking=frame.compactness_retention.compactness_retention_ranking,
+        drift_resistance_ranking=frame.hallucination_pressure.drift_resistance_ranking,
+        local_patch_adherence_ranking=frame.benchmark.local_patch_adherence_ranking,
+        repetitive_reliability_ranking=frame.benchmark.repetitive_reliability_ranking,
+        retrieval_discipline_ranking=frame.retrieval_radius.retrieval_discipline_ranking,
+        estimated_long_session_degradation=(
+            frame.long_session_drift.estimated_long_session_degradation
+        ),
+        estimated_provider_stability_gain=frame.estimated_provider_stability_gain,
+        estimated_recursive_drift_risk=frame.estimated_recursive_drift_risk,
+        openmythos_placeholder_only=frame.stability.openmythos_placeholder_only,
+        no_real_openmythos_execution=frame.benchmark.no_real_openmythos_execution,
+        no_hidden_provider_switching=frame.benchmark.no_hidden_provider_switching,
+        local_only=frame.local_only,
+        deterministic=frame.deterministic,
+        summary_only=frame.summary_only,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3193,6 +3253,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         dev_strategy=audit_dev_strategy(),
         dev_policy=audit_dev_policy(),
         provider_experimental=audit_provider_experimental(),
+        provider_stability=audit_provider_stability(),
     )
 
 

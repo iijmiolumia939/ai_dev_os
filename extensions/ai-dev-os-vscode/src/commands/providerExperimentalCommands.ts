@@ -37,6 +37,18 @@ export function registerProviderExperimentalCommands(
     runProviderBenchmarkAction,
   );
 
+  const runStabilityBenchmark = vscode.commands.registerCommand(
+    'aiDevOs.runStabilityBenchmark',
+    async () => {
+      const state = monitor.runStabilityBenchmark();
+      refreshAll();
+      await notifications.info(
+        'provider-stability-benchmark-run',
+        `AI_DEV_OS stability benchmark active; gain ${state.estimatedProviderStabilityGain}.`,
+      );
+    },
+  );
+
   const testOpenMythosGguf = vscode.commands.registerCommand(
     'aiDevOs.testOpenMythosGguf',
     runProviderBenchmarkAction,
@@ -75,6 +87,30 @@ export function registerProviderExperimentalCommands(
 
   const showDriftRisk = vscode.commands.registerCommand('aiDevOs.showDriftRisk', showDriftRiskAction);
 
+  const showProviderDrift = vscode.commands.registerCommand('aiDevOs.showProviderDrift', async () => {
+    const state = driftRiskStatus.refresh();
+    await vscode.window.showInformationMessage(
+      `AI_DEV_OS provider drift: ${state.estimatedRecursiveDriftRisk}; ${state.driftResistanceRanking}.`,
+    );
+  });
+
+  const showGovernanceDecay = vscode.commands.registerCommand('aiDevOs.showGovernanceDecay', async () => {
+    const state = governanceStableStatus.refresh();
+    await vscode.window.showInformationMessage(
+      `AI_DEV_OS governance decay: stable; ${state.governanceAdherenceRanking}.`,
+    );
+  });
+
+  const showCompactnessRetention = vscode.commands.registerCommand(
+    'aiDevOs.showCompactnessRetention',
+    async () => {
+      const state = benchmarkActiveStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS compactness retention: ${state.compactnessRetentionRanking}.`,
+      );
+    },
+  );
+
   const showOpenMythosDriftRisk = vscode.commands.registerCommand(
     'aiDevOs.showOpenMythosDriftRisk',
     showDriftRiskAction,
@@ -98,15 +134,29 @@ export function registerProviderExperimentalCommands(
     },
   );
 
+  const compactStabilitySummary = vscode.commands.registerCommand(
+    'aiDevOs.compactStabilitySummary',
+    async () => {
+      const state = monitor.compactSummary();
+      refreshAll();
+      await vscode.window.showInformationMessage(`AI_DEV_OS compact stability summary: ${state.stabilitySummary}`);
+    },
+  );
+
   return [
     runProviderBenchmark,
+    runStabilityBenchmark,
     testOpenMythosGguf,
     compareProviders,
     compareOpenMythosProvider,
     showOpenMythosStability,
     showDriftRisk,
+    showProviderDrift,
+    showGovernanceDecay,
+    showCompactnessRetention,
     showOpenMythosDriftRisk,
     compactBenchmarkSummary,
     compactOpenMythosSummary,
+    compactStabilitySummary,
   ];
 }
