@@ -181,6 +181,11 @@
     "onCommand:aiDevOs.showRollbackGuidance",
     "onCommand:aiDevOs.showExecutionStability",
     "onCommand:aiDevOs.compactExecutionSummary",
+    "onCommand:aiDevOs.continueExecution",
+    "onCommand:aiDevOs.resumeBoundedSprint",
+    "onCommand:aiDevOs.showContinuationState",
+    "onCommand:aiDevOs.showExecutionBudget",
+    "onCommand:aiDevOs.compactContinuationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -366,7 +371,12 @@
       {"command": "aiDevOs.showValidationSequence", "title": "AI_DEV_OS: Show Validation Sequence"},
       {"command": "aiDevOs.showRollbackGuidance", "title": "AI_DEV_OS: Show Rollback Guidance"},
       {"command": "aiDevOs.showExecutionStability", "title": "AI_DEV_OS: Show Execution Stability"},
-      {"command": "aiDevOs.compactExecutionSummary", "title": "AI_DEV_OS: Compact Execution Summary"}
+      {"command": "aiDevOs.compactExecutionSummary", "title": "AI_DEV_OS: Compact Execution Summary"},
+      {"command": "aiDevOs.continueExecution", "title": "AI_DEV_OS: Continue Execution"},
+      {"command": "aiDevOs.resumeBoundedSprint", "title": "AI_DEV_OS: Resume Bounded Sprint"},
+      {"command": "aiDevOs.showContinuationState", "title": "AI_DEV_OS: Show Continuation State"},
+      {"command": "aiDevOs.showExecutionBudget", "title": "AI_DEV_OS: Show Execution Budget"},
+      {"command": "aiDevOs.compactContinuationSummary", "title": "AI_DEV_OS: Compact Continuation Summary"}
     ],
     "views": {
       "explorer": [

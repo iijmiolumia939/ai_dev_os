@@ -3,6 +3,7 @@ import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
+import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
@@ -96,6 +97,13 @@ import {
   RollbackSafeStatusBar,
   ValidationStableStatusBar,
 } from './devExecution/devExecution';
+import {
+  BoundedExecutionStatusBar,
+  ContinuationSafeStatusBar,
+  ExecutionContinuationMonitor,
+  ExecutionContinuingStatusBar,
+  LoopGuardedStatusBar,
+} from './executionContinuation/executionContinuation';
 import {
   DevPolicyMonitor,
   EscalationPressureStatusBar,
@@ -227,6 +235,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const checkpointReadyStatus = new CheckpointReadyStatusBar(devExecution);
   const validationStableStatus = new ValidationStableStatusBar(devExecution);
   const rollbackSafeStatus = new RollbackSafeStatusBar(devExecution);
+  const executionContinuation = new ExecutionContinuationMonitor();
+  const executionContinuingStatus = new ExecutionContinuingStatusBar(executionContinuation);
+  const continuationSafeStatus = new ContinuationSafeStatusBar(executionContinuation);
+  const loopGuardedStatus = new LoopGuardedStatusBar(executionContinuation);
+  const boundedExecutionStatus = new BoundedExecutionStatusBar(executionContinuation);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -361,6 +374,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   checkpointReadyStatus.refresh();
   validationStableStatus.refresh();
   rollbackSafeStatus.refresh();
+  executionContinuingStatus.refresh();
+  continuationSafeStatus.refresh();
+  loopGuardedStatus.refresh();
+  boundedExecutionStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -529,6 +546,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     checkpointReadyStatus,
     validationStableStatus,
     rollbackSafeStatus,
+    executionContinuingStatus,
+    continuationSafeStatus,
+    loopGuardedStatus,
+    boundedExecutionStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -664,6 +685,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       checkpointReadyStatus,
       validationStableStatus,
       rollbackSafeStatus,
+      notifications,
+    ),
+    ...registerExecutionContinuationCommands(
+      executionContinuation,
+      executionContinuingStatus,
+      continuationSafeStatus,
+      loopGuardedStatus,
+      boundedExecutionStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

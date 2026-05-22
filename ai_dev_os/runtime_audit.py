@@ -28,6 +28,7 @@ from ai_dev_os.dev_execution import DevelopmentExecutionRuntime
 from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
+from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1066,6 +1067,30 @@ class CognitiveMemoryPressureAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionContinuationAuditReport:
+    execution_continuation_active: bool
+    continuation_budget_active: bool
+    continuation_governance_active: bool
+    continuation_checkpoint_active: bool
+    continuation_termination_active: bool
+    continuation_summary: str
+    governance_summary: str
+    checkpoint_summary: str
+    termination_summary: str
+    estimated_avoided_execution_stalls: int
+    estimated_avoided_recursive_loops: int
+    estimated_avoided_agent_explosions: int
+    deterministic: bool
+    bounded: bool
+    rollback_safe: bool
+    local_only: bool
+    summary_only: bool
+    governance_rules_mutated: bool
+    hidden_background_execution_blocked: bool
+    recursive_execution_loops_blocked: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1116,6 +1141,7 @@ class RuntimeEnforcementAuditReport:
     adaptive_provider_routing: AdaptiveProviderRoutingAuditReport
     provider_fatigue: ProviderFatigueAuditReport
     cognitive_memory_pressure: CognitiveMemoryPressureAuditReport
+    execution_continuation: ExecutionContinuationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3133,6 +3159,34 @@ def audit_cognitive_memory_pressure() -> CognitiveMemoryPressureAuditReport:
     )
 
 
+def audit_execution_continuation() -> ExecutionContinuationAuditReport:
+    frame = ExecutionContinuationRuntime().evaluate()
+    return ExecutionContinuationAuditReport(
+        execution_continuation_active=frame.execution_continuation_active,
+        continuation_budget_active=frame.continuation_budget_active,
+        continuation_governance_active=frame.continuation_governance_active,
+        continuation_checkpoint_active=frame.continuation_checkpoint_active,
+        continuation_termination_active=frame.continuation_termination_active,
+        continuation_summary=frame.continuation.continuation_summary,
+        governance_summary="LOCAL_PATCH_BOUNDED_RETRIEVAL_COMPACT_CONTINUITY",
+        checkpoint_summary=frame.checkpoint.execution_progress_summary,
+        termination_summary=frame.termination.termination_reason,
+        estimated_avoided_execution_stalls=frame.estimated_avoided_execution_stalls,
+        estimated_avoided_recursive_loops=frame.estimated_avoided_recursive_loops,
+        estimated_avoided_agent_explosions=frame.estimated_avoided_agent_explosions,
+        deterministic=frame.deterministic,
+        bounded=frame.bounded,
+        rollback_safe=frame.rollback_safe,
+        local_only=frame.local_only,
+        summary_only=frame.summary_only,
+        governance_rules_mutated=frame.governance.governance_rules_mutated,
+        hidden_background_execution_blocked=(
+            frame.governance.hidden_background_execution_blocked
+        ),
+        recursive_execution_loops_blocked=frame.governance.recursive_execution_loops_blocked,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3433,6 +3487,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         adaptive_provider_routing=audit_adaptive_provider_routing(),
         provider_fatigue=audit_provider_fatigue(),
         cognitive_memory_pressure=audit_cognitive_memory_pressure(),
+        execution_continuation=audit_execution_continuation(),
     )
 
 
