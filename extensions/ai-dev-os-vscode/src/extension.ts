@@ -45,9 +45,12 @@ import {
 import {
   AdaptiveRoutingStatusBar,
   BenchmarkActiveStatusBar,
+  CognitiveMemoryPressureStatusBar,
   CompactnessDecayStatusBar,
+  ContinuityInflationStatusBar,
   DriftAwareRoutingStatusBar,
   DriftRiskStatusBar,
+  EntropyGuardedStatusBar,
   ExperimentalProviderStatusBar,
   FatigueEscalationPressureStatusBar,
   FatigueLowStatusBar,
@@ -55,6 +58,7 @@ import {
   GovernanceStableStatusBar,
   ProviderExperimentalMonitor,
   RecoveryAvailableStatusBar,
+  RetrievalBoundedStatusBar,
   StableLocalStatusBar,
 } from './providerExperimental/providerExperimental';
 import {
@@ -189,6 +193,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const fatigueEscalationPressureStatus = new FatigueEscalationPressureStatusBar(providerExperimental);
   const compactnessDecayStatus = new CompactnessDecayStatusBar(providerExperimental);
   const recoveryAvailableStatus = new RecoveryAvailableStatusBar(providerExperimental);
+  const cognitiveMemoryPressureStatus = new CognitiveMemoryPressureStatusBar(providerExperimental);
+  const continuityInflationStatus = new ContinuityInflationStatusBar(providerExperimental);
+  const retrievalBoundedStatus = new RetrievalBoundedStatusBar(providerExperimental);
+  const entropyGuardedStatus = new EntropyGuardedStatusBar(providerExperimental);
   const localProvider = new LocalProviderMonitor();
   const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
   const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
@@ -325,6 +333,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   fatigueEscalationPressureStatus.refresh();
   compactnessDecayStatus.refresh();
   recoveryAvailableStatus.refresh();
+  cognitiveMemoryPressureStatus.refresh();
+  continuityInflationStatus.refresh();
+  retrievalBoundedStatus.refresh();
+  entropyGuardedStatus.refresh();
   const localProviderState = localProviderReadyStatus.refresh();
   ollamaActiveStatus.refresh();
   localBudgetOkStatus.refresh();
@@ -489,6 +501,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     fatigueEscalationPressureStatus,
     compactnessDecayStatus,
     recoveryAvailableStatus,
+    cognitiveMemoryPressureStatus,
+    continuityInflationStatus,
+    retrievalBoundedStatus,
+    entropyGuardedStatus,
     localProviderReadyStatus,
     ollamaActiveStatus,
     localBudgetOkStatus,
@@ -596,6 +612,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       fatigueEscalationPressureStatus,
       compactnessDecayStatus,
       recoveryAvailableStatus,
+      cognitiveMemoryPressureStatus,
+      continuityInflationStatus,
+      retrievalBoundedStatus,
+      entropyGuardedStatus,
       notifications,
     ),
     ...registerLocalProviderCommands(

@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ai_dev_os.adaptive_provider_routing import AdaptiveProviderRoutingRuntime
+from ai_dev_os.cognitive_memory_pressure import CognitiveMemoryPressureRuntime
 from ai_dev_os.consumer_rollout import (
     CompatibilityProjectionPolicy,
     ConsumerRolloutAuditPolicy,
@@ -1039,6 +1040,32 @@ class ProviderFatigueAuditReport:
 
 
 @dataclass(frozen=True)
+class CognitiveMemoryPressureAuditReport:
+    cognitive_memory_pressure_active: bool
+    continuity_inflation_active: bool
+    retrieval_overload_active: bool
+    summary_entropy_active: bool
+    context_fragmentation_active: bool
+    memory_pressure_summary: str
+    continuity_inflation_summary: str
+    retrieval_overload_summary: str
+    summary_entropy_summary: str
+    continuity_recovery_recommendation: str
+    estimated_avoided_context_explosion: int
+    estimated_avoided_summary_entropy: int
+    estimated_avoided_retrieval_overload: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    autonomous_cognition_erasure: bool
+    recursive_continuity_mutation: bool
+    governance_runtime_bypassed: bool
+    hidden_context_mutation: bool
+    retrieval_scope_expansion_allowed: bool
+    automatic_context_expansion: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1088,6 +1115,7 @@ class RuntimeEnforcementAuditReport:
     provider_stability: ProviderStabilityAuditReport
     adaptive_provider_routing: AdaptiveProviderRoutingAuditReport
     provider_fatigue: ProviderFatigueAuditReport
+    cognitive_memory_pressure: CognitiveMemoryPressureAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3075,6 +3103,36 @@ def audit_provider_fatigue() -> ProviderFatigueAuditReport:
     )
 
 
+def audit_cognitive_memory_pressure() -> CognitiveMemoryPressureAuditReport:
+    frame = CognitiveMemoryPressureRuntime().evaluate()
+    return CognitiveMemoryPressureAuditReport(
+        cognitive_memory_pressure_active=frame.cognitive_memory_pressure_active,
+        continuity_inflation_active=frame.continuity_inflation_active,
+        retrieval_overload_active=frame.retrieval_overload_active,
+        summary_entropy_active=frame.summary_entropy_active,
+        context_fragmentation_active=frame.context_fragmentation_active,
+        memory_pressure_summary=frame.cognitive_memory_pressure.memory_pressure_summary,
+        continuity_inflation_summary=frame.continuity_inflation.inflation_warning,
+        retrieval_overload_summary=frame.retrieval_overload.retrieval_overload_summary,
+        summary_entropy_summary=frame.summary_entropy.summary_entropy_summary,
+        continuity_recovery_recommendation=(
+            frame.continuity_recovery.continuity_recovery_recommendation
+        ),
+        estimated_avoided_context_explosion=frame.estimated_avoided_context_explosion,
+        estimated_avoided_summary_entropy=frame.estimated_avoided_summary_entropy,
+        estimated_avoided_retrieval_overload=frame.estimated_avoided_retrieval_overload,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        autonomous_cognition_erasure=frame.governance.autonomous_cognition_erasure,
+        recursive_continuity_mutation=frame.governance.recursive_continuity_mutation,
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+        hidden_context_mutation=frame.governance.hidden_context_mutation,
+        retrieval_scope_expansion_allowed=frame.governance.retrieval_scope_expansion_allowed,
+        automatic_context_expansion=frame.governance.automatic_context_expansion,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3374,6 +3432,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_stability=audit_provider_stability(),
         adaptive_provider_routing=audit_adaptive_provider_routing(),
         provider_fatigue=audit_provider_fatigue(),
+        cognitive_memory_pressure=audit_cognitive_memory_pressure(),
     )
 
 

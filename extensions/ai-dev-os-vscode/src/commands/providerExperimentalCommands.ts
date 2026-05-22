@@ -3,9 +3,12 @@ import {RateLimitedNotifications} from '../notifications/rateLimitedNotification
 import {
   AdaptiveRoutingStatusBar,
   BenchmarkActiveStatusBar,
+  CognitiveMemoryPressureStatusBar,
   CompactnessDecayStatusBar,
+  ContinuityInflationStatusBar,
   DriftAwareRoutingStatusBar,
   DriftRiskStatusBar,
+  EntropyGuardedStatusBar,
   ExperimentalProviderStatusBar,
   FatigueEscalationPressureStatusBar,
   FatigueLowStatusBar,
@@ -13,6 +16,7 @@ import {
   GovernanceStableStatusBar,
   ProviderExperimentalMonitor,
   RecoveryAvailableStatusBar,
+  RetrievalBoundedStatusBar,
   StableLocalStatusBar,
 } from '../providerExperimental/providerExperimental';
 
@@ -30,6 +34,10 @@ export function registerProviderExperimentalCommands(
   escalationPressureStatus: FatigueEscalationPressureStatusBar,
   compactnessDecayStatus: CompactnessDecayStatusBar,
   recoveryAvailableStatus: RecoveryAvailableStatusBar,
+  cognitiveMemoryPressureStatus: CognitiveMemoryPressureStatusBar,
+  continuityInflationStatus: ContinuityInflationStatusBar,
+  retrievalBoundedStatus: RetrievalBoundedStatusBar,
+  entropyGuardedStatus: EntropyGuardedStatusBar,
   notifications: RateLimitedNotifications,
 ): vscode.Disposable[] {
   const refreshAll = () => {
@@ -45,6 +53,10 @@ export function registerProviderExperimentalCommands(
     escalationPressureStatus.refresh();
     compactnessDecayStatus.refresh();
     recoveryAvailableStatus.refresh();
+    cognitiveMemoryPressureStatus.refresh();
+    continuityInflationStatus.refresh();
+    retrievalBoundedStatus.refresh();
+    entropyGuardedStatus.refresh();
   };
 
   const runProviderBenchmarkAction = async () => {
@@ -265,6 +277,55 @@ export function registerProviderExperimentalCommands(
     },
   );
 
+  const showMemoryPressure = vscode.commands.registerCommand('aiDevOs.showMemoryPressure', async () => {
+    const state = monitor.runCognitiveMemoryPressure();
+    refreshAll();
+    await vscode.window.showInformationMessage(
+      `AI_DEV_OS memory pressure: ${state.memoryPressureSummary}`,
+    );
+  });
+
+  const showContinuityInflation = vscode.commands.registerCommand(
+    'aiDevOs.showContinuityInflation',
+    async () => {
+      const state = continuityInflationStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS continuity inflation: ${state.continuityInflationSummary}`,
+      );
+    },
+  );
+
+  const showRetrievalOverload = vscode.commands.registerCommand(
+    'aiDevOs.showRetrievalOverload',
+    async () => {
+      const state = retrievalBoundedStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS retrieval overload: ${state.retrievalOverloadSummary}`,
+      );
+    },
+  );
+
+  const showSummaryEntropy = vscode.commands.registerCommand(
+    'aiDevOs.showSummaryEntropy',
+    async () => {
+      const state = entropyGuardedStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS summary entropy: ${state.summaryEntropySummary}`,
+      );
+    },
+  );
+
+  const compactMemorySummary = vscode.commands.registerCommand(
+    'aiDevOs.compactMemorySummary',
+    async () => {
+      const state = monitor.compactSummary();
+      refreshAll();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS compact memory summary: ${state.continuityRecoveryRecommendation}`,
+      );
+    },
+  );
+
   return [
     runProviderBenchmark,
     runStabilityBenchmark,
@@ -290,5 +351,10 @@ export function registerProviderExperimentalCommands(
     showFallbackOscillation,
     showCompactnessDecay,
     compactFatigueSummary,
+    showMemoryPressure,
+    showContinuityInflation,
+    showRetrievalOverload,
+    showSummaryEntropy,
+    compactMemorySummary,
   ];
 }
