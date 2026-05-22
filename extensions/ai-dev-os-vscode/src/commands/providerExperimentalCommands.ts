@@ -1,11 +1,15 @@
 import * as vscode from 'vscode';
 import {RateLimitedNotifications} from '../notifications/rateLimitedNotifications';
 import {
+  AdaptiveRoutingStatusBar,
   BenchmarkActiveStatusBar,
+  DriftAwareRoutingStatusBar,
   DriftRiskStatusBar,
   ExperimentalProviderStatusBar,
+  GovernanceWeightedRoutingStatusBar,
   GovernanceStableStatusBar,
   ProviderExperimentalMonitor,
+  StableLocalStatusBar,
 } from '../providerExperimental/providerExperimental';
 
 export function registerProviderExperimentalCommands(
@@ -14,6 +18,10 @@ export function registerProviderExperimentalCommands(
   driftRiskStatus: DriftRiskStatusBar,
   governanceStableStatus: GovernanceStableStatusBar,
   benchmarkActiveStatus: BenchmarkActiveStatusBar,
+  adaptiveRoutingStatus: AdaptiveRoutingStatusBar,
+  stableLocalStatus: StableLocalStatusBar,
+  driftAwareRoutingStatus: DriftAwareRoutingStatusBar,
+  governanceWeightedRoutingStatus: GovernanceWeightedRoutingStatusBar,
   notifications: RateLimitedNotifications,
 ): vscode.Disposable[] {
   const refreshAll = () => {
@@ -21,6 +29,10 @@ export function registerProviderExperimentalCommands(
     driftRiskStatus.refresh();
     governanceStableStatus.refresh();
     benchmarkActiveStatus.refresh();
+    adaptiveRoutingStatus.refresh();
+    stableLocalStatus.refresh();
+    driftAwareRoutingStatus.refresh();
+    governanceWeightedRoutingStatus.refresh();
   };
 
   const runProviderBenchmarkAction = async () => {
@@ -143,6 +155,55 @@ export function registerProviderExperimentalCommands(
     },
   );
 
+  const showAdaptiveRouting = vscode.commands.registerCommand('aiDevOs.showAdaptiveRouting', async () => {
+    const state = monitor.runAdaptiveRouting();
+    refreshAll();
+    await vscode.window.showInformationMessage(
+      `AI_DEV_OS adaptive routing: ${state.adaptiveRoutingSummary}`,
+    );
+  });
+
+  const showRoutingConfidence = vscode.commands.registerCommand(
+    'aiDevOs.showRoutingConfidence',
+    async () => {
+      const state = stableLocalStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS routing confidence: ${state.routingConfidenceSummary}`,
+      );
+    },
+  );
+
+  const showDriftAwareRouting = vscode.commands.registerCommand(
+    'aiDevOs.showDriftAwareRouting',
+    async () => {
+      const state = driftAwareRoutingStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS drift-aware routing: ${state.driftAwareRoutingResult}; avoided drift ${state.estimatedAvoidedProviderDrift}.`,
+      );
+    },
+  );
+
+  const showStabilityRouting = vscode.commands.registerCommand(
+    'aiDevOs.showStabilityRouting',
+    async () => {
+      const state = governanceWeightedRoutingStatus.refresh();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS stability routing: ${state.providerStabilityComparison}; ${state.governanceWeightedRoutingResult}.`,
+      );
+    },
+  );
+
+  const compactRoutingRecommendation = vscode.commands.registerCommand(
+    'aiDevOs.compactRoutingRecommendation',
+    async () => {
+      const state = monitor.compactSummary();
+      refreshAll();
+      await vscode.window.showInformationMessage(
+        `AI_DEV_OS compact routing recommendation: ${state.adaptiveRoutingSummary}`,
+      );
+    },
+  );
+
   return [
     runProviderBenchmark,
     runStabilityBenchmark,
@@ -158,5 +219,10 @@ export function registerProviderExperimentalCommands(
     compactBenchmarkSummary,
     compactOpenMythosSummary,
     compactStabilitySummary,
+    showAdaptiveRouting,
+    showRoutingConfidence,
+    showDriftAwareRouting,
+    showStabilityRouting,
+    compactRoutingRecommendation,
   ];
 }

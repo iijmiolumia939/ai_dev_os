@@ -43,11 +43,15 @@ import {
   ProviderRoutingMonitor,
 } from './providerRouting/providerRouting';
 import {
+  AdaptiveRoutingStatusBar,
   BenchmarkActiveStatusBar,
+  DriftAwareRoutingStatusBar,
   DriftRiskStatusBar,
   ExperimentalProviderStatusBar,
+  GovernanceWeightedRoutingStatusBar,
   GovernanceStableStatusBar,
   ProviderExperimentalMonitor,
+  StableLocalStatusBar,
 } from './providerExperimental/providerExperimental';
 import {
   GovernancePresenceMonitor,
@@ -173,6 +177,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const driftRiskStatus = new DriftRiskStatusBar(providerExperimental);
   const governanceStableStatus = new GovernanceStableStatusBar(providerExperimental);
   const benchmarkActiveStatus = new BenchmarkActiveStatusBar(providerExperimental);
+  const adaptiveRoutingStatus = new AdaptiveRoutingStatusBar(providerExperimental);
+  const stableLocalStatus = new StableLocalStatusBar(providerExperimental);
+  const driftAwareRoutingStatus = new DriftAwareRoutingStatusBar(providerExperimental);
+  const governanceWeightedRoutingStatus = new GovernanceWeightedRoutingStatusBar(providerExperimental);
   const localProvider = new LocalProviderMonitor();
   const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
   const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
@@ -301,6 +309,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   driftRiskStatus.refresh();
   governanceStableStatus.refresh();
   benchmarkActiveStatus.refresh();
+  adaptiveRoutingStatus.refresh();
+  stableLocalStatus.refresh();
+  driftAwareRoutingStatus.refresh();
+  governanceWeightedRoutingStatus.refresh();
   const localProviderState = localProviderReadyStatus.refresh();
   ollamaActiveStatus.refresh();
   localBudgetOkStatus.refresh();
@@ -457,6 +469,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     driftRiskStatus,
     governanceStableStatus,
     benchmarkActiveStatus,
+    adaptiveRoutingStatus,
+    stableLocalStatus,
+    driftAwareRoutingStatus,
+    governanceWeightedRoutingStatus,
     localProviderReadyStatus,
     ollamaActiveStatus,
     localBudgetOkStatus,
@@ -556,6 +572,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       driftRiskStatus,
       governanceStableStatus,
       benchmarkActiveStatus,
+      adaptiveRoutingStatus,
+      stableLocalStatus,
+      driftAwareRoutingStatus,
+      governanceWeightedRoutingStatus,
       notifications,
     ),
     ...registerLocalProviderCommands(

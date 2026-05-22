@@ -11,6 +11,11 @@ export interface ProviderExperimentalState {
   providerComparisonActive: boolean;
   providerDriftActive: true;
   providerStabilityActive: boolean;
+  adaptiveProviderRoutingActive: boolean;
+  stabilityRoutingActive: true;
+  driftAwareRoutingActive: true;
+  governanceWeightedRoutingActive: true;
+  routingConfidenceActive: true;
   longSessionDriftActive: true;
   governanceDecayActive: true;
   compactnessRetentionActive: true;
@@ -19,6 +24,10 @@ export interface ProviderExperimentalState {
   compactnessOk: true;
   compactSummary: string;
   stabilitySummary: string;
+  adaptiveRoutingSummary: string;
+  routingConfidenceSummary: string;
+  driftAwareRoutingResult: string;
+  governanceWeightedRoutingResult: string;
   openMythosLoadResult: string;
   ggufConversionResult: string;
   openMythosFallbackRoute: string;
@@ -27,6 +36,8 @@ export interface ProviderExperimentalState {
   estimatedGovernanceInstabilityRisk: number;
   estimatedArchitectureDriftRisk: number;
   estimatedProviderStabilityGain: number;
+  estimatedAvoidedProviderDrift: number;
+  estimatedAvoidedPremiumProviderBurn: number;
   estimatedRecursiveDriftRisk: string;
   estimatedLongSessionDegradation: string;
   providerStabilityComparison: string;
@@ -34,6 +45,7 @@ export interface ProviderExperimentalState {
   compactnessRetentionRanking: string;
   driftResistanceRanking: string;
   localPatchAdherenceRanking: string;
+  adaptiveProviderRanking: string;
   summaryOnly: true;
   localOnly: true;
   rollbackSafe: true;
@@ -45,6 +57,7 @@ export interface ProviderExperimentalState {
 export class ProviderExperimentalMonitor {
   private benchmarkActive = false;
   private stabilityBenchmarkActive = false;
+  private adaptiveRoutingActive = false;
 
   evaluate(): ProviderExperimentalState {
     return {
@@ -56,6 +69,11 @@ export class ProviderExperimentalMonitor {
       providerComparisonActive: true,
       providerDriftActive: true,
       providerStabilityActive: this.stabilityBenchmarkActive,
+      adaptiveProviderRoutingActive: this.adaptiveRoutingActive,
+      stabilityRoutingActive: true,
+      driftAwareRoutingActive: true,
+      governanceWeightedRoutingActive: true,
+      routingConfidenceActive: true,
       longSessionDriftActive: true,
       governanceDecayActive: true,
       compactnessRetentionActive: true,
@@ -64,6 +82,10 @@ export class ProviderExperimentalMonitor {
       compactnessOk: true,
       compactSummary: 'OpenMythos HF GGUF unavailable; conversion fallback guarded; no routing changed.',
       stabilitySummary: 'qwen2.5-coder:7b leads bounded stability; OpenMythos remains placeholder-only.',
+      adaptiveRoutingSummary: 'qwen2.5-coder:7b recommended for LOW bounded work; human confirmation required.',
+      routingConfidenceSummary: 'qwen2.5-coder:7b STABLE_LOCAL; gemma3:12b STABLE_GOVERNANCE; GPT-5.5 HIGH_ESCALATION_REQUIRED.',
+      driftAwareRoutingResult: 'DRIFT_LOW_LOCAL_FIRST_ESCALATION_GUARDED',
+      governanceWeightedRoutingResult: 'GOVERNANCE_WEIGHTED_LOCAL_PATCH_PREFERRED',
       openMythosLoadResult: 'unavailable:hf_repository_not_gguf',
       ggufConversionResult: 'guarded:not_converted_custom_open_mythos_architecture',
       openMythosFallbackRoute: 'qwen2.5-coder:7b',
@@ -72,6 +94,8 @@ export class ProviderExperimentalMonitor {
       estimatedGovernanceInstabilityRisk: 2,
       estimatedArchitectureDriftRisk: 2,
       estimatedProviderStabilityGain: 12,
+      estimatedAvoidedProviderDrift: 14,
+      estimatedAvoidedPremiumProviderBurn: 18,
       estimatedRecursiveDriftRisk: 'LOW_BASELINE_GUARDED',
       estimatedLongSessionDegradation: 'qwen2.5-coder:7b 4; qwen2.5-coder:14b 5; gemma3:12b 8; GPT-5.5 reference 18; OpenMythos placeholder 0',
       providerStabilityComparison: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
@@ -79,6 +103,7 @@ export class ProviderExperimentalMonitor {
       compactnessRetentionRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       driftResistanceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       localPatchAdherenceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      adaptiveProviderRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       summaryOnly: true,
       localOnly: true,
       rollbackSafe: true,
@@ -98,9 +123,15 @@ export class ProviderExperimentalMonitor {
     return this.evaluate();
   }
 
+  runAdaptiveRouting(): ProviderExperimentalState {
+    this.adaptiveRoutingActive = true;
+    return this.evaluate();
+  }
+
   compactSummary(): ProviderExperimentalState {
     this.benchmarkActive = false;
     this.stabilityBenchmarkActive = false;
+    this.adaptiveRoutingActive = false;
     return this.evaluate();
   }
 }
@@ -176,6 +207,86 @@ export class BenchmarkActiveStatusBar {
     const state = this.monitor.evaluate();
     this.item.text = `AI_DEV_OS COMPACTNESS_OK ${state.compactnessOk ? 'YES' : 'NO'}`;
     this.item.tooltip = `Compactness ranking ${state.compactnessRetentionRanking}; summary-only ${state.summaryOnly}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class AdaptiveRoutingStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 71);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showAdaptiveRouting';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS ADAPTIVE_ROUTING ${state.adaptiveProviderRoutingActive ? 'ON' : 'READY'}`;
+    this.item.tooltip = `${state.adaptiveRoutingSummary} Ranking ${state.adaptiveProviderRanking}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class StableLocalStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 70);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showRoutingConfidence';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = 'AI_DEV_OS STABLE_LOCAL qwen2.5-coder:7b';
+    this.item.tooltip = state.routingConfidenceSummary;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class DriftAwareRoutingStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 69);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showDriftAwareRouting';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS DRIFT_AWARE ${state.driftAwareRoutingActive ? 'ON' : 'OFF'}`;
+    this.item.tooltip = `${state.driftAwareRoutingResult}; avoided drift ${state.estimatedAvoidedProviderDrift}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class GovernanceWeightedRoutingStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 68);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showStabilityRouting';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS GOVERNANCE_WEIGHTED ${state.governanceWeightedRoutingActive ? 'ON' : 'OFF'}`;
+    this.item.tooltip = `${state.governanceWeightedRoutingResult}; premium burn avoided ${state.estimatedAvoidedPremiumProviderBurn}`;
     this.item.show();
     return state;
   }

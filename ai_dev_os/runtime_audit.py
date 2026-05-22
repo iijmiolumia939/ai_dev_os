@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_dev_os.adaptive_provider_routing import AdaptiveProviderRoutingRuntime
 from ai_dev_os.consumer_rollout import (
     CompatibilityProjectionPolicy,
     ConsumerRolloutAuditPolicy,
@@ -985,6 +986,32 @@ class ProviderStabilityAuditReport:
 
 
 @dataclass(frozen=True)
+class AdaptiveProviderRoutingAuditReport:
+    adaptive_provider_routing_active: bool
+    drift_aware_routing_active: bool
+    governance_weighted_routing_active: bool
+    long_session_routing_active: bool
+    routing_confidence_active: bool
+    provider_recommendation_ranking: tuple[str, ...]
+    stability_weighted_ranking: tuple[str, ...]
+    governance_weighted_ranking: tuple[str, ...]
+    routing_confidence_summary: tuple[str, ...]
+    drift_aware_routing_result: str
+    governance_weighted_routing_result: str
+    estimated_avoided_provider_drift: int
+    estimated_avoided_recursive_routing: int
+    estimated_avoided_premium_burn: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    no_hidden_provider_switching: bool
+    no_recursive_routing_loops: bool
+    no_unrestricted_provider_escalation: bool
+    automatic_switching_allowed: bool
+    governance_runtime_bypassed: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1032,6 +1059,7 @@ class RuntimeEnforcementAuditReport:
     dev_policy: DevPolicyAuditReport
     provider_experimental: ProviderExperimentalAuditReport
     provider_stability: ProviderStabilityAuditReport
+    adaptive_provider_routing: AdaptiveProviderRoutingAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2957,6 +2985,36 @@ def audit_provider_stability() -> ProviderStabilityAuditReport:
     )
 
 
+def audit_adaptive_provider_routing() -> AdaptiveProviderRoutingAuditReport:
+    frame = AdaptiveProviderRoutingRuntime().evaluate()
+    return AdaptiveProviderRoutingAuditReport(
+        adaptive_provider_routing_active=frame.adaptive_provider_routing_active,
+        drift_aware_routing_active=frame.drift_aware_routing_active,
+        governance_weighted_routing_active=frame.governance_weighted_routing_active,
+        long_session_routing_active=frame.long_session_routing_active,
+        routing_confidence_active=frame.routing_confidence_active,
+        provider_recommendation_ranking=frame.recommendation.provider_recommendation_ranking,
+        stability_weighted_ranking=frame.stability_weighted.stability_weighted_ranking,
+        governance_weighted_ranking=frame.governance_weighted.governance_weighted_ranking,
+        routing_confidence_summary=frame.confidence.routing_confidence_summary,
+        drift_aware_routing_result=frame.drift_aware.drift_aware_routing_result,
+        governance_weighted_routing_result=(
+            frame.governance_weighted.governance_weighted_routing_result
+        ),
+        estimated_avoided_provider_drift=frame.estimated_avoided_provider_drift,
+        estimated_avoided_recursive_routing=frame.estimated_avoided_recursive_routing,
+        estimated_avoided_premium_burn=frame.estimated_avoided_premium_burn,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        no_hidden_provider_switching=frame.adaptive.no_hidden_provider_switching,
+        no_recursive_routing_loops=frame.adaptive.no_recursive_routing_loops,
+        no_unrestricted_provider_escalation=frame.adaptive.no_unrestricted_provider_escalation,
+        automatic_switching_allowed=frame.recommendation.automatic_switching_allowed,
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3254,6 +3312,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         dev_policy=audit_dev_policy(),
         provider_experimental=audit_provider_experimental(),
         provider_stability=audit_provider_stability(),
+        adaptive_provider_routing=audit_adaptive_provider_routing(),
     )
 
 
