@@ -62,6 +62,7 @@ from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
 from ai_dev_os.provider_experimental import ProviderExperimentalRuntime
+from ai_dev_os.provider_fatigue import ProviderFatigueRuntime
 from ai_dev_os.provider_local import LocalProviderRuntime
 from ai_dev_os.provider_routing import ProviderRoutingRuntime
 from ai_dev_os.provider_stability import ProviderStabilityRuntime
@@ -1012,6 +1013,32 @@ class AdaptiveProviderRoutingAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderFatigueAuditReport:
+    provider_fatigue_active: bool
+    escalation_fatigue_active: bool
+    fallback_oscillation_active: bool
+    compactness_decay_active: bool
+    long_session_pressure_active: bool
+    fatigue_confidence_active: bool
+    provider_recovery_active: bool
+    provider_fatigue_summary: tuple[str, ...]
+    escalation_fatigue_warning: str
+    fallback_oscillation_summary: str
+    compactness_decay_recommendation: str
+    recovery_recommendation: str
+    estimated_avoided_provider_exhaustion: int
+    estimated_avoided_recursive_fatigue: int
+    estimated_avoided_premium_burn: int
+    human_confirmed_only: bool
+    deterministic: bool
+    rollback_safe: bool
+    autonomous_provider_replacement: bool
+    recursive_reroute_loops_blocked: bool
+    governance_runtime_bypassed: bool
+    hidden_escalation_switching: bool
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1060,6 +1087,7 @@ class RuntimeEnforcementAuditReport:
     provider_experimental: ProviderExperimentalAuditReport
     provider_stability: ProviderStabilityAuditReport
     adaptive_provider_routing: AdaptiveProviderRoutingAuditReport
+    provider_fatigue: ProviderFatigueAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3015,6 +3043,38 @@ def audit_adaptive_provider_routing() -> AdaptiveProviderRoutingAuditReport:
     )
 
 
+def audit_provider_fatigue() -> ProviderFatigueAuditReport:
+    frame = ProviderFatigueRuntime().evaluate()
+    return ProviderFatigueAuditReport(
+        provider_fatigue_active=frame.provider_fatigue_active,
+        escalation_fatigue_active=frame.escalation_fatigue_active,
+        fallback_oscillation_active=frame.fallback_oscillation_active,
+        compactness_decay_active=frame.compactness_decay_active,
+        long_session_pressure_active=frame.long_session_pressure_active,
+        fatigue_confidence_active=frame.confidence.fatigue_confidence_active,
+        provider_recovery_active=frame.recovery.provider_recovery_active,
+        provider_fatigue_summary=frame.confidence.fatigue_confidence_summary,
+        escalation_fatigue_warning=frame.escalation_fatigue.escalation_fatigue_warning,
+        fallback_oscillation_summary=(frame.fallback_oscillation.fallback_oscillation_summary),
+        compactness_decay_recommendation=(
+            frame.compactness_decay.bounded_compression_recommendation
+        ),
+        recovery_recommendation=frame.recovery.recovery_recommendation,
+        estimated_avoided_provider_exhaustion=(frame.estimated_avoided_provider_exhaustion),
+        estimated_avoided_recursive_fatigue=frame.estimated_avoided_recursive_fatigue,
+        estimated_avoided_premium_burn=frame.estimated_avoided_premium_burn,
+        human_confirmed_only=frame.human_confirmed_only,
+        deterministic=frame.deterministic,
+        rollback_safe=frame.rollback_safe,
+        autonomous_provider_replacement=(frame.governance.autonomous_provider_replacement),
+        recursive_reroute_loops_blocked=(
+            frame.fallback_oscillation.recursive_reroute_loops_blocked
+        ),
+        governance_runtime_bypassed=frame.governance.governance_runtime_bypassed,
+        hidden_escalation_switching=frame.governance.hidden_escalation_switching,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3313,6 +3373,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_experimental=audit_provider_experimental(),
         provider_stability=audit_provider_stability(),
         adaptive_provider_routing=audit_adaptive_provider_routing(),
+        provider_fatigue=audit_provider_fatigue(),
     )
 
 

@@ -45,12 +45,16 @@ import {
 import {
   AdaptiveRoutingStatusBar,
   BenchmarkActiveStatusBar,
+  CompactnessDecayStatusBar,
   DriftAwareRoutingStatusBar,
   DriftRiskStatusBar,
   ExperimentalProviderStatusBar,
+  FatigueEscalationPressureStatusBar,
+  FatigueLowStatusBar,
   GovernanceWeightedRoutingStatusBar,
   GovernanceStableStatusBar,
   ProviderExperimentalMonitor,
+  RecoveryAvailableStatusBar,
   StableLocalStatusBar,
 } from './providerExperimental/providerExperimental';
 import {
@@ -181,6 +185,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const stableLocalStatus = new StableLocalStatusBar(providerExperimental);
   const driftAwareRoutingStatus = new DriftAwareRoutingStatusBar(providerExperimental);
   const governanceWeightedRoutingStatus = new GovernanceWeightedRoutingStatusBar(providerExperimental);
+  const fatigueLowStatus = new FatigueLowStatusBar(providerExperimental);
+  const fatigueEscalationPressureStatus = new FatigueEscalationPressureStatusBar(providerExperimental);
+  const compactnessDecayStatus = new CompactnessDecayStatusBar(providerExperimental);
+  const recoveryAvailableStatus = new RecoveryAvailableStatusBar(providerExperimental);
   const localProvider = new LocalProviderMonitor();
   const localProviderReadyStatus = new LocalProviderReadyStatusBar(localProvider);
   const ollamaActiveStatus = new OllamaActiveStatusBar(localProvider);
@@ -313,6 +321,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   stableLocalStatus.refresh();
   driftAwareRoutingStatus.refresh();
   governanceWeightedRoutingStatus.refresh();
+  fatigueLowStatus.refresh();
+  fatigueEscalationPressureStatus.refresh();
+  compactnessDecayStatus.refresh();
+  recoveryAvailableStatus.refresh();
   const localProviderState = localProviderReadyStatus.refresh();
   ollamaActiveStatus.refresh();
   localBudgetOkStatus.refresh();
@@ -473,6 +485,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     stableLocalStatus,
     driftAwareRoutingStatus,
     governanceWeightedRoutingStatus,
+    fatigueLowStatus,
+    fatigueEscalationPressureStatus,
+    compactnessDecayStatus,
+    recoveryAvailableStatus,
     localProviderReadyStatus,
     ollamaActiveStatus,
     localBudgetOkStatus,
@@ -576,6 +592,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       stableLocalStatus,
       driftAwareRoutingStatus,
       governanceWeightedRoutingStatus,
+      fatigueLowStatus,
+      fatigueEscalationPressureStatus,
+      compactnessDecayStatus,
+      recoveryAvailableStatus,
       notifications,
     ),
     ...registerLocalProviderCommands(

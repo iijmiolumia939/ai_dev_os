@@ -16,6 +16,11 @@ export interface ProviderExperimentalState {
   driftAwareRoutingActive: true;
   governanceWeightedRoutingActive: true;
   routingConfidenceActive: true;
+  providerFatigueActive: boolean;
+  escalationFatigueActive: true;
+  fallbackOscillationActive: true;
+  compactnessDecayActive: true;
+  recoveryAvailable: true;
   longSessionDriftActive: true;
   governanceDecayActive: true;
   compactnessRetentionActive: true;
@@ -26,6 +31,11 @@ export interface ProviderExperimentalState {
   stabilitySummary: string;
   adaptiveRoutingSummary: string;
   routingConfidenceSummary: string;
+  providerFatigueSummary: string;
+  escalationFatigueSummary: string;
+  fallbackOscillationSummary: string;
+  compactnessDecaySummary: string;
+  providerRecoveryRecommendation: string;
   driftAwareRoutingResult: string;
   governanceWeightedRoutingResult: string;
   openMythosLoadResult: string;
@@ -37,6 +47,8 @@ export interface ProviderExperimentalState {
   estimatedArchitectureDriftRisk: number;
   estimatedProviderStabilityGain: number;
   estimatedAvoidedProviderDrift: number;
+  estimatedAvoidedProviderExhaustion: number;
+  estimatedAvoidedRecursiveFatigue: number;
   estimatedAvoidedPremiumProviderBurn: number;
   estimatedRecursiveDriftRisk: string;
   estimatedLongSessionDegradation: string;
@@ -46,6 +58,7 @@ export interface ProviderExperimentalState {
   driftResistanceRanking: string;
   localPatchAdherenceRanking: string;
   adaptiveProviderRanking: string;
+  providerRecoveryRanking: string;
   summaryOnly: true;
   localOnly: true;
   rollbackSafe: true;
@@ -58,6 +71,7 @@ export class ProviderExperimentalMonitor {
   private benchmarkActive = false;
   private stabilityBenchmarkActive = false;
   private adaptiveRoutingActive = false;
+  private providerFatigueActive = false;
 
   evaluate(): ProviderExperimentalState {
     return {
@@ -74,6 +88,11 @@ export class ProviderExperimentalMonitor {
       driftAwareRoutingActive: true,
       governanceWeightedRoutingActive: true,
       routingConfidenceActive: true,
+      providerFatigueActive: this.providerFatigueActive,
+      escalationFatigueActive: true,
+      fallbackOscillationActive: true,
+      compactnessDecayActive: true,
+      recoveryAvailable: true,
       longSessionDriftActive: true,
       governanceDecayActive: true,
       compactnessRetentionActive: true,
@@ -84,6 +103,11 @@ export class ProviderExperimentalMonitor {
       stabilitySummary: 'qwen2.5-coder:7b leads bounded stability; OpenMythos remains placeholder-only.',
       adaptiveRoutingSummary: 'qwen2.5-coder:7b recommended for LOW bounded work; human confirmation required.',
       routingConfidenceSummary: 'qwen2.5-coder:7b STABLE_LOCAL; gemma3:12b STABLE_GOVERNANCE; GPT-5.5 HIGH_ESCALATION_REQUIRED.',
+      providerFatigueSummary: 'qwen2.5-coder:7b fatigue low; escalation pressure guarded.',
+      escalationFatigueSummary: 'ESCALATION_PRESSURE_GUARDED; downgrade before premium retry.',
+      fallbackOscillationSummary: 'OSCILLATION_LOW_LOCAL_FIRST_BLOCKED_LOOPS',
+      compactnessDecaySummary: 'COMPACTNESS_RESET_BEFORE_LONG_SESSION_CONTINUATION',
+      providerRecoveryRecommendation: 'RECOVER_WITH_LOCAL_DOWNGRADE_AND_COMPACTNESS_RESET',
       driftAwareRoutingResult: 'DRIFT_LOW_LOCAL_FIRST_ESCALATION_GUARDED',
       governanceWeightedRoutingResult: 'GOVERNANCE_WEIGHTED_LOCAL_PATCH_PREFERRED',
       openMythosLoadResult: 'unavailable:hf_repository_not_gguf',
@@ -95,6 +119,8 @@ export class ProviderExperimentalMonitor {
       estimatedArchitectureDriftRisk: 2,
       estimatedProviderStabilityGain: 12,
       estimatedAvoidedProviderDrift: 14,
+      estimatedAvoidedProviderExhaustion: 16,
+      estimatedAvoidedRecursiveFatigue: 11,
       estimatedAvoidedPremiumProviderBurn: 18,
       estimatedRecursiveDriftRisk: 'LOW_BASELINE_GUARDED',
       estimatedLongSessionDegradation: 'qwen2.5-coder:7b 4; qwen2.5-coder:14b 5; gemma3:12b 8; GPT-5.5 reference 18; OpenMythos placeholder 0',
@@ -104,6 +130,7 @@ export class ProviderExperimentalMonitor {
       driftResistanceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       localPatchAdherenceRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       adaptiveProviderRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
+      providerRecoveryRanking: 'qwen2.5-coder:7b > qwen2.5-coder:14b > gemma3:12b > GPT-5.5 reference > OpenMythos placeholder',
       summaryOnly: true,
       localOnly: true,
       rollbackSafe: true,
@@ -128,10 +155,16 @@ export class ProviderExperimentalMonitor {
     return this.evaluate();
   }
 
+  runProviderFatigue(): ProviderExperimentalState {
+    this.providerFatigueActive = true;
+    return this.evaluate();
+  }
+
   compactSummary(): ProviderExperimentalState {
     this.benchmarkActive = false;
     this.stabilityBenchmarkActive = false;
     this.adaptiveRoutingActive = false;
+    this.providerFatigueActive = false;
     return this.evaluate();
   }
 }
@@ -287,6 +320,86 @@ export class GovernanceWeightedRoutingStatusBar {
     const state = this.monitor.evaluate();
     this.item.text = `AI_DEV_OS GOVERNANCE_WEIGHTED ${state.governanceWeightedRoutingActive ? 'ON' : 'OFF'}`;
     this.item.tooltip = `${state.governanceWeightedRoutingResult}; premium burn avoided ${state.estimatedAvoidedPremiumProviderBurn}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class FatigueLowStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 67);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showProviderFatigue';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS FATIGUE_LOW ${state.providerFatigueActive ? 'ON' : 'READY'}`;
+    this.item.tooltip = `${state.providerFatigueSummary}; avoided exhaustion ${state.estimatedAvoidedProviderExhaustion}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class FatigueEscalationPressureStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 66);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showEscalationFatigue';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS ESCALATION_PRESSURE ${state.escalationFatigueActive ? 'GUARDED' : 'OFF'}`;
+    this.item.tooltip = `${state.escalationFatigueSummary}; avoided premium burn ${state.estimatedAvoidedPremiumProviderBurn}`;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class CompactnessDecayStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 65);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.showCompactnessDecay';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS COMPACTNESS_DECAY ${state.compactnessDecayActive ? 'WATCH' : 'OFF'}`;
+    this.item.tooltip = state.compactnessDecaySummary;
+    this.item.show();
+    return state;
+  }
+
+  dispose(): void {
+    this.item.dispose();
+  }
+}
+
+export class RecoveryAvailableStatusBar {
+  private readonly item = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 64);
+
+  constructor(private readonly monitor: ProviderExperimentalMonitor) {
+    this.item.command = 'aiDevOs.compactFatigueSummary';
+  }
+
+  refresh(): ProviderExperimentalState {
+    const state = this.monitor.evaluate();
+    this.item.text = `AI_DEV_OS RECOVERY_AVAILABLE ${state.recoveryAvailable ? 'YES' : 'NO'}`;
+    this.item.tooltip = `${state.providerRecoveryRecommendation}; ${state.providerRecoveryRanking}`;
     this.item.show();
     return state;
   }
