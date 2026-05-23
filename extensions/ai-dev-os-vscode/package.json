@@ -221,6 +221,11 @@
     "onCommand:aiDevOs.showRedundancyPressure",
     "onCommand:aiDevOs.showPersistenceQuality",
     "onCommand:aiDevOs.compactQualitySummary",
+    "onCommand:aiDevOs.runVerifiedCommand",
+    "onCommand:aiDevOs.showExecutionEvidence",
+    "onCommand:aiDevOs.showPytestEvidence",
+    "onCommand:aiDevOs.showGitEvidence",
+    "onCommand:aiDevOs.compactVerifiedExecutionSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -446,7 +451,12 @@
       {"command": "aiDevOs.showQualityDrift", "title": "AI_DEV_OS: Show Quality Drift"},
       {"command": "aiDevOs.showRedundancyPressure", "title": "AI_DEV_OS: Show Redundancy Pressure"},
       {"command": "aiDevOs.showPersistenceQuality", "title": "AI_DEV_OS: Show Persistence Quality"},
-      {"command": "aiDevOs.compactQualitySummary", "title": "AI_DEV_OS: Compact Quality Summary"}
+      {"command": "aiDevOs.compactQualitySummary", "title": "AI_DEV_OS: Compact Quality Summary"},
+      {"command": "aiDevOs.runVerifiedCommand", "title": "AI_DEV_OS: Run Verified Command"},
+      {"command": "aiDevOs.showExecutionEvidence", "title": "AI_DEV_OS: Show Execution Evidence"},
+      {"command": "aiDevOs.showPytestEvidence", "title": "AI_DEV_OS: Show Pytest Evidence"},
+      {"command": "aiDevOs.showGitEvidence", "title": "AI_DEV_OS: Show Git Evidence"},
+      {"command": "aiDevOs.compactVerifiedExecutionSummary", "title": "AI_DEV_OS: Compact Verified Execution Summary"}
     ],
     "views": {
       "explorer": [

@@ -29,6 +29,7 @@ import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplific
 import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
 import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
+import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCommands';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
@@ -195,6 +196,13 @@ import {
   SubagentExecutionMonitor,
   SwarmBlockedStatusBar,
 } from './subagentExecution/subagentExecution';
+import {
+  CommandGroundedStatusBar,
+  GitEvidenceSafeStatusBar,
+  PytestVerifiedStatusBar,
+  VerifiedExecutionMonitor,
+  VerifiedExecutionStatusBar,
+} from './verifiedExecution/verifiedExecution';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -336,6 +344,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
   const fallbackReadyStatus = new FallbackReadyStatusBar(subagentExecution);
   const swarmBlockedStatus = new SwarmBlockedStatusBar(subagentExecution);
+  const verifiedExecution = new VerifiedExecutionMonitor();
+  const verifiedExecutionStatus = new VerifiedExecutionStatusBar(verifiedExecution);
+  const commandGroundedStatus = new CommandGroundedStatusBar(verifiedExecution);
+  const pytestVerifiedStatus = new PytestVerifiedStatusBar(verifiedExecution);
+  const gitEvidenceSafeStatus = new GitEvidenceSafeStatusBar(verifiedExecution);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -501,6 +514,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
   swarmBlockedStatus.refresh();
+  verifiedExecutionStatus.refresh();
+  commandGroundedStatus.refresh();
+  pytestVerifiedStatus.refresh();
+  gitEvidenceSafeStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -701,6 +718,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     localDelegationStatus,
     fallbackReadyStatus,
     swarmBlockedStatus,
+    verifiedExecutionStatus,
+    commandGroundedStatus,
+    pytestVerifiedStatus,
+    gitEvidenceSafeStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -904,6 +925,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       localDelegationStatus,
       fallbackReadyStatus,
       swarmBlockedStatus,
+      notifications,
+    ),
+    ...registerVerifiedExecutionCommands(
+      verifiedExecution,
+      verifiedExecutionStatus,
+      commandGroundedStatus,
+      pytestVerifiedStatus,
+      gitEvidenceSafeStatus,
       notifications,
     ),
   );

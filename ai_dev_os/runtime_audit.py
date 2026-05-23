@@ -36,6 +36,7 @@ from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.execution_session import ExecutionSessionRuntime
 from ai_dev_os.execution_stability import ExecutionStabilityRuntime
+from ai_dev_os.verified_execution import VerifiedExecutionRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1176,6 +1177,19 @@ class ExecutionQualityAuditReport:
 
 
 @dataclass(frozen=True)
+class VerifiedExecutionAuditReport:
+    verified_execution_active: bool
+    command_runtime_active: bool
+    filesystem_runtime_active: bool
+    pytest_runtime_active: bool
+    git_runtime_active: bool
+    evidence_runtime_active: bool
+    estimated_avoided_fake_execution: int
+    estimated_avoided_hallucinated_pytest: int
+    estimated_avoided_synthetic_git_state: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1234,6 +1248,7 @@ class RuntimeEnforcementAuditReport:
     execution_session: ExecutionSessionAuditReport
     execution_stability: ExecutionStabilityAuditReport
     execution_quality: ExecutionQualityAuditReport
+    verified_execution: VerifiedExecutionAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3371,6 +3386,21 @@ def audit_execution_quality() -> ExecutionQualityAuditReport:
     )
 
 
+def audit_verified_execution() -> VerifiedExecutionAuditReport:
+    frame = VerifiedExecutionRuntime().evaluate()
+    return VerifiedExecutionAuditReport(
+        verified_execution_active=frame.envelope_active,
+        command_runtime_active=frame.verification.command_verified,
+        filesystem_runtime_active=frame.verification.filesystem_verified,
+        pytest_runtime_active=frame.verification.pytest_verified,
+        git_runtime_active=frame.verification.git_verified,
+        evidence_runtime_active=frame.integrity.integrity_active,
+        estimated_avoided_fake_execution=frame.estimated_avoided_fake_execution,
+        estimated_avoided_hallucinated_pytest=frame.estimated_avoided_hallucinated_pytest,
+        estimated_avoided_synthetic_git_state=frame.estimated_avoided_synthetic_git_state,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3679,6 +3709,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_session=audit_execution_session(),
         execution_stability=audit_execution_stability(),
         execution_quality=audit_execution_quality(),
+        verified_execution=audit_verified_execution(),
     )
 
 
