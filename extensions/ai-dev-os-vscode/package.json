@@ -269,6 +269,11 @@
     "onCommand:aiDevOs.showRetrySchedule",
     "onCommand:aiDevOs.showContinuationSchedule",
     "onCommand:aiDevOs.compactRuntimeOrchestratorSummary",
+    "onCommand:aiDevOs.showRuntimeHardening",
+    "onCommand:aiDevOs.showRetryStormStatus",
+    "onCommand:aiDevOs.showEscalationOscillation",
+    "onCommand:aiDevOs.showOrchestrationDeadlocks",
+    "onCommand:aiDevOs.compactRuntimeHardeningSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -542,7 +547,12 @@
       {"command": "aiDevOs.showValidationSchedule", "title": "AI_DEV_OS: Show Validation Schedule"},
       {"command": "aiDevOs.showRetrySchedule", "title": "AI_DEV_OS: Show Retry Schedule"},
       {"command": "aiDevOs.showContinuationSchedule", "title": "AI_DEV_OS: Show Continuation Schedule"},
-      {"command": "aiDevOs.compactRuntimeOrchestratorSummary", "title": "AI_DEV_OS: Compact Runtime Orchestrator Summary"}
+      {"command": "aiDevOs.compactRuntimeOrchestratorSummary", "title": "AI_DEV_OS: Compact Runtime Orchestrator Summary"},
+      {"command": "aiDevOs.showRuntimeHardening", "title": "AI_DEV_OS: Show Runtime Hardening"},
+      {"command": "aiDevOs.showRetryStormStatus", "title": "AI_DEV_OS: Show Retry Storm Status"},
+      {"command": "aiDevOs.showEscalationOscillation", "title": "AI_DEV_OS: Show Escalation Oscillation"},
+      {"command": "aiDevOs.showOrchestrationDeadlocks", "title": "AI_DEV_OS: Show Orchestration Deadlocks"},
+      {"command": "aiDevOs.compactRuntimeHardeningSummary", "title": "AI_DEV_OS: Compact Runtime Hardening Summary"}
     ],
     "views": {
       "explorer": [

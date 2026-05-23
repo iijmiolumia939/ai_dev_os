@@ -113,6 +113,7 @@ from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
+from ai_dev_os.runtime_hardening import RuntimeHardeningRuntime
 from ai_dev_os.runtime_mediation import ExecutionSequencer
 from ai_dev_os.runtime_orchestrator import RuntimeOrchestrator
 from ai_dev_os.runtime_policy import RuntimePolicyEngine
@@ -1231,6 +1232,19 @@ class SprintLoopAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimeHardeningAuditReport:
+    runtime_hardening_active: bool
+    retry_storm_score: int
+    escalation_oscillation_score: int
+    continuation_stability_score: int
+    provider_starvation_score: int
+    orchestration_deadlock_score: int
+    estimated_avoided_retry_storms: int
+    estimated_avoided_orchestration_collapse: int
+    estimated_avoided_frontier_stabilization: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1372,6 +1386,7 @@ class RuntimeEnforcementAuditReport:
     runtime_policy: RuntimePolicyAuditReport
     sprint_loop: SprintLoopAuditReport
     runtime_orchestrator: RuntimeOrchestratorAuditReport
+    runtime_hardening: RuntimeHardeningAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3562,6 +3577,21 @@ def audit_sprint_loop() -> SprintLoopAuditReport:
     )
 
 
+def audit_runtime_hardening() -> RuntimeHardeningAuditReport:
+    frame = RuntimeHardeningRuntime().evaluate()
+    return RuntimeHardeningAuditReport(
+        runtime_hardening_active=frame.runtime_hardening_active,
+        retry_storm_score=frame.retry_storm_score,
+        escalation_oscillation_score=frame.escalation_oscillation_score,
+        continuation_stability_score=frame.continuation_stability_score,
+        provider_starvation_score=frame.provider_starvation_score,
+        orchestration_deadlock_score=frame.orchestration_deadlock_score,
+        estimated_avoided_retry_storms=frame.estimated_avoided_retry_storms,
+        estimated_avoided_orchestration_collapse=(frame.estimated_avoided_orchestration_collapse),
+        estimated_avoided_frontier_stabilization=(frame.estimated_avoided_frontier_stabilization),
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -3971,6 +4001,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_policy=audit_runtime_policy(),
         sprint_loop=audit_sprint_loop(),
         runtime_orchestrator=audit_runtime_orchestrator(),
+        runtime_hardening=audit_runtime_hardening(),
     )
 
 
