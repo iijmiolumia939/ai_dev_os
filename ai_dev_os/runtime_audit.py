@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from ai_dev_os.adaptive_provider import AdaptiveProviderRuntime
 from ai_dev_os.adaptive_provider_routing import AdaptiveProviderRoutingRuntime
 from ai_dev_os.cognitive_memory_pressure import CognitiveMemoryPressureRuntime
 from ai_dev_os.cognitive_state import CognitiveStateRuntime
@@ -1214,6 +1215,18 @@ class IntentionalPlanningAuditReport:
 
 
 @dataclass(frozen=True)
+class AdaptiveProviderAuditReport:
+    adaptive_provider_active: bool
+    provider_capability_score: int
+    provider_fatigue_score: int
+    provider_cost_pressure: str
+    provider_confidence_score: int
+    estimated_avoided_frontier_provider_usage: int
+    estimated_avoided_recursive_escalation: int
+    estimated_avoided_provider_instability: int
+
+
+@dataclass(frozen=True)
 class ReflectiveEvaluationAuditReport:
     reflective_evaluation_active: bool
     execution_quality_score: int
@@ -1301,6 +1314,7 @@ class RuntimeEnforcementAuditReport:
     cognitive_state: CognitiveStateAuditReport
     intentional_planning: IntentionalPlanningAuditReport
     reflective_evaluation: ReflectiveEvaluationAuditReport
+    adaptive_provider: AdaptiveProviderAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3477,6 +3491,22 @@ def audit_intentional_planning() -> IntentionalPlanningAuditReport:
     )
 
 
+def audit_adaptive_provider() -> AdaptiveProviderAuditReport:
+    frame = AdaptiveProviderRuntime().evaluate()
+    return AdaptiveProviderAuditReport(
+        adaptive_provider_active=frame.adaptive_provider_active,
+        provider_capability_score=frame.provider_capability_score,
+        provider_fatigue_score=frame.provider_fatigue_score,
+        provider_cost_pressure=frame.provider_cost_pressure,
+        provider_confidence_score=frame.provider_confidence_score,
+        estimated_avoided_frontier_provider_usage=(
+            frame.estimated_avoided_frontier_provider_usage
+        ),
+        estimated_avoided_recursive_escalation=(frame.estimated_avoided_recursive_escalation),
+        estimated_avoided_provider_instability=(frame.estimated_avoided_provider_instability),
+    )
+
+
 def audit_reflective_evaluation() -> ReflectiveEvaluationAuditReport:
     frame = ReflectiveEvaluationRuntime().evaluate()
     return ReflectiveEvaluationAuditReport(
@@ -3818,6 +3848,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         cognitive_state=audit_cognitive_state(),
         intentional_planning=audit_intentional_planning(),
         reflective_evaluation=audit_reflective_evaluation(),
+        adaptive_provider=audit_adaptive_provider(),
     )
 
 

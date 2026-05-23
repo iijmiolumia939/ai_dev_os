@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {registerAdaptiveProviderCommands} from './commands/adaptiveProviderCommands';
 import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
@@ -34,6 +35,13 @@ import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
 import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
 import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCommands';
+import {
+  AdaptiveProviderMonitor,
+  CostGuardedStatusBar,
+  FatigueTrackedStatusBar,
+  LocalFirstStatusBar,
+  ProviderBoundedStatusBar,
+} from './adaptiveProvider/adaptiveProvider';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
@@ -401,6 +409,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const executionCoherentStatus = new ExecutionCoherentStatusBar(reflectiveEvaluation);
   const continuationValidStatus = new ContinuationValidStatusBar(reflectiveEvaluation);
   const planningStableStatus = new PlanningStableStatusBar(reflectiveEvaluation);
+  const adaptiveProvider = new AdaptiveProviderMonitor();
+  const providerBoundedStatus = new ProviderBoundedStatusBar(adaptiveProvider);
+  const localFirstStatus = new LocalFirstStatusBar(adaptiveProvider);
+  const fatigueTrackedStatus = new FatigueTrackedStatusBar(adaptiveProvider);
+  const costGuardedStatus = new CostGuardedStatusBar(adaptiveProvider);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -585,6 +598,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   executionCoherentStatus.refresh();
   continuationValidStatus.refresh();
   planningStableStatus.refresh();
+  providerBoundedStatus.refresh();
+  localFirstStatus.refresh();
+  fatigueTrackedStatus.refresh();
+  costGuardedStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -804,6 +821,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     executionCoherentStatus,
     continuationValidStatus,
     planningStableStatus,
+    providerBoundedStatus,
+    localFirstStatus,
+    fatigueTrackedStatus,
+    costGuardedStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1046,6 +1067,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       executionCoherentStatus,
       continuationValidStatus,
       planningStableStatus,
+      notifications,
+    ),
+    ...registerAdaptiveProviderCommands(
+      adaptiveProvider,
+      providerBoundedStatus,
+      localFirstStatus,
+      fatigueTrackedStatus,
+      costGuardedStatus,
       notifications,
     ),
   );

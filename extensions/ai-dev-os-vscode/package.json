@@ -245,6 +245,10 @@
     "onCommand:aiDevOs.showContinuationValidity",
     "onCommand:aiDevOs.showPlanningIntegrity",
     "onCommand:aiDevOs.compactReflectiveEvaluationSummary",
+    "onCommand:aiDevOs.showProviderCapability",
+    "onCommand:aiDevOs.showProviderCost",
+    "onCommand:aiDevOs.showProviderConfidence",
+    "onCommand:aiDevOs.compactAdaptiveProviderSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -494,7 +498,11 @@
       {"command": "aiDevOs.showCognitiveCoherence", "title": "AI_DEV_OS: Show Cognitive Coherence"},
       {"command": "aiDevOs.showContinuationValidity", "title": "AI_DEV_OS: Show Continuation Validity"},
       {"command": "aiDevOs.showPlanningIntegrity", "title": "AI_DEV_OS: Show Planning Integrity"},
-      {"command": "aiDevOs.compactReflectiveEvaluationSummary", "title": "AI_DEV_OS: Compact Reflective Evaluation Summary"}
+      {"command": "aiDevOs.compactReflectiveEvaluationSummary", "title": "AI_DEV_OS: Compact Reflective Evaluation Summary"},
+      {"command": "aiDevOs.showProviderCapability", "title": "AI_DEV_OS: Show Provider Capability"},
+      {"command": "aiDevOs.showProviderCost", "title": "AI_DEV_OS: Show Provider Cost"},
+      {"command": "aiDevOs.showProviderConfidence", "title": "AI_DEV_OS: Show Provider Confidence"},
+      {"command": "aiDevOs.compactAdaptiveProviderSummary", "title": "AI_DEV_OS: Compact Adaptive Provider Summary"}
     ],
     "views": {
       "explorer": [
