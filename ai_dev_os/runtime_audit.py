@@ -31,6 +31,7 @@ from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
 from ai_dev_os.execution_coordination import ExecutionCoordinationRuntime
 from ai_dev_os.execution_intent import ExecutionIntentRuntime
+from ai_dev_os.execution_quality import ExecutionQualityRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.execution_session import ExecutionSessionRuntime
@@ -1164,6 +1165,17 @@ class ExecutionStabilityAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionQualityAuditReport:
+    execution_quality_active: bool
+    quality_drift_active: bool
+    quality_redundancy_active: bool
+    quality_persistence_active: bool
+    estimated_avoided_low_value_execution: int
+    estimated_avoided_recursive_optimization: int
+    estimated_avoided_execution_redundancy: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1221,6 +1233,7 @@ class RuntimeEnforcementAuditReport:
     execution_intent: ExecutionIntentAuditReport
     execution_session: ExecutionSessionAuditReport
     execution_stability: ExecutionStabilityAuditReport
+    execution_quality: ExecutionQualityAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3345,6 +3358,19 @@ def audit_execution_stability() -> ExecutionStabilityAuditReport:
     )
 
 
+def audit_execution_quality() -> ExecutionQualityAuditReport:
+    frame = ExecutionQualityRuntime().evaluate()
+    return ExecutionQualityAuditReport(
+        execution_quality_active=frame.execution_quality_active,
+        quality_drift_active=frame.quality_drift_active,
+        quality_redundancy_active=frame.quality_redundancy_active,
+        quality_persistence_active=frame.quality_persistence_active,
+        estimated_avoided_low_value_execution=(frame.estimated_avoided_low_value_execution),
+        estimated_avoided_recursive_optimization=(frame.estimated_avoided_recursive_optimization),
+        estimated_avoided_execution_redundancy=(frame.estimated_avoided_execution_redundancy),
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3652,6 +3678,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_intent=audit_execution_intent(),
         execution_session=audit_execution_session(),
         execution_stability=audit_execution_stability(),
+        execution_quality=audit_execution_quality(),
     )
 
 

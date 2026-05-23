@@ -6,6 +6,7 @@ import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerExecutionCoordinationCommands} from './commands/executionCoordinationCommands';
 import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
 import {registerExecutionIntentCommands} from './commands/executionIntentCommands';
+import {registerExecutionQualityCommands} from './commands/executionQualityCommands';
 import {registerExecutionRecoveryCommands} from './commands/executionRecoveryCommands';
 import {registerExecutionSaturationCommands} from './commands/executionSaturationCommands';
 import {registerExecutionSessionCommands} from './commands/executionSessionCommands';
@@ -124,6 +125,13 @@ import {
   PriorityBoundedStatusBar,
   TransitionsSafeStatusBar,
 } from './executionIntent/executionIntent';
+import {
+  ExecutionQualityMonitor,
+  ExecutionSignalStableStatusBar,
+  QualityBoundedStatusBar,
+  QualityDriftSafeStatusBar,
+  RedundancyLowStatusBar,
+} from './executionQuality/executionQuality';
 import {
   ExecutionSessionMonitor,
   LifecycleBoundedStatusBar,
@@ -318,6 +326,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const driftLowStatus = new DriftLowStatusBar(executionStabilityRuntime);
   const oscillationStableStatus = new OscillationStableStatusBar(executionStabilityRuntime);
   const persistenceSafeStatus = new PersistenceSafeStatusBar(executionStabilityRuntime);
+  const executionQuality = new ExecutionQualityMonitor();
+  const qualityBoundedStatus = new QualityBoundedStatusBar(executionQuality);
+  const redundancyLowStatus = new RedundancyLowStatusBar(executionQuality);
+  const qualityDriftSafeStatus = new QualityDriftSafeStatusBar(executionQuality);
+  const executionSignalStableStatus = new ExecutionSignalStableStatusBar(executionQuality);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -480,6 +493,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   driftLowStatus.refresh();
   oscillationStableStatus.refresh();
   persistenceSafeStatus.refresh();
+  qualityBoundedStatus.refresh();
+  redundancyLowStatus.refresh();
+  qualityDriftSafeStatus.refresh();
+  executionSignalStableStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -676,6 +693,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     driftLowStatus,
     oscillationStableStatus,
     persistenceSafeStatus,
+    qualityBoundedStatus,
+    redundancyLowStatus,
+    qualityDriftSafeStatus,
+    executionSignalStableStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -867,6 +888,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       driftLowStatus,
       oscillationStableStatus,
       persistenceSafeStatus,
+      notifications,
+    ),
+    ...registerExecutionQualityCommands(
+      executionQuality,
+      qualityBoundedStatus,
+      redundancyLowStatus,
+      qualityDriftSafeStatus,
+      executionSignalStableStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

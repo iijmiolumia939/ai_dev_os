@@ -216,6 +216,11 @@
     "onCommand:aiDevOs.showStabilityOscillation",
     "onCommand:aiDevOs.showPersistenceStability",
     "onCommand:aiDevOs.compactStabilitySummary",
+    "onCommand:aiDevOs.showExecutionQuality",
+    "onCommand:aiDevOs.showQualityDrift",
+    "onCommand:aiDevOs.showRedundancyPressure",
+    "onCommand:aiDevOs.showPersistenceQuality",
+    "onCommand:aiDevOs.compactQualitySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -436,7 +441,12 @@
       {"command": "aiDevOs.showStabilityDrift", "title": "AI_DEV_OS: Show Stability Drift"},
       {"command": "aiDevOs.showStabilityOscillation", "title": "AI_DEV_OS: Show Stability Oscillation"},
       {"command": "aiDevOs.showPersistenceStability", "title": "AI_DEV_OS: Show Persistence Stability"},
-      {"command": "aiDevOs.compactStabilitySummary", "title": "AI_DEV_OS: Compact Stability Summary"}
+      {"command": "aiDevOs.compactStabilitySummary", "title": "AI_DEV_OS: Compact Stability Summary"},
+      {"command": "aiDevOs.showExecutionQuality", "title": "AI_DEV_OS: Show Execution Quality"},
+      {"command": "aiDevOs.showQualityDrift", "title": "AI_DEV_OS: Show Quality Drift"},
+      {"command": "aiDevOs.showRedundancyPressure", "title": "AI_DEV_OS: Show Redundancy Pressure"},
+      {"command": "aiDevOs.showPersistenceQuality", "title": "AI_DEV_OS: Show Persistence Quality"},
+      {"command": "aiDevOs.compactQualitySummary", "title": "AI_DEV_OS: Compact Quality Summary"}
     ],
     "views": {
       "explorer": [
