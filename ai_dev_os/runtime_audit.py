@@ -57,6 +57,7 @@ from ai_dev_os.governance_trends.trend_window import (
 )
 from ai_dev_os.incremental_context import IncrementalContextRuntime
 from ai_dev_os.intentional_planning import IntentionalPlanningRuntime
+from ai_dev_os.main_merge_qualification import MainMergeQualificationRuntime
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -1301,6 +1302,19 @@ class ProviderCostStabilizationAuditReport:
 
 
 @dataclass(frozen=True)
+class MainMergeQualificationAuditReport:
+    main_merge_qualification_active: bool
+    merge_readiness_score: int
+    governance_completeness_score: int
+    validation_completeness_score: int
+    runtime_coherence_score: int
+    operational_risk_score: int
+    estimated_avoided_merge_regression: int
+    estimated_avoided_runtime_instability: int
+    estimated_avoided_frontier_dependency: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1447,6 +1461,7 @@ class RuntimeEnforcementAuditReport:
     failure_injection: FailureInjectionAuditReport
     soak_stability: SoakStabilityAuditReport
     provider_cost_stabilization: ProviderCostStabilizationAuditReport
+    main_merge_qualification: MainMergeQualificationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3713,6 +3728,21 @@ def audit_provider_cost_stabilization() -> ProviderCostStabilizationAuditReport:
     )
 
 
+def audit_main_merge_qualification() -> MainMergeQualificationAuditReport:
+    frame = MainMergeQualificationRuntime().evaluate()
+    return MainMergeQualificationAuditReport(
+        main_merge_qualification_active=frame.main_merge_qualification_active,
+        merge_readiness_score=frame.merge_readiness_score,
+        governance_completeness_score=frame.governance_completeness_score,
+        validation_completeness_score=frame.validation_completeness_score,
+        runtime_coherence_score=frame.runtime_coherence_score,
+        operational_risk_score=frame.operational_risk_score,
+        estimated_avoided_merge_regression=frame.estimated_avoided_merge_regression,
+        estimated_avoided_runtime_instability=frame.estimated_avoided_runtime_instability,
+        estimated_avoided_frontier_dependency=frame.estimated_avoided_frontier_dependency,
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4127,6 +4157,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         failure_injection=audit_failure_injection(),
         soak_stability=audit_soak_stability(),
         provider_cost_stabilization=audit_provider_cost_stabilization(),
+        main_merge_qualification=audit_main_merge_qualification(),
     )
 
 

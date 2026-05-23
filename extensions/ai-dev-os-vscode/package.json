@@ -294,6 +294,11 @@
     "onCommand:aiDevOs.showRetryCost",
     "onCommand:aiDevOs.showLocalFirstEfficiency",
     "onCommand:aiDevOs.compactCostStabilizationSummary",
+    "onCommand:aiDevOs.showMergeQualification",
+    "onCommand:aiDevOs.showGovernanceCompleteness",
+    "onCommand:aiDevOs.showValidationCompleteness",
+    "onCommand:aiDevOs.showOperationalRisk",
+    "onCommand:aiDevOs.compactMergeQualificationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -592,7 +597,12 @@
       {"command": "aiDevOs.showFrontierDependency", "title": "AI_DEV_OS: Show Frontier Dependency"},
       {"command": "aiDevOs.showRetryCost", "title": "AI_DEV_OS: Show Retry Cost"},
       {"command": "aiDevOs.showLocalFirstEfficiency", "title": "AI_DEV_OS: Show Local First Efficiency"},
-      {"command": "aiDevOs.compactCostStabilizationSummary", "title": "AI_DEV_OS: Compact Cost Stabilization Summary"}
+      {"command": "aiDevOs.compactCostStabilizationSummary", "title": "AI_DEV_OS: Compact Cost Stabilization Summary"},
+      {"command": "aiDevOs.showMergeQualification", "title": "AI_DEV_OS: Show Merge Qualification"},
+      {"command": "aiDevOs.showGovernanceCompleteness", "title": "AI_DEV_OS: Show Governance Completeness"},
+      {"command": "aiDevOs.showValidationCompleteness", "title": "AI_DEV_OS: Show Validation Completeness"},
+      {"command": "aiDevOs.showOperationalRisk", "title": "AI_DEV_OS: Show Operational Risk"},
+      {"command": "aiDevOs.compactMergeQualificationSummary", "title": "AI_DEV_OS: Compact Merge Qualification Summary"}
     ],
     "views": {
       "explorer": [

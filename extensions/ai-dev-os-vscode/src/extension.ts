@@ -4,6 +4,7 @@ import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands'
 import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerFailureInjectionCommands} from './commands/failureInjectionCommands';
+import {registerMainMergeQualificationCommands} from './commands/mainMergeQualificationCommands';
 import {registerProviderCostStabilizationCommands} from './commands/providerCostStabilizationCommands';
 import {registerSoakStabilityCommands} from './commands/soakStabilityCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
@@ -160,6 +161,13 @@ import {
   OverheadFlatStatusBar,
   ProviderCostStabilizationMonitor,
 } from './providerCostStabilization/providerCostStabilization';
+import {
+  GovernanceCompleteStatusBar,
+  MainMergeQualificationMonitor,
+  MergeReadyStatusBar,
+  QualificationValidationStableStatusBar,
+  RiskBoundedStatusBar,
+} from './mainMergeQualification/mainMergeQualification';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -531,6 +539,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const frontierBoundedStatus = new FrontierBoundedStatusBar(providerCostStabilization);
   const localFirstEfficiencyStatus = new LocalFirstEfficiencyStatusBar(providerCostStabilization);
   const overheadFlatStatus = new OverheadFlatStatusBar(providerCostStabilization);
+  const mainMergeQualification = new MainMergeQualificationMonitor();
+  const mergeReadyStatus = new MergeReadyStatusBar(mainMergeQualification);
+  const governanceCompleteStatus = new GovernanceCompleteStatusBar(mainMergeQualification);
+  const validationStableQualificationStatus = new QualificationValidationStableStatusBar(mainMergeQualification);
+  const riskBoundedStatus = new RiskBoundedStatusBar(mainMergeQualification);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -755,6 +768,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   frontierBoundedStatus.refresh();
   localFirstEfficiencyStatus.refresh();
   overheadFlatStatus.refresh();
+  mergeReadyStatus.refresh();
+  governanceCompleteStatus.refresh();
+  validationStableQualificationStatus.refresh();
+  riskBoundedStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -1014,6 +1031,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     frontierBoundedStatus,
     localFirstEfficiencyStatus,
     overheadFlatStatus,
+    mergeReadyStatus,
+    governanceCompleteStatus,
+    validationStableQualificationStatus,
+    riskBoundedStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1336,6 +1357,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       frontierBoundedStatus,
       localFirstEfficiencyStatus,
       overheadFlatStatus,
+      notifications,
+    ),
+    ...registerMainMergeQualificationCommands(
+      mainMergeQualification,
+      mergeReadyStatus,
+      governanceCompleteStatus,
+      validationStableQualificationStatus,
+      riskBoundedStatus,
       notifications,
     ),
   );
