@@ -4,6 +4,7 @@ import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands'
 import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerFailureInjectionCommands} from './commands/failureInjectionCommands';
+import {registerSoakStabilityCommands} from './commands/soakStabilityCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
@@ -144,6 +145,13 @@ import {
   RecoveryStableStatusBar,
   RetryResilientStatusBar,
 } from './failureInjection/failureInjection';
+import {
+  DriftBoundedStatusBar,
+  EntropyVisibleStatusBar,
+  LongSessionSafeStatusBar,
+  SoakStabilityMonitor,
+  SoakStableStatusBar,
+} from './soakStability/soakStability';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -505,6 +513,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const recoveryStableStatus = new RecoveryStableStatusBar(failureInjection);
   const retryResilientStatus = new RetryResilientStatusBar(failureInjection);
   const orchestrationResilientStatus = new OrchestrationResilientStatusBar(failureInjection);
+  const soakStability = new SoakStabilityMonitor();
+  const soakStableStatus = new SoakStableStatusBar(soakStability);
+  const driftBoundedStatus = new DriftBoundedStatusBar(soakStability);
+  const entropyVisibleStatus = new EntropyVisibleStatusBar(soakStability);
+  const longSessionSafeStatus = new LongSessionSafeStatusBar(soakStability);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -721,6 +734,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   recoveryStableStatus.refresh();
   retryResilientStatus.refresh();
   orchestrationResilientStatus.refresh();
+  soakStableStatus.refresh();
+  driftBoundedStatus.refresh();
+  entropyVisibleStatus.refresh();
+  longSessionSafeStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -972,6 +989,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     recoveryStableStatus,
     retryResilientStatus,
     orchestrationResilientStatus,
+    soakStableStatus,
+    driftBoundedStatus,
+    entropyVisibleStatus,
+    longSessionSafeStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1278,6 +1299,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       recoveryStableStatus,
       retryResilientStatus,
       orchestrationResilientStatus,
+      notifications,
+    ),
+    ...registerSoakStabilityCommands(
+      soakStability,
+      soakStableStatus,
+      driftBoundedStatus,
+      entropyVisibleStatus,
+      longSessionSafeStatus,
       notifications,
     ),
   );

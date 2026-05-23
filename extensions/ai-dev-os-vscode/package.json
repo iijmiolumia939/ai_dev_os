@@ -284,6 +284,11 @@
     "onCommand:aiDevOs.showProviderInjection",
     "onCommand:aiDevOs.showRecoveryResilience",
     "onCommand:aiDevOs.compactFailureInjectionSummary",
+    "onCommand:aiDevOs.showSoakStability",
+    "onCommand:aiDevOs.showLongSessionDrift",
+    "onCommand:aiDevOs.showRetryAccumulation",
+    "onCommand:aiDevOs.showRuntimeEntropy",
+    "onCommand:aiDevOs.compactSoakStabilitySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -572,7 +577,12 @@
       {"command": "aiDevOs.showRetryInjection", "title": "AI_DEV_OS: Show Retry Injection"},
       {"command": "aiDevOs.showProviderInjection", "title": "AI_DEV_OS: Show Provider Injection"},
       {"command": "aiDevOs.showRecoveryResilience", "title": "AI_DEV_OS: Show Recovery Resilience"},
-      {"command": "aiDevOs.compactFailureInjectionSummary", "title": "AI_DEV_OS: Compact Failure Injection Summary"}
+      {"command": "aiDevOs.compactFailureInjectionSummary", "title": "AI_DEV_OS: Compact Failure Injection Summary"},
+      {"command": "aiDevOs.showSoakStability", "title": "AI_DEV_OS: Show Soak Stability"},
+      {"command": "aiDevOs.showLongSessionDrift", "title": "AI_DEV_OS: Show Long Session Drift"},
+      {"command": "aiDevOs.showRetryAccumulation", "title": "AI_DEV_OS: Show Retry Accumulation"},
+      {"command": "aiDevOs.showRuntimeEntropy", "title": "AI_DEV_OS: Show Runtime Entropy"},
+      {"command": "aiDevOs.compactSoakStabilitySummary", "title": "AI_DEV_OS: Compact Soak Stability Summary"}
     ],
     "views": {
       "explorer": [

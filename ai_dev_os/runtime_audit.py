@@ -142,6 +142,7 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.soak_stability import SoakStabilityRuntime
 from ai_dev_os.sprint_loop import SprintLoopRuntime
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.subagent_execution import SubagentExecutionRuntime
@@ -1273,6 +1274,19 @@ class FailureInjectionAuditReport:
 
 
 @dataclass(frozen=True)
+class SoakStabilityAuditReport:
+    soak_stability_active: bool
+    long_session_stability_score: int
+    retry_accumulation_score: int
+    provider_fatigue_accumulation_score: int
+    continuation_entropy_score: int
+    orchestration_queue_drift_score: int
+    estimated_avoided_slow_degradation: int
+    estimated_avoided_runtime_entropy: int
+    estimated_avoided_frontier_stabilization: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1417,6 +1431,7 @@ class RuntimeEnforcementAuditReport:
     runtime_hardening: RuntimeHardeningAuditReport
     continuous_runtime_audit: ContinuousRuntimeAuditReport
     failure_injection: FailureInjectionAuditReport
+    soak_stability: SoakStabilityAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3652,6 +3667,21 @@ def audit_failure_injection() -> FailureInjectionAuditReport:
     )
 
 
+def audit_soak_stability() -> SoakStabilityAuditReport:
+    frame = SoakStabilityRuntime().evaluate()
+    return SoakStabilityAuditReport(
+        soak_stability_active=frame.soak_stability_active,
+        long_session_stability_score=frame.long_session_stability_score,
+        retry_accumulation_score=frame.retry_accumulation_score,
+        provider_fatigue_accumulation_score=frame.provider_fatigue_accumulation_score,
+        continuation_entropy_score=frame.continuation_entropy_score,
+        orchestration_queue_drift_score=frame.orchestration_queue_drift_score,
+        estimated_avoided_slow_degradation=frame.estimated_avoided_slow_degradation,
+        estimated_avoided_runtime_entropy=frame.estimated_avoided_runtime_entropy,
+        estimated_avoided_frontier_stabilization=frame.estimated_avoided_frontier_stabilization,
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4064,6 +4094,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_hardening=audit_runtime_hardening(),
         continuous_runtime_audit=audit_continuous_runtime_audit(),
         failure_injection=audit_failure_injection(),
+        soak_stability=audit_soak_stability(),
     )
 
 
