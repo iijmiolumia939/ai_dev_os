@@ -9,6 +9,7 @@ import {registerExecutionIntentCommands} from './commands/executionIntentCommand
 import {registerExecutionRecoveryCommands} from './commands/executionRecoveryCommands';
 import {registerExecutionSaturationCommands} from './commands/executionSaturationCommands';
 import {registerExecutionSessionCommands} from './commands/executionSessionCommands';
+import {registerExecutionStabilityCommands} from './commands/executionStabilityCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
@@ -130,6 +131,13 @@ import {
   SessionIntegritySafeStatusBar,
   SessionStableStatusBar,
 } from './executionSession/executionSession';
+import {
+  DriftLowStatusBar,
+  ExecutionStabilityMonitor,
+  OscillationStableStatusBar,
+  PersistenceSafeStatusBar,
+  StabilityBoundedStatusBar,
+} from './executionStability/executionStability';
 import {
   CheckpointValidStatusBar,
   ExecutionRecoveryMonitor,
@@ -305,6 +313,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const lifecycleBoundedStatus = new LifecycleBoundedStatusBar(executionSession);
   const sessionIntegritySafeStatus = new SessionIntegritySafeStatusBar(executionSession);
   const persistenceGuardedStatus = new PersistenceGuardedStatusBar(executionSession);
+  const executionStabilityRuntime = new ExecutionStabilityMonitor();
+  const stabilityBoundedStatus = new StabilityBoundedStatusBar(executionStabilityRuntime);
+  const driftLowStatus = new DriftLowStatusBar(executionStabilityRuntime);
+  const oscillationStableStatus = new OscillationStableStatusBar(executionStabilityRuntime);
+  const persistenceSafeStatus = new PersistenceSafeStatusBar(executionStabilityRuntime);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -463,6 +476,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   lifecycleBoundedStatus.refresh();
   sessionIntegritySafeStatus.refresh();
   persistenceGuardedStatus.refresh();
+  stabilityBoundedStatus.refresh();
+  driftLowStatus.refresh();
+  oscillationStableStatus.refresh();
+  persistenceSafeStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -655,6 +672,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     lifecycleBoundedStatus,
     sessionIntegritySafeStatus,
     persistenceGuardedStatus,
+    stabilityBoundedStatus,
+    driftLowStatus,
+    oscillationStableStatus,
+    persistenceSafeStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -838,6 +859,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       lifecycleBoundedStatus,
       sessionIntegritySafeStatus,
       persistenceGuardedStatus,
+      notifications,
+    ),
+    ...registerExecutionStabilityCommands(
+      executionStabilityRuntime,
+      stabilityBoundedStatus,
+      driftLowStatus,
+      oscillationStableStatus,
+      persistenceSafeStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

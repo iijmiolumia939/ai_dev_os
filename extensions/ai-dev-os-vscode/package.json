@@ -211,6 +211,11 @@
     "onCommand:aiDevOs.showSessionIntegrity",
     "onCommand:aiDevOs.showSessionConflicts",
     "onCommand:aiDevOs.compactSessionSummary",
+    "onCommand:aiDevOs.showExecutionStabilityRuntime",
+    "onCommand:aiDevOs.showStabilityDrift",
+    "onCommand:aiDevOs.showStabilityOscillation",
+    "onCommand:aiDevOs.showPersistenceStability",
+    "onCommand:aiDevOs.compactStabilitySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -426,7 +431,12 @@
       {"command": "aiDevOs.showSessionLifecycle", "title": "AI_DEV_OS: Show Session Lifecycle"},
       {"command": "aiDevOs.showSessionIntegrity", "title": "AI_DEV_OS: Show Session Integrity"},
       {"command": "aiDevOs.showSessionConflicts", "title": "AI_DEV_OS: Show Session Conflicts"},
-      {"command": "aiDevOs.compactSessionSummary", "title": "AI_DEV_OS: Compact Session Summary"}
+      {"command": "aiDevOs.compactSessionSummary", "title": "AI_DEV_OS: Compact Session Summary"},
+      {"command": "aiDevOs.showExecutionStabilityRuntime", "title": "AI_DEV_OS: Show Execution Stability"},
+      {"command": "aiDevOs.showStabilityDrift", "title": "AI_DEV_OS: Show Stability Drift"},
+      {"command": "aiDevOs.showStabilityOscillation", "title": "AI_DEV_OS: Show Stability Oscillation"},
+      {"command": "aiDevOs.showPersistenceStability", "title": "AI_DEV_OS: Show Persistence Stability"},
+      {"command": "aiDevOs.compactStabilitySummary", "title": "AI_DEV_OS: Compact Stability Summary"}
     ],
     "views": {
       "explorer": [

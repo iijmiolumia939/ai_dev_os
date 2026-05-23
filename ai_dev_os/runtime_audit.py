@@ -34,6 +34,7 @@ from ai_dev_os.execution_intent import ExecutionIntentRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.execution_session import ExecutionSessionRuntime
+from ai_dev_os.execution_stability import ExecutionStabilityRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1152,6 +1153,17 @@ class ExecutionSessionAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionStabilityAuditReport:
+    execution_stability_active: bool
+    stability_drift_active: bool
+    stability_oscillation_active: bool
+    stability_persistence_active: bool
+    estimated_avoided_long_session_drift: int
+    estimated_avoided_recursive_stabilization: int
+    estimated_avoided_persistence_entropy: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1208,6 +1220,7 @@ class RuntimeEnforcementAuditReport:
     execution_coordination: ExecutionCoordinationAuditReport
     execution_intent: ExecutionIntentAuditReport
     execution_session: ExecutionSessionAuditReport
+    execution_stability: ExecutionStabilityAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3317,6 +3330,21 @@ def audit_execution_session() -> ExecutionSessionAuditReport:
     )
 
 
+def audit_execution_stability() -> ExecutionStabilityAuditReport:
+    frame = ExecutionStabilityRuntime().evaluate()
+    return ExecutionStabilityAuditReport(
+        execution_stability_active=frame.execution_stability_active,
+        stability_drift_active=frame.stability_drift_active,
+        stability_oscillation_active=frame.stability_oscillation_active,
+        stability_persistence_active=frame.stability_persistence_active,
+        estimated_avoided_long_session_drift=frame.estimated_avoided_long_session_drift,
+        estimated_avoided_recursive_stabilization=(
+            frame.estimated_avoided_recursive_stabilization
+        ),
+        estimated_avoided_persistence_entropy=frame.estimated_avoided_persistence_entropy,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3623,6 +3651,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_coordination=audit_execution_coordination(),
         execution_intent=audit_execution_intent(),
         execution_session=audit_execution_session(),
+        execution_stability=audit_execution_stability(),
     )
 
 
