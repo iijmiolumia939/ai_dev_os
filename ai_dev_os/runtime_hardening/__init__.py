@@ -360,7 +360,9 @@ class RuntimeHardeningRuntime:
             + bounded_provider_queue_saturation * 10
             + provider_scheduling_instability * 12
             + provider_confidence_collapse * 18
+            + max(0, 70 - adaptive_provider.provider_fatigue_score) // 2
         )
+        provider_fatigue_collapse = adaptive_provider.provider_fatigue_score < 55
         provider_starvation_score = _clamp(100 - provider_starvation_pressure)
         regression_cascade_pressure = _clamp(
             repeated_regressions * 18
@@ -517,11 +519,12 @@ class RuntimeHardeningRuntime:
                 deterministic_provider_starvation_summary=(
                     f"readiness={provider_readiness_starvation};"
                     f"confidence={adaptive_provider.provider_confidence_score};"
+                    f"fatigue={adaptive_provider.provider_fatigue_score};"
                     f"score={provider_starvation_score}"
                 ),
                 bounded_provider_rebalance_recommendation=(
                     "REBALANCE_PROVIDER_WINDOW_AFTER_COOLDOWN"
-                    if provider_starvation_score < 55
+                    if provider_starvation_score < 55 or provider_fatigue_collapse
                     else "PROVIDER_WINDOW_STABLE"
                 ),
             ),
@@ -565,7 +568,8 @@ class RuntimeHardeningRuntime:
                 retry_cooldown_required=retry_threshold_exceeded or retry_storm_score < 55,
                 escalation_cooldown_required=escalation_threshold_exceeded,
                 continuation_cooldown_required=continuation_stability_score < 55,
-                provider_cooldown_required=provider_starvation_score < 55,
+                provider_cooldown_required=provider_starvation_score < 55
+                or provider_fatigue_collapse,
                 orchestration_cooldown_required=orchestration_threshold_exceeded,
                 deterministic_cooldown_interaction_summary=(
                     f"retry={retry_storm_score};escalation={escalation_oscillation_score};"

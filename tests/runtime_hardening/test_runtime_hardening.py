@@ -94,7 +94,18 @@ def test_tc_runtimehardening_05_provider_starvation_detection() -> None:
     assert frame.cooldown_interaction.provider_cooldown_required is True
 
 
-def test_tc_runtimehardening_06_orchestration_deadlock_detection() -> None:
+def test_tc_runtimehardening_06_provider_fatigue_stabilizes_starvation_window() -> None:
+    frame = RuntimeHardeningRuntime().evaluate()
+
+    assert "fatigue=" in frame.provider_starvation.deterministic_provider_starvation_summary
+    assert frame.provider_starvation.bounded_provider_rebalance_recommendation == (
+        "REBALANCE_PROVIDER_WINDOW_AFTER_COOLDOWN"
+    )
+    assert frame.cooldown_interaction.provider_cooldown_required is True
+    assert frame.provider_starvation_score < 70
+
+
+def test_tc_runtimehardening_07_orchestration_deadlock_detection() -> None:
     frame = RuntimeHardeningRuntime().evaluate(
         orchestration_dependency_deadlocks=2,
         validation_retry_deadlocks=1,
@@ -113,7 +124,7 @@ def test_tc_runtimehardening_06_orchestration_deadlock_detection() -> None:
     assert frame.runtime_conflict.continuation_termination_conflict is True
 
 
-def test_tc_runtimehardening_07_recursive_stabilization_blocking() -> None:
+def test_tc_runtimehardening_08_recursive_stabilization_blocking() -> None:
     frame = RuntimeHardeningRuntime().evaluate(recursive_stabilization_attempts=1)
 
     assert frame.interaction_governance.deterministic_interaction_governance is True
@@ -121,7 +132,7 @@ def test_tc_runtimehardening_07_recursive_stabilization_blocking() -> None:
     assert "RECURSIVE_STABILIZATION_DETECTED" in (frame.hardening_termination.termination_reasons)
 
 
-def test_tc_runtimehardening_08_runtime_governance_enforcement() -> None:
+def test_tc_runtimehardening_09_runtime_governance_enforcement() -> None:
     frame = RuntimeHardeningRuntime().evaluate(
         autonomous_runtime_mutation_attempts=1,
         hidden_orchestration_execution_attempts=1,
@@ -139,7 +150,7 @@ def test_tc_runtimehardening_08_runtime_governance_enforcement() -> None:
     assert "GOVERNANCE_VIOLATION_DETECTED" in frame.hardening_termination.termination_reasons
 
 
-def test_tc_runtimehardening_09_hardening_termination_handling() -> None:
+def test_tc_runtimehardening_10_hardening_termination_handling() -> None:
     frame = RuntimeHardeningRuntime().evaluate(
         hardening_budget_used=HARDENING_BUDGET_LIMIT + 1,
         retry_amplification_chains=RETRY_AMPLIFICATION_THRESHOLD + 1,
@@ -158,7 +169,7 @@ def test_tc_runtimehardening_09_hardening_termination_handling() -> None:
     assert "HARDENING_BUDGET_EXCEEDED" in frame.hardening_termination.termination_reasons
 
 
-def test_tc_runtimehardening_10_bounded_hardening_history_retention() -> None:
+def test_tc_runtimehardening_11_bounded_hardening_history_retention() -> None:
     history = tuple(f"history_{index}" for index in range(9))
     frame = RuntimeHardeningRuntime().evaluate(hardening_history_items=history)
 
@@ -168,7 +179,7 @@ def test_tc_runtimehardening_10_bounded_hardening_history_retention() -> None:
     assert frame.hardening_eviction.bounded_eviction_active is True
 
 
-def test_tc_runtimehardening_11_runtime_audit_exposes_required_fields() -> None:
+def test_tc_runtimehardening_12_runtime_audit_exposes_required_fields() -> None:
     report = run_runtime_enforcement_audit().runtime_hardening
 
     assert report.runtime_hardening_active is True
@@ -182,7 +193,7 @@ def test_tc_runtimehardening_11_runtime_audit_exposes_required_fields() -> None:
     assert report.estimated_avoided_frontier_stabilization > 0
 
 
-def test_tc_runtimehardening_12_runtime_is_deterministic() -> None:
+def test_tc_runtimehardening_13_runtime_is_deterministic() -> None:
     first = RuntimeHardeningRuntime().evaluate()
     second = RuntimeHardeningRuntime().evaluate()
 
