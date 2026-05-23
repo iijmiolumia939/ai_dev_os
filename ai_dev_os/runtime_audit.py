@@ -114,6 +114,7 @@ from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_r
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
 from ai_dev_os.runtime_mediation import ExecutionSequencer
+from ai_dev_os.runtime_orchestrator import RuntimeOrchestrator
 from ai_dev_os.runtime_policy import RuntimePolicyEngine
 from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
 from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
@@ -1230,6 +1231,18 @@ class SprintLoopAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimeOrchestratorAuditReport:
+    runtime_orchestrator_active: bool
+    orchestration_schedule_score: int
+    validation_schedule_score: int
+    retry_schedule_score: int
+    continuation_schedule_score: int
+    estimated_avoided_manual_scheduling: int
+    estimated_avoided_recursive_orchestration: int
+    estimated_avoided_frontier_next_step_reasoning: int
+
+
+@dataclass(frozen=True)
 class RuntimePolicyAuditReport:
     runtime_policy_active: bool
     execution_policy_score: int
@@ -1358,6 +1371,7 @@ class RuntimeEnforcementAuditReport:
     execution_memory: ExecutionMemoryAuditReport
     runtime_policy: RuntimePolicyAuditReport
     sprint_loop: SprintLoopAuditReport
+    runtime_orchestrator: RuntimeOrchestratorAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3548,6 +3562,24 @@ def audit_sprint_loop() -> SprintLoopAuditReport:
     )
 
 
+def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
+    frame = RuntimeOrchestrator().evaluate()
+    return RuntimeOrchestratorAuditReport(
+        runtime_orchestrator_active=frame.runtime_orchestrator_active,
+        orchestration_schedule_score=frame.orchestration_schedule_score,
+        validation_schedule_score=frame.validation_schedule_score,
+        retry_schedule_score=frame.retry_schedule_score,
+        continuation_schedule_score=frame.continuation_schedule_score,
+        estimated_avoided_manual_scheduling=frame.estimated_avoided_manual_scheduling,
+        estimated_avoided_recursive_orchestration=(
+            frame.estimated_avoided_recursive_orchestration
+        ),
+        estimated_avoided_frontier_next_step_reasoning=(
+            frame.estimated_avoided_frontier_next_step_reasoning
+        ),
+    )
+
+
 def audit_runtime_policy() -> RuntimePolicyAuditReport:
     frame = RuntimePolicyEngine().evaluate()
     return RuntimePolicyAuditReport(
@@ -3938,6 +3970,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_memory=audit_execution_memory(),
         runtime_policy=audit_runtime_policy(),
         sprint_loop=audit_sprint_loop(),
+        runtime_orchestrator=audit_runtime_orchestrator(),
     )
 
 

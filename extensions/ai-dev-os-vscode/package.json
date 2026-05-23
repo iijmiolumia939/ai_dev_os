@@ -264,6 +264,11 @@
     "onCommand:aiDevOs.showSprintRegression",
     "onCommand:aiDevOs.showSprintCommitReadiness",
     "onCommand:aiDevOs.compactSprintLoopSummary",
+    "onCommand:aiDevOs.showRuntimeOrchestrator",
+    "onCommand:aiDevOs.showValidationSchedule",
+    "onCommand:aiDevOs.showRetrySchedule",
+    "onCommand:aiDevOs.showContinuationSchedule",
+    "onCommand:aiDevOs.compactRuntimeOrchestratorSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -532,7 +537,12 @@
       {"command": "aiDevOs.showSprintValidation", "title": "AI_DEV_OS: Show Sprint Validation"},
       {"command": "aiDevOs.showSprintRegression", "title": "AI_DEV_OS: Show Sprint Regression"},
       {"command": "aiDevOs.showSprintCommitReadiness", "title": "AI_DEV_OS: Show Sprint Commit Readiness"},
-      {"command": "aiDevOs.compactSprintLoopSummary", "title": "AI_DEV_OS: Compact Sprint Loop Summary"}
+      {"command": "aiDevOs.compactSprintLoopSummary", "title": "AI_DEV_OS: Compact Sprint Loop Summary"},
+      {"command": "aiDevOs.showRuntimeOrchestrator", "title": "AI_DEV_OS: Show Runtime Orchestrator"},
+      {"command": "aiDevOs.showValidationSchedule", "title": "AI_DEV_OS: Show Validation Schedule"},
+      {"command": "aiDevOs.showRetrySchedule", "title": "AI_DEV_OS: Show Retry Schedule"},
+      {"command": "aiDevOs.showContinuationSchedule", "title": "AI_DEV_OS: Show Continuation Schedule"},
+      {"command": "aiDevOs.compactRuntimeOrchestratorSummary", "title": "AI_DEV_OS: Compact Runtime Orchestrator Summary"}
     ],
     "views": {
       "explorer": [

@@ -31,6 +31,7 @@ import {registerReflectiveEvaluationCommands} from './commands/reflectiveEvaluat
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeMediationCommands} from './commands/runtimeMediationCommands';
+import {registerRuntimeOrchestratorCommands} from './commands/runtimeOrchestratorCommands';
 import {registerRuntimePolicyCommands} from './commands/runtimePolicyCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
@@ -133,6 +134,13 @@ import {
   PolicyBoundedStatusBar,
   RuntimePolicyMonitor,
 } from './runtimePolicy/runtimePolicy';
+import {
+  ContinuationOrderedStatusBar,
+  OrchestrationBoundedStatusBar,
+  RetryOrderedStatusBar,
+  RuntimeOrchestratorMonitor,
+  SchedulingStableStatusBar,
+} from './runtimeOrchestrator/runtimeOrchestrator';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {
@@ -453,6 +461,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const sprintValidationStableStatus = new SprintValidationStableStatusBar(sprintLoop);
   const regressionTrackedStatus = new RegressionTrackedStatusBar(sprintLoop);
   const commitReadyStatus = new CommitReadyStatusBar(sprintLoop);
+  const runtimeOrchestrator = new RuntimeOrchestratorMonitor();
+  const orchestrationBoundedStatus = new OrchestrationBoundedStatusBar(runtimeOrchestrator);
+  const schedulingStableStatus = new SchedulingStableStatusBar(runtimeOrchestrator);
+  const retryOrderedStatus = new RetryOrderedStatusBar(runtimeOrchestrator);
+  const continuationOrderedStatus = new ContinuationOrderedStatusBar(runtimeOrchestrator);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -653,6 +666,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   validationStableStatus.refresh();
   regressionTrackedStatus.refresh();
   commitReadyStatus.refresh();
+  orchestrationBoundedStatus.refresh();
+  schedulingStableStatus.refresh();
+  retryOrderedStatus.refresh();
+  continuationOrderedStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -888,6 +905,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     validationStableStatus,
     regressionTrackedStatus,
     commitReadyStatus,
+    orchestrationBoundedStatus,
+    schedulingStableStatus,
+    retryOrderedStatus,
+    continuationOrderedStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1162,6 +1183,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       sprintValidationStableStatus,
       regressionTrackedStatus,
       commitReadyStatus,
+      notifications,
+    ),
+    ...registerRuntimeOrchestratorCommands(
+      runtimeOrchestrator,
+      orchestrationBoundedStatus,
+      schedulingStableStatus,
+      retryOrderedStatus,
+      continuationOrderedStatus,
       notifications,
     ),
   );
