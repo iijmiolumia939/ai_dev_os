@@ -4,6 +4,7 @@ import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
+import {registerExecutionRecoveryCommands} from './commands/executionRecoveryCommands';
 import {registerExecutionSaturationCommands} from './commands/executionSaturationCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
@@ -105,6 +106,13 @@ import {
   ExecutionContinuingStatusBar,
   LoopGuardedStatusBar,
 } from './executionContinuation/executionContinuation';
+import {
+  CheckpointValidStatusBar,
+  ExecutionRecoveryMonitor,
+  RecoveryCooldownStatusBar,
+  RecoverySafeStatusBar,
+  RollbackBoundedStatusBar,
+} from './executionRecovery/executionRecovery';
 import {
   ContinuationBoundedStatusBar,
   ExecutionSaturationMonitor,
@@ -253,6 +261,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const retryStableStatus = new RetryStableStatusBar(executionSaturation);
   const toolPressureSafeStatus = new ToolPressureSafeStatusBar(executionSaturation);
   const continuationBoundedStatus = new ContinuationBoundedStatusBar(executionSaturation);
+  const executionRecovery = new ExecutionRecoveryMonitor();
+  const recoverySafeStatus = new RecoverySafeStatusBar(executionRecovery);
+  const checkpointValidStatus = new CheckpointValidStatusBar(executionRecovery);
+  const recoveryCooldownStatus = new RecoveryCooldownStatusBar(executionRecovery);
+  const rollbackBoundedStatus = new RollbackBoundedStatusBar(executionRecovery);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -395,6 +408,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   retryStableStatus.refresh();
   toolPressureSafeStatus.refresh();
   continuationBoundedStatus.refresh();
+  recoverySafeStatus.refresh();
+  checkpointValidStatus.refresh();
+  recoveryCooldownStatus.refresh();
+  rollbackBoundedStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -571,6 +588,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     retryStableStatus,
     toolPressureSafeStatus,
     continuationBoundedStatus,
+    recoverySafeStatus,
+    checkpointValidStatus,
+    recoveryCooldownStatus,
+    rollbackBoundedStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -722,6 +743,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       retryStableStatus,
       toolPressureSafeStatus,
       continuationBoundedStatus,
+      notifications,
+    ),
+    ...registerExecutionRecoveryCommands(
+      executionRecovery,
+      recoverySafeStatus,
+      checkpointValidStatus,
+      recoveryCooldownStatus,
+      rollbackBoundedStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

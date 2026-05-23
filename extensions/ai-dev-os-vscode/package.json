@@ -191,6 +191,11 @@
     "onCommand:aiDevOs.showToolCongestion",
     "onCommand:aiDevOs.showCheckpointInflation",
     "onCommand:aiDevOs.compactSaturationSummary",
+    "onCommand:aiDevOs.showRecoveryState",
+    "onCommand:aiDevOs.showRecoveryCooldown",
+    "onCommand:aiDevOs.showCheckpointIntegrity",
+    "onCommand:aiDevOs.resumeSafeRecovery",
+    "onCommand:aiDevOs.compactRecoverySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -386,7 +391,12 @@
       {"command": "aiDevOs.showRetryOscillation", "title": "AI_DEV_OS: Show Retry Oscillation"},
       {"command": "aiDevOs.showToolCongestion", "title": "AI_DEV_OS: Show Tool Congestion"},
       {"command": "aiDevOs.showCheckpointInflation", "title": "AI_DEV_OS: Show Checkpoint Inflation"},
-      {"command": "aiDevOs.compactSaturationSummary", "title": "AI_DEV_OS: Compact Saturation Summary"}
+      {"command": "aiDevOs.compactSaturationSummary", "title": "AI_DEV_OS: Compact Saturation Summary"},
+      {"command": "aiDevOs.showRecoveryState", "title": "AI_DEV_OS: Show Recovery State"},
+      {"command": "aiDevOs.showRecoveryCooldown", "title": "AI_DEV_OS: Show Recovery Cooldown"},
+      {"command": "aiDevOs.showCheckpointIntegrity", "title": "AI_DEV_OS: Show Checkpoint Integrity"},
+      {"command": "aiDevOs.resumeSafeRecovery", "title": "AI_DEV_OS: Resume Safe Recovery"},
+      {"command": "aiDevOs.compactRecoverySummary", "title": "AI_DEV_OS: Compact Recovery Summary"}
     ],
     "views": {
       "explorer": [

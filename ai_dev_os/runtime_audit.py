@@ -29,6 +29,7 @@ from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
+from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
@@ -1104,6 +1105,17 @@ class ExecutionSaturationAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionRecoveryAuditReport:
+    execution_recovery_active: bool
+    recovery_cooldown_active: bool
+    recovery_checkpoint_integrity_active: bool
+    recovery_termination_active: bool
+    estimated_avoided_recovery_loops: int
+    estimated_avoided_checkpoint_corruption: int
+    estimated_avoided_recursive_repair: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1156,6 +1168,7 @@ class RuntimeEnforcementAuditReport:
     cognitive_memory_pressure: CognitiveMemoryPressureAuditReport
     execution_continuation: ExecutionContinuationAuditReport
     execution_saturation: ExecutionSaturationAuditReport
+    execution_recovery: ExecutionRecoveryAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3194,9 +3207,7 @@ def audit_execution_continuation() -> ExecutionContinuationAuditReport:
         local_only=frame.local_only,
         summary_only=frame.summary_only,
         governance_rules_mutated=frame.governance.governance_rules_mutated,
-        hidden_background_execution_blocked=(
-            frame.governance.hidden_background_execution_blocked
-        ),
+        hidden_background_execution_blocked=(frame.governance.hidden_background_execution_blocked),
         recursive_execution_loops_blocked=frame.governance.recursive_execution_loops_blocked,
     )
 
@@ -3209,13 +3220,22 @@ def audit_execution_saturation() -> ExecutionSaturationAuditReport:
         tool_congestion_active=frame.tool_congestion_active,
         checkpoint_inflation_active=frame.checkpoint_inflation_active,
         saturation_termination_active=frame.saturation_termination_active,
-        estimated_avoided_recursive_execution=(
-            frame.estimated_avoided_recursive_execution
-        ),
+        estimated_avoided_recursive_execution=(frame.estimated_avoided_recursive_execution),
         estimated_avoided_retry_loops=frame.estimated_avoided_retry_loops,
-        estimated_avoided_checkpoint_explosion=(
-            frame.estimated_avoided_checkpoint_explosion
-        ),
+        estimated_avoided_checkpoint_explosion=(frame.estimated_avoided_checkpoint_explosion),
+    )
+
+
+def audit_execution_recovery() -> ExecutionRecoveryAuditReport:
+    frame = ExecutionRecoveryRuntime().evaluate()
+    return ExecutionRecoveryAuditReport(
+        execution_recovery_active=frame.execution_recovery_active,
+        recovery_cooldown_active=frame.recovery_cooldown_active,
+        recovery_checkpoint_integrity_active=(frame.recovery_checkpoint_integrity_active),
+        recovery_termination_active=frame.recovery_termination_active,
+        estimated_avoided_recovery_loops=frame.estimated_avoided_recovery_loops,
+        estimated_avoided_checkpoint_corruption=(frame.estimated_avoided_checkpoint_corruption),
+        estimated_avoided_recursive_repair=frame.estimated_avoided_recursive_repair,
     )
 
 
@@ -3521,6 +3541,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         cognitive_memory_pressure=audit_cognitive_memory_pressure(),
         execution_continuation=audit_execution_continuation(),
         execution_saturation=audit_execution_saturation(),
+        execution_recovery=audit_execution_recovery(),
     )
 
 
