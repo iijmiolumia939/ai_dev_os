@@ -259,6 +259,11 @@
     "onCommand:aiDevOs.showProviderPolicy",
     "onCommand:aiDevOs.showContinuationPolicy",
     "onCommand:aiDevOs.compactRuntimePolicySummary",
+    "onCommand:aiDevOs.showSprintLoop",
+    "onCommand:aiDevOs.showSprintValidation",
+    "onCommand:aiDevOs.showSprintRegression",
+    "onCommand:aiDevOs.showSprintCommitReadiness",
+    "onCommand:aiDevOs.compactSprintLoopSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -522,7 +527,12 @@
       {"command": "aiDevOs.showRetryPolicy", "title": "AI_DEV_OS: Show Retry Policy"},
       {"command": "aiDevOs.showProviderPolicy", "title": "AI_DEV_OS: Show Provider Policy"},
       {"command": "aiDevOs.showContinuationPolicy", "title": "AI_DEV_OS: Show Continuation Policy"},
-      {"command": "aiDevOs.compactRuntimePolicySummary", "title": "AI_DEV_OS: Compact Runtime Policy Summary"}
+      {"command": "aiDevOs.compactRuntimePolicySummary", "title": "AI_DEV_OS: Compact Runtime Policy Summary"},
+      {"command": "aiDevOs.showSprintLoop", "title": "AI_DEV_OS: Show Sprint Loop"},
+      {"command": "aiDevOs.showSprintValidation", "title": "AI_DEV_OS: Show Sprint Validation"},
+      {"command": "aiDevOs.showSprintRegression", "title": "AI_DEV_OS: Show Sprint Regression"},
+      {"command": "aiDevOs.showSprintCommitReadiness", "title": "AI_DEV_OS: Show Sprint Commit Readiness"},
+      {"command": "aiDevOs.compactSprintLoopSummary", "title": "AI_DEV_OS: Compact Sprint Loop Summary"}
     ],
     "views": {
       "explorer": [

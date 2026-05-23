@@ -34,6 +34,7 @@ import {registerRuntimeMediationCommands} from './commands/runtimeMediationComma
 import {registerRuntimePolicyCommands} from './commands/runtimePolicyCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
+import {registerSprintLoopCommands} from './commands/sprintLoopCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
 import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
 import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCommands';
@@ -134,6 +135,13 @@ import {
 } from './runtimePolicy/runtimePolicy';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
+import {
+  CommitReadyStatusBar,
+  RegressionTrackedStatusBar,
+  SprintBoundedStatusBar,
+  SprintLoopMonitor,
+  SprintValidationStableStatusBar,
+} from './sprintLoop/sprintLoop';
 import {BoundaryStateStore} from './state/boundaryState';
 import {BoundedRetentionViewProvider} from './views/boundedRetentionView';
 import {ContractOverlapViewProvider} from './views/contractOverlapView';
@@ -440,6 +448,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceStablePolicyStatus = new GovernanceStablePolicyStatusBar(runtimePolicy);
   const localFirstPolicyStatus = new LocalFirstPolicyStatusBar(runtimePolicy);
   const escalationGuardedStatus = new EscalationGuardedStatusBar(runtimePolicy);
+  const sprintLoop = new SprintLoopMonitor();
+  const sprintBoundedStatus = new SprintBoundedStatusBar(sprintLoop);
+  const sprintValidationStableStatus = new SprintValidationStableStatusBar(sprintLoop);
+  const regressionTrackedStatus = new RegressionTrackedStatusBar(sprintLoop);
+  const commitReadyStatus = new CommitReadyStatusBar(sprintLoop);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -567,7 +580,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   realismProtectedStatus.refresh();
   const executionState = executionActiveStatus.refresh();
   checkpointReadyStatus.refresh();
-  validationStableStatus.refresh();
+  sprintValidationStableStatus.refresh();
   rollbackSafeStatus.refresh();
   executionContinuingStatus.refresh();
   continuationSafeStatus.refresh();
@@ -636,6 +649,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   governanceStablePolicyStatus.refresh();
   localFirstPolicyStatus.refresh();
   escalationGuardedStatus.refresh();
+  sprintBoundedStatus.refresh();
+  validationStableStatus.refresh();
+  regressionTrackedStatus.refresh();
+  commitReadyStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -798,7 +815,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     realismProtectedStatus,
     executionActiveStatus,
     checkpointReadyStatus,
-    validationStableStatus,
+    sprintValidationStableStatus,
     rollbackSafeStatus,
     executionContinuingStatus,
     continuationSafeStatus,
@@ -867,6 +884,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     governanceStablePolicyStatus,
     localFirstPolicyStatus,
     escalationGuardedStatus,
+    sprintBoundedStatus,
+    validationStableStatus,
+    regressionTrackedStatus,
+    commitReadyStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1133,6 +1154,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       governanceStablePolicyStatus,
       localFirstPolicyStatus,
       escalationGuardedStatus,
+      notifications,
+    ),
+    ...registerSprintLoopCommands(
+      sprintLoop,
+      sprintBoundedStatus,
+      sprintValidationStableStatus,
+      regressionTrackedStatus,
+      commitReadyStatus,
       notifications,
     ),
   );

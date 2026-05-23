@@ -138,6 +138,7 @@ from ai_dev_os.session_orchestrator.prompt_pack import PromptPackPolicy
 from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolicy
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
+from ai_dev_os.sprint_loop import SprintLoopRuntime
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.subagent_execution import SubagentExecutionRuntime
 from ai_dev_os.verified_execution import VerifiedExecutionRuntime
@@ -1217,6 +1218,18 @@ class IntentionalPlanningAuditReport:
 
 
 @dataclass(frozen=True)
+class SprintLoopAuditReport:
+    sprint_loop_active: bool
+    sprint_validation_score: int
+    sprint_regression_score: int
+    sprint_commit_readiness_score: int
+    sprint_continuation_score: int
+    estimated_avoided_manual_orchestration: int
+    estimated_avoided_recursive_sprints: int
+    estimated_avoided_frontier_supervision: int
+
+
+@dataclass(frozen=True)
 class RuntimePolicyAuditReport:
     runtime_policy_active: bool
     execution_policy_score: int
@@ -1344,6 +1357,7 @@ class RuntimeEnforcementAuditReport:
     adaptive_provider: AdaptiveProviderAuditReport
     execution_memory: ExecutionMemoryAuditReport
     runtime_policy: RuntimePolicyAuditReport
+    sprint_loop: SprintLoopAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3520,6 +3534,20 @@ def audit_intentional_planning() -> IntentionalPlanningAuditReport:
     )
 
 
+def audit_sprint_loop() -> SprintLoopAuditReport:
+    frame = SprintLoopRuntime().evaluate()
+    return SprintLoopAuditReport(
+        sprint_loop_active=frame.sprint_loop_active,
+        sprint_validation_score=frame.sprint_validation_score,
+        sprint_regression_score=frame.sprint_regression_score,
+        sprint_commit_readiness_score=frame.sprint_commit_readiness_score,
+        sprint_continuation_score=frame.sprint_continuation_score,
+        estimated_avoided_manual_orchestration=(frame.estimated_avoided_manual_orchestration),
+        estimated_avoided_recursive_sprints=(frame.estimated_avoided_recursive_sprints),
+        estimated_avoided_frontier_supervision=(frame.estimated_avoided_frontier_supervision),
+    )
+
+
 def audit_runtime_policy() -> RuntimePolicyAuditReport:
     frame = RuntimePolicyEngine().evaluate()
     return RuntimePolicyAuditReport(
@@ -3909,6 +3937,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         adaptive_provider=audit_adaptive_provider(),
         execution_memory=audit_execution_memory(),
         runtime_policy=audit_runtime_policy(),
+        sprint_loop=audit_sprint_loop(),
     )
 
 
