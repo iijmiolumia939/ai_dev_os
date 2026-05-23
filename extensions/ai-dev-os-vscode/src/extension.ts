@@ -31,6 +31,7 @@ import {registerReflectiveEvaluationCommands} from './commands/reflectiveEvaluat
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeMediationCommands} from './commands/runtimeMediationCommands';
+import {registerRuntimePolicyCommands} from './commands/runtimePolicyCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
@@ -124,6 +125,13 @@ import {
 import {ReasoningRoutingMonitor, ReasoningTierStatusBar} from './reasoningRouting/reasoningRouting';
 import {ReasoningScopeMonitor, ReasoningScopeStatusBar} from './reasoningScope/reasoningScope';
 import {RetrievalBudgetMonitor, RetrievalBudgetStatusBar} from './retrievalBudget/retrievalBudget';
+import {
+  EscalationGuardedStatusBar,
+  GovernanceStablePolicyStatusBar,
+  LocalFirstPolicyStatusBar,
+  PolicyBoundedStatusBar,
+  RuntimePolicyMonitor,
+} from './runtimePolicy/runtimePolicy';
 import {ArchitecturePressureStatusBar, RuntimeGraphMonitor} from './runtimeGraph/runtimeGraph';
 import {RuntimeSimplificationMonitor, SimplificationStatusBar} from './runtimeSimplification/runtimeSimplification';
 import {BoundaryStateStore} from './state/boundaryState';
@@ -427,6 +435,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const retryMemoryStatus = new RetryMemoryStatusBar(executionMemory);
   const reuseBoundedStatus = new ReuseBoundedStatusBar(executionMemory);
   const providerMemoryStatus = new ProviderMemoryStatusBar(executionMemory);
+  const runtimePolicy = new RuntimePolicyMonitor();
+  const policyBoundedStatus = new PolicyBoundedStatusBar(runtimePolicy);
+  const governanceStablePolicyStatus = new GovernanceStablePolicyStatusBar(runtimePolicy);
+  const localFirstPolicyStatus = new LocalFirstPolicyStatusBar(runtimePolicy);
+  const escalationGuardedStatus = new EscalationGuardedStatusBar(runtimePolicy);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -619,6 +632,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   retryMemoryStatus.refresh();
   reuseBoundedStatus.refresh();
   providerMemoryStatus.refresh();
+  policyBoundedStatus.refresh();
+  governanceStablePolicyStatus.refresh();
+  localFirstPolicyStatus.refresh();
+  escalationGuardedStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -846,6 +863,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     retryMemoryStatus,
     reuseBoundedStatus,
     providerMemoryStatus,
+    policyBoundedStatus,
+    governanceStablePolicyStatus,
+    localFirstPolicyStatus,
+    escalationGuardedStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1104,6 +1125,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       retryMemoryStatus,
       reuseBoundedStatus,
       providerMemoryStatus,
+      notifications,
+    ),
+    ...registerRuntimePolicyCommands(
+      runtimePolicy,
+      policyBoundedStatus,
+      governanceStablePolicyStatus,
+      localFirstPolicyStatus,
+      escalationGuardedStatus,
       notifications,
     ),
   );

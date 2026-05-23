@@ -254,6 +254,11 @@
     "onCommand:aiDevOs.showExecutionReuse",
     "onCommand:aiDevOs.showProviderExecutionMemory",
     "onCommand:aiDevOs.compactExecutionMemorySummary",
+    "onCommand:aiDevOs.showRuntimePolicy",
+    "onCommand:aiDevOs.showRetryPolicy",
+    "onCommand:aiDevOs.showProviderPolicy",
+    "onCommand:aiDevOs.showContinuationPolicy",
+    "onCommand:aiDevOs.compactRuntimePolicySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -512,7 +517,12 @@
       {"command": "aiDevOs.showRetryPatterns", "title": "AI_DEV_OS: Show Retry Patterns"},
       {"command": "aiDevOs.showExecutionReuse", "title": "AI_DEV_OS: Show Execution Reuse"},
       {"command": "aiDevOs.showProviderExecutionMemory", "title": "AI_DEV_OS: Show Provider Execution Memory"},
-      {"command": "aiDevOs.compactExecutionMemorySummary", "title": "AI_DEV_OS: Compact Execution Memory Summary"}
+      {"command": "aiDevOs.compactExecutionMemorySummary", "title": "AI_DEV_OS: Compact Execution Memory Summary"},
+      {"command": "aiDevOs.showRuntimePolicy", "title": "AI_DEV_OS: Show Runtime Policy"},
+      {"command": "aiDevOs.showRetryPolicy", "title": "AI_DEV_OS: Show Retry Policy"},
+      {"command": "aiDevOs.showProviderPolicy", "title": "AI_DEV_OS: Show Provider Policy"},
+      {"command": "aiDevOs.showContinuationPolicy", "title": "AI_DEV_OS: Show Continuation Policy"},
+      {"command": "aiDevOs.compactRuntimePolicySummary", "title": "AI_DEV_OS: Compact Runtime Policy Summary"}
     ],
     "views": {
       "explorer": [

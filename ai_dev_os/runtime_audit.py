@@ -114,6 +114,7 @@ from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_r
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
 from ai_dev_os.runtime_mediation import ExecutionSequencer
+from ai_dev_os.runtime_policy import RuntimePolicyEngine
 from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
 from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
@@ -1216,6 +1217,19 @@ class IntentionalPlanningAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimePolicyAuditReport:
+    runtime_policy_active: bool
+    execution_policy_score: int
+    retry_policy_score: int
+    provider_policy_score: int
+    continuation_policy_score: int
+    reflective_policy_score: int
+    estimated_avoided_recursive_governance: int
+    estimated_avoided_frontier_escalation: int
+    estimated_avoided_policy_fragmentation: int
+
+
+@dataclass(frozen=True)
 class ExecutionMemoryAuditReport:
     execution_memory_active: bool
     execution_pattern_score: int
@@ -1329,6 +1343,7 @@ class RuntimeEnforcementAuditReport:
     reflective_evaluation: ReflectiveEvaluationAuditReport
     adaptive_provider: AdaptiveProviderAuditReport
     execution_memory: ExecutionMemoryAuditReport
+    runtime_policy: RuntimePolicyAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3505,6 +3520,21 @@ def audit_intentional_planning() -> IntentionalPlanningAuditReport:
     )
 
 
+def audit_runtime_policy() -> RuntimePolicyAuditReport:
+    frame = RuntimePolicyEngine().evaluate()
+    return RuntimePolicyAuditReport(
+        runtime_policy_active=frame.runtime_policy_active,
+        execution_policy_score=frame.execution_policy_score,
+        retry_policy_score=frame.retry_policy_score,
+        provider_policy_score=frame.provider_policy_score,
+        continuation_policy_score=frame.continuation_policy_score,
+        reflective_policy_score=frame.reflective_policy_score,
+        estimated_avoided_recursive_governance=(frame.estimated_avoided_recursive_governance),
+        estimated_avoided_frontier_escalation=(frame.estimated_avoided_frontier_escalation),
+        estimated_avoided_policy_fragmentation=(frame.estimated_avoided_policy_fragmentation),
+    )
+
+
 def audit_execution_memory() -> ExecutionMemoryAuditReport:
     frame = ExecutionMemoryRuntime().evaluate()
     return ExecutionMemoryAuditReport(
@@ -3878,6 +3908,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         reflective_evaluation=audit_reflective_evaluation(),
         adaptive_provider=audit_adaptive_provider(),
         execution_memory=audit_execution_memory(),
+        runtime_policy=audit_runtime_policy(),
     )
 
 
