@@ -201,6 +201,11 @@
     "onCommand:aiDevOs.showRuntimePriorities",
     "onCommand:aiDevOs.showCoordinationCooldown",
     "onCommand:aiDevOs.compactCoordinationSummary",
+    "onCommand:aiDevOs.showExecutionIntent",
+    "onCommand:aiDevOs.showIntentPriority",
+    "onCommand:aiDevOs.showIntentConflicts",
+    "onCommand:aiDevOs.showIntentTransitions",
+    "onCommand:aiDevOs.compactIntentSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -406,7 +411,12 @@
       {"command": "aiDevOs.showCoordinationConflicts", "title": "AI_DEV_OS: Show Coordination Conflicts"},
       {"command": "aiDevOs.showRuntimePriorities", "title": "AI_DEV_OS: Show Runtime Priorities"},
       {"command": "aiDevOs.showCoordinationCooldown", "title": "AI_DEV_OS: Show Coordination Cooldown"},
-      {"command": "aiDevOs.compactCoordinationSummary", "title": "AI_DEV_OS: Compact Coordination Summary"}
+      {"command": "aiDevOs.compactCoordinationSummary", "title": "AI_DEV_OS: Compact Coordination Summary"},
+      {"command": "aiDevOs.showExecutionIntent", "title": "AI_DEV_OS: Show Execution Intent"},
+      {"command": "aiDevOs.showIntentPriority", "title": "AI_DEV_OS: Show Intent Priority"},
+      {"command": "aiDevOs.showIntentConflicts", "title": "AI_DEV_OS: Show Intent Conflicts"},
+      {"command": "aiDevOs.showIntentTransitions", "title": "AI_DEV_OS: Show Intent Transitions"},
+      {"command": "aiDevOs.compactIntentSummary", "title": "AI_DEV_OS: Compact Intent Summary"}
     ],
     "views": {
       "explorer": [

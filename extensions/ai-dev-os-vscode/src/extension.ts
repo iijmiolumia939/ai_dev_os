@@ -5,6 +5,7 @@ import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerExecutionCoordinationCommands} from './commands/executionCoordinationCommands';
 import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
+import {registerExecutionIntentCommands} from './commands/executionIntentCommands';
 import {registerExecutionRecoveryCommands} from './commands/executionRecoveryCommands';
 import {registerExecutionSaturationCommands} from './commands/executionSaturationCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
@@ -114,6 +115,13 @@ import {
   ExecutionCoordinationMonitor,
   RuntimePrioritySafeStatusBar,
 } from './executionCoordination/executionCoordination';
+import {
+  ExecutionIntentMonitor,
+  ExecutionSemanticsActiveStatusBar,
+  IntentStableStatusBar,
+  PriorityBoundedStatusBar,
+  TransitionsSafeStatusBar,
+} from './executionIntent/executionIntent';
 import {
   CheckpointValidStatusBar,
   ExecutionRecoveryMonitor,
@@ -279,6 +287,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const conflictsBoundedStatus = new ConflictsBoundedStatusBar(executionCoordination);
   const runtimePrioritySafeStatus = new RuntimePrioritySafeStatusBar(executionCoordination);
   const coordinationGuardedStatus = new CoordinationGuardedStatusBar(executionCoordination);
+  const executionIntent = new ExecutionIntentMonitor();
+  const intentStableStatus = new IntentStableStatusBar(executionIntent);
+  const priorityBoundedStatus = new PriorityBoundedStatusBar(executionIntent);
+  const transitionsSafeStatus = new TransitionsSafeStatusBar(executionIntent);
+  const executionSemanticsActiveStatus = new ExecutionSemanticsActiveStatusBar(executionIntent);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -429,6 +442,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   conflictsBoundedStatus.refresh();
   runtimePrioritySafeStatus.refresh();
   coordinationGuardedStatus.refresh();
+  intentStableStatus.refresh();
+  priorityBoundedStatus.refresh();
+  transitionsSafeStatus.refresh();
+  executionSemanticsActiveStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -613,6 +630,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     conflictsBoundedStatus,
     runtimePrioritySafeStatus,
     coordinationGuardedStatus,
+    intentStableStatus,
+    priorityBoundedStatus,
+    transitionsSafeStatus,
+    executionSemanticsActiveStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -780,6 +801,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       conflictsBoundedStatus,
       runtimePrioritySafeStatus,
       coordinationGuardedStatus,
+      notifications,
+    ),
+    ...registerExecutionIntentCommands(
+      executionIntent,
+      intentStableStatus,
+      priorityBoundedStatus,
+      transitionsSafeStatus,
+      executionSemanticsActiveStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

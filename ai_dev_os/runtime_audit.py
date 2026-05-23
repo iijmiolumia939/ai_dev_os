@@ -30,6 +30,7 @@ from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
 from ai_dev_os.execution_coordination import ExecutionCoordinationRuntime
+from ai_dev_os.execution_intent import ExecutionIntentRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
@@ -1128,6 +1129,17 @@ class ExecutionCoordinationAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionIntentAuditReport:
+    execution_intent_active: bool
+    intent_priority_active: bool
+    intent_transition_active: bool
+    intent_conflict_active: bool
+    estimated_avoided_intent_oscillation: int
+    estimated_avoided_recursive_planning: int
+    estimated_avoided_execution_instability: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1182,6 +1194,7 @@ class RuntimeEnforcementAuditReport:
     execution_saturation: ExecutionSaturationAuditReport
     execution_recovery: ExecutionRecoveryAuditReport
     execution_coordination: ExecutionCoordinationAuditReport
+    execution_intent: ExecutionIntentAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3265,6 +3278,19 @@ def audit_execution_coordination() -> ExecutionCoordinationAuditReport:
     )
 
 
+def audit_execution_intent() -> ExecutionIntentAuditReport:
+    frame = ExecutionIntentRuntime().evaluate()
+    return ExecutionIntentAuditReport(
+        execution_intent_active=frame.execution_intent_active,
+        intent_priority_active=frame.intent_priority_active,
+        intent_transition_active=frame.intent_transition_active,
+        intent_conflict_active=frame.intent_conflict_active,
+        estimated_avoided_intent_oscillation=frame.estimated_avoided_intent_oscillation,
+        estimated_avoided_recursive_planning=frame.estimated_avoided_recursive_planning,
+        estimated_avoided_execution_instability=(frame.estimated_avoided_execution_instability),
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3569,6 +3595,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_saturation=audit_execution_saturation(),
         execution_recovery=audit_execution_recovery(),
         execution_coordination=audit_execution_coordination(),
+        execution_intent=audit_execution_intent(),
     )
 
 
