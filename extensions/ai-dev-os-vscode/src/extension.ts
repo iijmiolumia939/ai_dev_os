@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import {registerAdaptiveProviderCommands} from './commands/adaptiveProviderCommands';
 import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands';
+import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
@@ -128,6 +129,13 @@ import {
 import {ReasoningRoutingMonitor, ReasoningTierStatusBar} from './reasoningRouting/reasoningRouting';
 import {ReasoningScopeMonitor, ReasoningScopeStatusBar} from './reasoningScope/reasoningScope';
 import {RetrievalBudgetMonitor, RetrievalBudgetStatusBar} from './retrievalBudget/retrievalBudget';
+import {
+  ContinuousRuntimeAuditMonitor,
+  ContinuousRuntimeHealthStatusBar,
+  OrchestrationVisibleStatusBar,
+  ProviderVisibleStatusBar,
+  RetryVisibleStatusBar,
+} from './continuousRuntimeAudit/continuousRuntimeAudit';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -479,6 +487,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const retryStableHardeningStatus = new RetryStableHardeningStatusBar(runtimeHardening);
   const orchestrationSafeStatus = new OrchestrationSafeStatusBar(runtimeHardening);
   const escalationStableStatus = new EscalationStableStatusBar(runtimeHardening);
+  const continuousRuntimeAudit = new ContinuousRuntimeAuditMonitor();
+  const continuousRuntimeHealthStatus = new ContinuousRuntimeHealthStatusBar(continuousRuntimeAudit);
+  const retryVisibleStatus = new RetryVisibleStatusBar(continuousRuntimeAudit);
+  const orchestrationVisibleStatus = new OrchestrationVisibleStatusBar(continuousRuntimeAudit);
+  const providerVisibleStatus = new ProviderVisibleStatusBar(continuousRuntimeAudit);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -687,6 +700,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   retryStableHardeningStatus.refresh();
   orchestrationSafeStatus.refresh();
   escalationStableStatus.refresh();
+  continuousRuntimeHealthStatus.refresh();
+  retryVisibleStatus.refresh();
+  orchestrationVisibleStatus.refresh();
+  providerVisibleStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -930,6 +947,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     retryStableHardeningStatus,
     orchestrationSafeStatus,
     escalationStableStatus,
+    continuousRuntimeHealthStatus,
+    retryVisibleStatus,
+    orchestrationVisibleStatus,
+    providerVisibleStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1220,6 +1241,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       retryStableHardeningStatus,
       orchestrationSafeStatus,
       escalationStableStatus,
+      notifications,
+    ),
+    ...registerContinuousRuntimeAuditCommands(
+      continuousRuntimeAudit,
+      continuousRuntimeHealthStatus,
+      retryVisibleStatus,
+      orchestrationVisibleStatus,
+      providerVisibleStatus,
       notifications,
     ),
   );

@@ -20,6 +20,7 @@ from ai_dev_os.context_subset.repository_subset import RepositorySubsetPolicy
 from ai_dev_os.context_subset.session_focus import SessionFocusPolicy
 from ai_dev_os.context_subset.stale_topic_eviction import StaleTopicEvictionPolicy
 from ai_dev_os.context_subset.topic_isolation import TopicIsolationPolicy
+from ai_dev_os.continuous_runtime_audit import ContinuousRuntimeAuditRuntime
 from ai_dev_os.copilot_usage.agent_mode_budget import AgentLoopState, AgentModeBudgetGuard
 from ai_dev_os.copilot_usage.atomic_prompting import AtomicPromptPolicy
 from ai_dev_os.copilot_usage.context_diet import ContextDietPolicy, ContextItem
@@ -1245,6 +1246,19 @@ class RuntimeHardeningAuditReport:
 
 
 @dataclass(frozen=True)
+class ContinuousRuntimeAuditReport:
+    continuous_runtime_audit_active: bool
+    runtime_health_score: int
+    retry_pressure_score: int
+    provider_fatigue_score: int
+    continuation_instability_score: int
+    orchestration_pressure_score: int
+    estimated_avoided_runtime_blindness: int
+    estimated_avoided_orchestration_collapse: int
+    estimated_avoided_frontier_observability: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1387,6 +1401,7 @@ class RuntimeEnforcementAuditReport:
     sprint_loop: SprintLoopAuditReport
     runtime_orchestrator: RuntimeOrchestratorAuditReport
     runtime_hardening: RuntimeHardeningAuditReport
+    continuous_runtime_audit: ContinuousRuntimeAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3592,6 +3607,21 @@ def audit_runtime_hardening() -> RuntimeHardeningAuditReport:
     )
 
 
+def audit_continuous_runtime_audit() -> ContinuousRuntimeAuditReport:
+    frame = ContinuousRuntimeAuditRuntime().evaluate()
+    return ContinuousRuntimeAuditReport(
+        continuous_runtime_audit_active=frame.continuous_runtime_audit_active,
+        runtime_health_score=frame.runtime_health_score,
+        retry_pressure_score=frame.retry_pressure_score,
+        provider_fatigue_score=frame.provider_fatigue_score,
+        continuation_instability_score=frame.continuation_instability_score,
+        orchestration_pressure_score=frame.orchestration_pressure_score,
+        estimated_avoided_runtime_blindness=frame.estimated_avoided_runtime_blindness,
+        estimated_avoided_orchestration_collapse=(frame.estimated_avoided_orchestration_collapse),
+        estimated_avoided_frontier_observability=(frame.estimated_avoided_frontier_observability),
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4002,6 +4032,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         sprint_loop=audit_sprint_loop(),
         runtime_orchestrator=audit_runtime_orchestrator(),
         runtime_hardening=audit_runtime_hardening(),
+        continuous_runtime_audit=audit_continuous_runtime_audit(),
     )
 
 

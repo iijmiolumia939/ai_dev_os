@@ -274,6 +274,11 @@
     "onCommand:aiDevOs.showEscalationOscillation",
     "onCommand:aiDevOs.showOrchestrationDeadlocks",
     "onCommand:aiDevOs.compactRuntimeHardeningSummary",
+    "onCommand:aiDevOs.showRuntimeHealth",
+    "onCommand:aiDevOs.showRetryPressure",
+    "onCommand:aiDevOs.showContinuousProviderFatigue",
+    "onCommand:aiDevOs.showOrchestrationPressure",
+    "onCommand:aiDevOs.compactContinuousAuditSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -552,7 +557,12 @@
       {"command": "aiDevOs.showRetryStormStatus", "title": "AI_DEV_OS: Show Retry Storm Status"},
       {"command": "aiDevOs.showEscalationOscillation", "title": "AI_DEV_OS: Show Escalation Oscillation"},
       {"command": "aiDevOs.showOrchestrationDeadlocks", "title": "AI_DEV_OS: Show Orchestration Deadlocks"},
-      {"command": "aiDevOs.compactRuntimeHardeningSummary", "title": "AI_DEV_OS: Compact Runtime Hardening Summary"}
+      {"command": "aiDevOs.compactRuntimeHardeningSummary", "title": "AI_DEV_OS: Compact Runtime Hardening Summary"},
+      {"command": "aiDevOs.showRuntimeHealth", "title": "AI_DEV_OS: Show Runtime Health"},
+      {"command": "aiDevOs.showRetryPressure", "title": "AI_DEV_OS: Show Retry Pressure"},
+      {"command": "aiDevOs.showContinuousProviderFatigue", "title": "AI_DEV_OS: Show Provider Fatigue"},
+      {"command": "aiDevOs.showOrchestrationPressure", "title": "AI_DEV_OS: Show Orchestration Pressure"},
+      {"command": "aiDevOs.compactContinuousAuditSummary", "title": "AI_DEV_OS: Compact Continuous Audit Summary"}
     ],
     "views": {
       "explorer": [
