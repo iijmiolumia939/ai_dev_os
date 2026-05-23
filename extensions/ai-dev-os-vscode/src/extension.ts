@@ -4,6 +4,7 @@ import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
+import {registerExecutionSaturationCommands} from './commands/executionSaturationCommands';
 import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands';
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
@@ -104,6 +105,13 @@ import {
   ExecutionContinuingStatusBar,
   LoopGuardedStatusBar,
 } from './executionContinuation/executionContinuation';
+import {
+  ContinuationBoundedStatusBar,
+  ExecutionSaturationMonitor,
+  RetryStableStatusBar,
+  SaturationLowStatusBar,
+  ToolPressureSafeStatusBar,
+} from './executionSaturation/executionSaturation';
 import {
   DevPolicyMonitor,
   EscalationPressureStatusBar,
@@ -240,6 +248,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const continuationSafeStatus = new ContinuationSafeStatusBar(executionContinuation);
   const loopGuardedStatus = new LoopGuardedStatusBar(executionContinuation);
   const boundedExecutionStatus = new BoundedExecutionStatusBar(executionContinuation);
+  const executionSaturation = new ExecutionSaturationMonitor();
+  const saturationLowStatus = new SaturationLowStatusBar(executionSaturation);
+  const retryStableStatus = new RetryStableStatusBar(executionSaturation);
+  const toolPressureSafeStatus = new ToolPressureSafeStatusBar(executionSaturation);
+  const continuationBoundedStatus = new ContinuationBoundedStatusBar(executionSaturation);
   const subagentExecution = new SubagentExecutionMonitor();
   const subagentActiveStatus = new SubagentActiveStatusBar(subagentExecution);
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
@@ -378,6 +391,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   continuationSafeStatus.refresh();
   loopGuardedStatus.refresh();
   boundedExecutionStatus.refresh();
+  saturationLowStatus.refresh();
+  retryStableStatus.refresh();
+  toolPressureSafeStatus.refresh();
+  continuationBoundedStatus.refresh();
   const subagentState = subagentActiveStatus.refresh();
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
@@ -550,6 +567,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     continuationSafeStatus,
     loopGuardedStatus,
     boundedExecutionStatus,
+    saturationLowStatus,
+    retryStableStatus,
+    toolPressureSafeStatus,
+    continuationBoundedStatus,
     subagentActiveStatus,
     localDelegationStatus,
     fallbackReadyStatus,
@@ -693,6 +714,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       continuationSafeStatus,
       loopGuardedStatus,
       boundedExecutionStatus,
+      notifications,
+    ),
+    ...registerExecutionSaturationCommands(
+      executionSaturation,
+      saturationLowStatus,
+      retryStableStatus,
+      toolPressureSafeStatus,
+      continuationBoundedStatus,
       notifications,
     ),
     ...registerSubagentExecutionCommands(

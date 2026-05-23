@@ -186,6 +186,11 @@
     "onCommand:aiDevOs.showContinuationState",
     "onCommand:aiDevOs.showExecutionBudget",
     "onCommand:aiDevOs.compactContinuationSummary",
+    "onCommand:aiDevOs.showExecutionSaturation",
+    "onCommand:aiDevOs.showRetryOscillation",
+    "onCommand:aiDevOs.showToolCongestion",
+    "onCommand:aiDevOs.showCheckpointInflation",
+    "onCommand:aiDevOs.compactSaturationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -376,7 +381,12 @@
       {"command": "aiDevOs.resumeBoundedSprint", "title": "AI_DEV_OS: Resume Bounded Sprint"},
       {"command": "aiDevOs.showContinuationState", "title": "AI_DEV_OS: Show Continuation State"},
       {"command": "aiDevOs.showExecutionBudget", "title": "AI_DEV_OS: Show Execution Budget"},
-      {"command": "aiDevOs.compactContinuationSummary", "title": "AI_DEV_OS: Compact Continuation Summary"}
+      {"command": "aiDevOs.compactContinuationSummary", "title": "AI_DEV_OS: Compact Continuation Summary"},
+      {"command": "aiDevOs.showExecutionSaturation", "title": "AI_DEV_OS: Show Execution Saturation"},
+      {"command": "aiDevOs.showRetryOscillation", "title": "AI_DEV_OS: Show Retry Oscillation"},
+      {"command": "aiDevOs.showToolCongestion", "title": "AI_DEV_OS: Show Tool Congestion"},
+      {"command": "aiDevOs.showCheckpointInflation", "title": "AI_DEV_OS: Show Checkpoint Inflation"},
+      {"command": "aiDevOs.compactSaturationSummary", "title": "AI_DEV_OS: Compact Saturation Summary"}
     ],
     "views": {
       "explorer": [

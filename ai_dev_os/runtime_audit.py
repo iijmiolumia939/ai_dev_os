@@ -29,6 +29,7 @@ from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
+from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1091,6 +1092,18 @@ class ExecutionContinuationAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionSaturationAuditReport:
+    execution_saturation_active: bool
+    retry_oscillation_active: bool
+    tool_congestion_active: bool
+    checkpoint_inflation_active: bool
+    saturation_termination_active: bool
+    estimated_avoided_recursive_execution: int
+    estimated_avoided_retry_loops: int
+    estimated_avoided_checkpoint_explosion: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1142,6 +1155,7 @@ class RuntimeEnforcementAuditReport:
     provider_fatigue: ProviderFatigueAuditReport
     cognitive_memory_pressure: CognitiveMemoryPressureAuditReport
     execution_continuation: ExecutionContinuationAuditReport
+    execution_saturation: ExecutionSaturationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3187,6 +3201,24 @@ def audit_execution_continuation() -> ExecutionContinuationAuditReport:
     )
 
 
+def audit_execution_saturation() -> ExecutionSaturationAuditReport:
+    frame = ExecutionSaturationRuntime().evaluate()
+    return ExecutionSaturationAuditReport(
+        execution_saturation_active=frame.execution_saturation_active,
+        retry_oscillation_active=frame.retry_oscillation_active,
+        tool_congestion_active=frame.tool_congestion_active,
+        checkpoint_inflation_active=frame.checkpoint_inflation_active,
+        saturation_termination_active=frame.saturation_termination_active,
+        estimated_avoided_recursive_execution=(
+            frame.estimated_avoided_recursive_execution
+        ),
+        estimated_avoided_retry_loops=frame.estimated_avoided_retry_loops,
+        estimated_avoided_checkpoint_explosion=(
+            frame.estimated_avoided_checkpoint_explosion
+        ),
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3488,6 +3520,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_fatigue=audit_provider_fatigue(),
         cognitive_memory_pressure=audit_cognitive_memory_pressure(),
         execution_continuation=audit_execution_continuation(),
+        execution_saturation=audit_execution_saturation(),
     )
 
 
