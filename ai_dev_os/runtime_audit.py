@@ -33,6 +33,7 @@ from ai_dev_os.execution_coordination import ExecutionCoordinationRuntime
 from ai_dev_os.execution_intent import ExecutionIntentRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
+from ai_dev_os.execution_session import ExecutionSessionRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1140,6 +1141,17 @@ class ExecutionIntentAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionSessionAuditReport:
+    execution_session_active: bool
+    session_lifecycle_active: bool
+    session_integrity_active: bool
+    session_termination_active: bool
+    estimated_avoided_orphaned_sessions: int
+    estimated_avoided_recursive_persistence: int
+    estimated_avoided_session_fragmentation: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1195,6 +1207,7 @@ class RuntimeEnforcementAuditReport:
     execution_recovery: ExecutionRecoveryAuditReport
     execution_coordination: ExecutionCoordinationAuditReport
     execution_intent: ExecutionIntentAuditReport
+    execution_session: ExecutionSessionAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3291,6 +3304,19 @@ def audit_execution_intent() -> ExecutionIntentAuditReport:
     )
 
 
+def audit_execution_session() -> ExecutionSessionAuditReport:
+    frame = ExecutionSessionRuntime().evaluate()
+    return ExecutionSessionAuditReport(
+        execution_session_active=frame.execution_session_active,
+        session_lifecycle_active=frame.session_lifecycle_active,
+        session_integrity_active=frame.session_integrity_active,
+        session_termination_active=frame.session_termination_active,
+        estimated_avoided_orphaned_sessions=frame.estimated_avoided_orphaned_sessions,
+        estimated_avoided_recursive_persistence=(frame.estimated_avoided_recursive_persistence),
+        estimated_avoided_session_fragmentation=(frame.estimated_avoided_session_fragmentation),
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3596,6 +3622,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_recovery=audit_execution_recovery(),
         execution_coordination=audit_execution_coordination(),
         execution_intent=audit_execution_intent(),
+        execution_session=audit_execution_session(),
     )
 
 

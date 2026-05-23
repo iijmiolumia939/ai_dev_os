@@ -206,6 +206,11 @@
     "onCommand:aiDevOs.showIntentConflicts",
     "onCommand:aiDevOs.showIntentTransitions",
     "onCommand:aiDevOs.compactIntentSummary",
+    "onCommand:aiDevOs.showExecutionSessions",
+    "onCommand:aiDevOs.showSessionLifecycle",
+    "onCommand:aiDevOs.showSessionIntegrity",
+    "onCommand:aiDevOs.showSessionConflicts",
+    "onCommand:aiDevOs.compactSessionSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -416,7 +421,12 @@
       {"command": "aiDevOs.showIntentPriority", "title": "AI_DEV_OS: Show Intent Priority"},
       {"command": "aiDevOs.showIntentConflicts", "title": "AI_DEV_OS: Show Intent Conflicts"},
       {"command": "aiDevOs.showIntentTransitions", "title": "AI_DEV_OS: Show Intent Transitions"},
-      {"command": "aiDevOs.compactIntentSummary", "title": "AI_DEV_OS: Compact Intent Summary"}
+      {"command": "aiDevOs.compactIntentSummary", "title": "AI_DEV_OS: Compact Intent Summary"},
+      {"command": "aiDevOs.showExecutionSessions", "title": "AI_DEV_OS: Show Execution Sessions"},
+      {"command": "aiDevOs.showSessionLifecycle", "title": "AI_DEV_OS: Show Session Lifecycle"},
+      {"command": "aiDevOs.showSessionIntegrity", "title": "AI_DEV_OS: Show Session Integrity"},
+      {"command": "aiDevOs.showSessionConflicts", "title": "AI_DEV_OS: Show Session Conflicts"},
+      {"command": "aiDevOs.compactSessionSummary", "title": "AI_DEV_OS: Compact Session Summary"}
     ],
     "views": {
       "explorer": [
