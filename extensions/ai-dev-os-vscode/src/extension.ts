@@ -25,6 +25,7 @@ import {registerProviderExperimentalCommands} from './commands/providerExperimen
 import {registerProviderRoutingCommands} from './commands/providerRoutingCommands';
 import {registerReasoningRoutingCommands} from './commands/reasoningRoutingCommands';
 import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
+import {registerReflectiveEvaluationCommands} from './commands/reflectiveEvaluationCommands';
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
 import {registerRuntimeMediationCommands} from './commands/runtimeMediationCommands';
@@ -49,6 +50,13 @@ import {
   IntentionalPlanningMonitor,
   PlanningBoundedStatusBar,
 } from './intentionalPlanning/intentionalPlanning';
+import {
+  ContinuationValidStatusBar,
+  ExecutionCoherentStatusBar,
+  PlanningStableStatusBar,
+  ReflectionBoundedStatusBar,
+  ReflectiveEvaluationMonitor,
+} from './reflectiveEvaluation/reflectiveEvaluation';
 import {IncrementalContextMonitor, IncrementalContextStatusBar} from './incrementalContext/incrementalContext';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
@@ -388,6 +396,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const planningBoundedStatus = new PlanningBoundedStatusBar(intentionalPlanning);
   const decayTrackedStatus = new DecayTrackedStatusBar(intentionalPlanning);
   const continuationStableStatus = new ContinuationStableStatusBar(intentionalPlanning);
+  const reflectiveEvaluation = new ReflectiveEvaluationMonitor();
+  const reflectionBoundedStatus = new ReflectionBoundedStatusBar(reflectiveEvaluation);
+  const executionCoherentStatus = new ExecutionCoherentStatusBar(reflectiveEvaluation);
+  const continuationValidStatus = new ContinuationValidStatusBar(reflectiveEvaluation);
+  const planningStableStatus = new PlanningStableStatusBar(reflectiveEvaluation);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -568,6 +581,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   planningBoundedStatus.refresh();
   decayTrackedStatus.refresh();
   continuationStableStatus.refresh();
+  reflectionBoundedStatus.refresh();
+  executionCoherentStatus.refresh();
+  continuationValidStatus.refresh();
+  planningStableStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -783,6 +800,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     planningBoundedStatus,
     decayTrackedStatus,
     continuationStableStatus,
+    reflectionBoundedStatus,
+    executionCoherentStatus,
+    continuationValidStatus,
+    planningStableStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1017,6 +1038,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       planningBoundedStatus,
       decayTrackedStatus,
       continuationStableStatus,
+      notifications,
+    ),
+    ...registerReflectiveEvaluationCommands(
+      reflectiveEvaluation,
+      reflectionBoundedStatus,
+      executionCoherentStatus,
+      continuationValidStatus,
+      planningStableStatus,
       notifications,
     ),
   );

@@ -96,6 +96,7 @@ from ai_dev_os.reasoning_routing import (
     TaskComplexityPolicy,
 )
 from ai_dev_os.reasoning_scope import ReasoningScopeRuntime
+from ai_dev_os.reflective_evaluation import ReflectiveEvaluationRuntime
 from ai_dev_os.release_readiness import (
     ConsumerRolloutPolicy,
     ExtensionReadinessPolicy,
@@ -1213,6 +1214,18 @@ class IntentionalPlanningAuditReport:
 
 
 @dataclass(frozen=True)
+class ReflectiveEvaluationAuditReport:
+    reflective_evaluation_active: bool
+    execution_quality_score: int
+    cognitive_coherence_score: int
+    continuation_validity_score: int
+    planning_integrity_score: int
+    estimated_avoided_recursive_reflection: int
+    estimated_avoided_self_optimization: int
+    estimated_avoided_frontier_evaluation: int
+
+
+@dataclass(frozen=True)
 class RuntimeMediationAuditReport:
     runtime_mediation_active: bool
     execution_sequencer_active: bool
@@ -1287,6 +1300,7 @@ class RuntimeEnforcementAuditReport:
     runtime_mediation: RuntimeMediationAuditReport
     cognitive_state: CognitiveStateAuditReport
     intentional_planning: IntentionalPlanningAuditReport
+    reflective_evaluation: ReflectiveEvaluationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3463,6 +3477,20 @@ def audit_intentional_planning() -> IntentionalPlanningAuditReport:
     )
 
 
+def audit_reflective_evaluation() -> ReflectiveEvaluationAuditReport:
+    frame = ReflectiveEvaluationRuntime().evaluate()
+    return ReflectiveEvaluationAuditReport(
+        reflective_evaluation_active=frame.reflective_evaluation_active,
+        execution_quality_score=frame.execution_quality_score,
+        cognitive_coherence_score=frame.cognitive_coherence_score,
+        continuation_validity_score=frame.continuation_validity_score,
+        planning_integrity_score=frame.planning_integrity_score,
+        estimated_avoided_recursive_reflection=(frame.estimated_avoided_recursive_reflection),
+        estimated_avoided_self_optimization=frame.estimated_avoided_self_optimization,
+        estimated_avoided_frontier_evaluation=(frame.estimated_avoided_frontier_evaluation),
+    )
+
+
 def audit_runtime_mediation() -> RuntimeMediationAuditReport:
     frame = ExecutionSequencer().mediate()
     return RuntimeMediationAuditReport(
@@ -3789,6 +3817,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_mediation=audit_runtime_mediation(),
         cognitive_state=audit_cognitive_state(),
         intentional_planning=audit_intentional_planning(),
+        reflective_evaluation=audit_reflective_evaluation(),
     )
 
 

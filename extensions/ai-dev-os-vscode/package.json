@@ -240,6 +240,11 @@
     "onCommand:aiDevOs.showPlanningDecay",
     "onCommand:aiDevOs.showPlanningContinuation",
     "onCommand:aiDevOs.compactIntentionalPlanningSummary",
+    "onCommand:aiDevOs.showReflectiveEvaluation",
+    "onCommand:aiDevOs.showCognitiveCoherence",
+    "onCommand:aiDevOs.showContinuationValidity",
+    "onCommand:aiDevOs.showPlanningIntegrity",
+    "onCommand:aiDevOs.compactReflectiveEvaluationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -484,7 +489,12 @@
       {"command": "aiDevOs.showPlanningWindow", "title": "AI_DEV_OS: Show Planning Window"},
       {"command": "aiDevOs.showPlanningDecay", "title": "AI_DEV_OS: Show Planning Decay"},
       {"command": "aiDevOs.showPlanningContinuation", "title": "AI_DEV_OS: Show Planning Continuation"},
-      {"command": "aiDevOs.compactIntentionalPlanningSummary", "title": "AI_DEV_OS: Compact Intentional Planning Summary"}
+      {"command": "aiDevOs.compactIntentionalPlanningSummary", "title": "AI_DEV_OS: Compact Intentional Planning Summary"},
+      {"command": "aiDevOs.showReflectiveEvaluation", "title": "AI_DEV_OS: Show Reflective Evaluation"},
+      {"command": "aiDevOs.showCognitiveCoherence", "title": "AI_DEV_OS: Show Cognitive Coherence"},
+      {"command": "aiDevOs.showContinuationValidity", "title": "AI_DEV_OS: Show Continuation Validity"},
+      {"command": "aiDevOs.showPlanningIntegrity", "title": "AI_DEV_OS: Show Planning Integrity"},
+      {"command": "aiDevOs.compactReflectiveEvaluationSummary", "title": "AI_DEV_OS: Compact Reflective Evaluation Summary"}
     ],
     "views": {
       "explorer": [
