@@ -289,6 +289,11 @@
     "onCommand:aiDevOs.showRetryAccumulation",
     "onCommand:aiDevOs.showRuntimeEntropy",
     "onCommand:aiDevOs.compactSoakStabilitySummary",
+    "onCommand:aiDevOs.showCostStabilization",
+    "onCommand:aiDevOs.showFrontierDependency",
+    "onCommand:aiDevOs.showRetryCost",
+    "onCommand:aiDevOs.showLocalFirstEfficiency",
+    "onCommand:aiDevOs.compactCostStabilizationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -582,7 +587,12 @@
       {"command": "aiDevOs.showLongSessionDrift", "title": "AI_DEV_OS: Show Long Session Drift"},
       {"command": "aiDevOs.showRetryAccumulation", "title": "AI_DEV_OS: Show Retry Accumulation"},
       {"command": "aiDevOs.showRuntimeEntropy", "title": "AI_DEV_OS: Show Runtime Entropy"},
-      {"command": "aiDevOs.compactSoakStabilitySummary", "title": "AI_DEV_OS: Compact Soak Stability Summary"}
+      {"command": "aiDevOs.compactSoakStabilitySummary", "title": "AI_DEV_OS: Compact Soak Stability Summary"},
+      {"command": "aiDevOs.showCostStabilization", "title": "AI_DEV_OS: Show Cost Stabilization"},
+      {"command": "aiDevOs.showFrontierDependency", "title": "AI_DEV_OS: Show Frontier Dependency"},
+      {"command": "aiDevOs.showRetryCost", "title": "AI_DEV_OS: Show Retry Cost"},
+      {"command": "aiDevOs.showLocalFirstEfficiency", "title": "AI_DEV_OS: Show Local First Efficiency"},
+      {"command": "aiDevOs.compactCostStabilizationSummary", "title": "AI_DEV_OS: Compact Cost Stabilization Summary"}
     ],
     "views": {
       "explorer": [

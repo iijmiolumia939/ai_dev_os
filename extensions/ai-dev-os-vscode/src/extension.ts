@@ -4,6 +4,7 @@ import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands'
 import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerFailureInjectionCommands} from './commands/failureInjectionCommands';
+import {registerProviderCostStabilizationCommands} from './commands/providerCostStabilizationCommands';
 import {registerSoakStabilityCommands} from './commands/soakStabilityCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
@@ -152,6 +153,13 @@ import {
   SoakStabilityMonitor,
   SoakStableStatusBar,
 } from './soakStability/soakStability';
+import {
+  CostStableStatusBar,
+  FrontierBoundedStatusBar,
+  LocalFirstEfficiencyStatusBar,
+  OverheadFlatStatusBar,
+  ProviderCostStabilizationMonitor,
+} from './providerCostStabilization/providerCostStabilization';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -518,6 +526,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const driftBoundedStatus = new DriftBoundedStatusBar(soakStability);
   const entropyVisibleStatus = new EntropyVisibleStatusBar(soakStability);
   const longSessionSafeStatus = new LongSessionSafeStatusBar(soakStability);
+  const providerCostStabilization = new ProviderCostStabilizationMonitor();
+  const costStableStatus = new CostStableStatusBar(providerCostStabilization);
+  const frontierBoundedStatus = new FrontierBoundedStatusBar(providerCostStabilization);
+  const localFirstEfficiencyStatus = new LocalFirstEfficiencyStatusBar(providerCostStabilization);
+  const overheadFlatStatus = new OverheadFlatStatusBar(providerCostStabilization);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -738,6 +751,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   driftBoundedStatus.refresh();
   entropyVisibleStatus.refresh();
   longSessionSafeStatus.refresh();
+  costStableStatus.refresh();
+  frontierBoundedStatus.refresh();
+  localFirstEfficiencyStatus.refresh();
+  overheadFlatStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -993,6 +1010,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     driftBoundedStatus,
     entropyVisibleStatus,
     longSessionSafeStatus,
+    costStableStatus,
+    frontierBoundedStatus,
+    localFirstEfficiencyStatus,
+    overheadFlatStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1307,6 +1328,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       driftBoundedStatus,
       entropyVisibleStatus,
       longSessionSafeStatus,
+      notifications,
+    ),
+    ...registerProviderCostStabilizationCommands(
+      providerCostStabilization,
+      costStableStatus,
+      frontierBoundedStatus,
+      localFirstEfficiencyStatus,
+      overheadFlatStatus,
       notifications,
     ),
   );

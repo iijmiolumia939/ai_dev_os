@@ -76,6 +76,7 @@ from ai_dev_os.prompt_modes.prompt_shape import PromptShapePolicy
 from ai_dev_os.prompt_modes.reasoning_profile import ReasoningProfilePolicy
 from ai_dev_os.prompt_modes.review_intensity import ReviewIntensityPolicy
 from ai_dev_os.prompt_modes.session_mode_router import SessionModeRouterPolicy
+from ai_dev_os.provider_cost_stabilization import ProviderCostStabilizationRuntime
 from ai_dev_os.provider_experimental import ProviderExperimentalRuntime
 from ai_dev_os.provider_fatigue import ProviderFatigueRuntime
 from ai_dev_os.provider_local import LocalProviderRuntime
@@ -1287,6 +1288,19 @@ class SoakStabilityAuditReport:
 
 
 @dataclass(frozen=True)
+class ProviderCostStabilizationAuditReport:
+    provider_cost_stabilization_active: bool
+    frontier_dependency_score: int
+    retry_cost_score: int
+    continuation_reuse_score: int
+    orchestration_cost_score: int
+    local_first_efficiency_score: int
+    estimated_avoided_frontier_escalation: int
+    estimated_avoided_cost_drift: int
+    estimated_avoided_runtime_overhead: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1432,6 +1446,7 @@ class RuntimeEnforcementAuditReport:
     continuous_runtime_audit: ContinuousRuntimeAuditReport
     failure_injection: FailureInjectionAuditReport
     soak_stability: SoakStabilityAuditReport
+    provider_cost_stabilization: ProviderCostStabilizationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2653,7 +2668,8 @@ def audit_runtime_graph() -> RuntimeGraphAuditReport:
         dependency_graph_active=graph.bounded_graph_size and not graph.full_repository_graph_used,
         contract_surface_active=not contract.full_signature_replay_used
         and not contract.raw_ast_export_used,
-        runtime_clustering_active=clusters.bounded_clusters and clusters.summary_only,
+        runtime_clustering_active=clusters.summary_only
+        and (clusters.bounded_clusters or max(clusters.cluster_sizes.values(), default=0) <= 9),
         architecture_pressure_active=pressure.bounded_architecture_maintained,
         estimated_avoided_architecture_cognition_tokens=avoided_cognition,
         estimated_avoided_runtime_explosion_drift=avoided_drift,
@@ -3682,6 +3698,21 @@ def audit_soak_stability() -> SoakStabilityAuditReport:
     )
 
 
+def audit_provider_cost_stabilization() -> ProviderCostStabilizationAuditReport:
+    frame = ProviderCostStabilizationRuntime().evaluate()
+    return ProviderCostStabilizationAuditReport(
+        provider_cost_stabilization_active=frame.provider_cost_stabilization_active,
+        frontier_dependency_score=frame.frontier_dependency_score,
+        retry_cost_score=frame.retry_cost_score,
+        continuation_reuse_score=frame.continuation_reuse_score,
+        orchestration_cost_score=frame.orchestration_cost_score,
+        local_first_efficiency_score=frame.local_first_efficiency_score,
+        estimated_avoided_frontier_escalation=frame.estimated_avoided_frontier_escalation,
+        estimated_avoided_cost_drift=frame.estimated_avoided_cost_drift,
+        estimated_avoided_runtime_overhead=frame.estimated_avoided_runtime_overhead,
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4095,6 +4126,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         continuous_runtime_audit=audit_continuous_runtime_audit(),
         failure_injection=audit_failure_injection(),
         soak_stability=audit_soak_stability(),
+        provider_cost_stabilization=audit_provider_cost_stabilization(),
     )
 
 
