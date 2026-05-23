@@ -226,6 +226,11 @@
     "onCommand:aiDevOs.showPytestEvidence",
     "onCommand:aiDevOs.showGitEvidence",
     "onCommand:aiDevOs.compactVerifiedExecutionSummary",
+    "onCommand:aiDevOs.showRuntimeMediation",
+    "onCommand:aiDevOs.showExecutionQueue",
+    "onCommand:aiDevOs.showRetryGovernance",
+    "onCommand:aiDevOs.showCooldownGovernance",
+    "onCommand:aiDevOs.compactRuntimeMediationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -456,7 +461,12 @@
       {"command": "aiDevOs.showExecutionEvidence", "title": "AI_DEV_OS: Show Execution Evidence"},
       {"command": "aiDevOs.showPytestEvidence", "title": "AI_DEV_OS: Show Pytest Evidence"},
       {"command": "aiDevOs.showGitEvidence", "title": "AI_DEV_OS: Show Git Evidence"},
-      {"command": "aiDevOs.compactVerifiedExecutionSummary", "title": "AI_DEV_OS: Compact Verified Execution Summary"}
+      {"command": "aiDevOs.compactVerifiedExecutionSummary", "title": "AI_DEV_OS: Compact Verified Execution Summary"},
+      {"command": "aiDevOs.showRuntimeMediation", "title": "AI_DEV_OS: Show Runtime Mediation"},
+      {"command": "aiDevOs.showExecutionQueue", "title": "AI_DEV_OS: Show Execution Queue"},
+      {"command": "aiDevOs.showRetryGovernance", "title": "AI_DEV_OS: Show Retry Governance"},
+      {"command": "aiDevOs.showCooldownGovernance", "title": "AI_DEV_OS: Show Cooldown Governance"},
+      {"command": "aiDevOs.compactRuntimeMediationSummary", "title": "AI_DEV_OS: Compact Runtime Mediation Summary"}
     ],
     "views": {
       "explorer": [

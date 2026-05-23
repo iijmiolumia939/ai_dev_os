@@ -36,7 +36,6 @@ from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.execution_session import ExecutionSessionRuntime
 from ai_dev_os.execution_stability import ExecutionStabilityRuntime
-from ai_dev_os.verified_execution import VerifiedExecutionRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -109,6 +108,7 @@ from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
 from ai_dev_os.runtime_graph import RuntimeGraphPolicy
+from ai_dev_os.runtime_mediation import ExecutionSequencer
 from ai_dev_os.runtime_simplification import RuntimeSimplificationPolicy
 from ai_dev_os.session_bootstrap.draft_injection import DraftInjectionPolicy
 from ai_dev_os.session_boundary.boundary_enforcement import BoundaryEnforcementPolicy
@@ -134,6 +134,7 @@ from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, Sprint
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.subagent_execution import SubagentExecutionRuntime
+from ai_dev_os.verified_execution import VerifiedExecutionRuntime
 from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
 from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
@@ -1190,6 +1191,18 @@ class VerifiedExecutionAuditReport:
 
 
 @dataclass(frozen=True)
+class RuntimeMediationAuditReport:
+    runtime_mediation_active: bool
+    execution_sequencer_active: bool
+    retry_governance_active: bool
+    cooldown_governance_active: bool
+    execution_arbitration_active: bool
+    estimated_avoided_recursive_execution: int
+    estimated_avoided_retry_amplification: int
+    estimated_avoided_execution_saturation: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1249,6 +1262,7 @@ class RuntimeEnforcementAuditReport:
     execution_stability: ExecutionStabilityAuditReport
     execution_quality: ExecutionQualityAuditReport
     verified_execution: VerifiedExecutionAuditReport
+    runtime_mediation: RuntimeMediationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3401,6 +3415,20 @@ def audit_verified_execution() -> VerifiedExecutionAuditReport:
     )
 
 
+def audit_runtime_mediation() -> RuntimeMediationAuditReport:
+    frame = ExecutionSequencer().mediate()
+    return RuntimeMediationAuditReport(
+        runtime_mediation_active=frame.runtime_mediation_active,
+        execution_sequencer_active=frame.execution_sequencer_active,
+        retry_governance_active=frame.retry_governance_active,
+        cooldown_governance_active=frame.cooldown_governance_active,
+        execution_arbitration_active=frame.execution_arbitration_active,
+        estimated_avoided_recursive_execution=frame.estimated_avoided_recursive_execution,
+        estimated_avoided_retry_amplification=frame.estimated_avoided_retry_amplification,
+        estimated_avoided_execution_saturation=frame.estimated_avoided_execution_saturation,
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3710,6 +3738,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_stability=audit_execution_stability(),
         execution_quality=audit_execution_quality(),
         verified_execution=audit_verified_execution(),
+        runtime_mediation=audit_runtime_mediation(),
     )
 
 

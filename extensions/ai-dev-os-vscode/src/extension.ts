@@ -25,6 +25,7 @@ import {registerReasoningRoutingCommands} from './commands/reasoningRoutingComma
 import {registerReasoningScopeCommands} from './commands/reasoningScopeCommands';
 import {registerRetrievalBudgetCommands} from './commands/retrievalBudgetCommands';
 import {registerRuntimeGraphCommands} from './commands/runtimeGraphCommands';
+import {registerRuntimeMediationCommands} from './commands/runtimeMediationCommands';
 import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplificationCommands';
 import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
@@ -203,6 +204,13 @@ import {
   VerifiedExecutionMonitor,
   VerifiedExecutionStatusBar,
 } from './verifiedExecution/verifiedExecution';
+import {
+  CooldownStableStatusBar,
+  ExecutionBoundedStatusBar,
+  MediationActiveStatusBar,
+  RetryGovernedStatusBar,
+  RuntimeMediationMonitor,
+} from './runtimeMediation/runtimeMediation';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const store = new BoundaryStateStore(context);
@@ -349,6 +357,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const commandGroundedStatus = new CommandGroundedStatusBar(verifiedExecution);
   const pytestVerifiedStatus = new PytestVerifiedStatusBar(verifiedExecution);
   const gitEvidenceSafeStatus = new GitEvidenceSafeStatusBar(verifiedExecution);
+  const runtimeMediation = new RuntimeMediationMonitor();
+  const mediationActiveStatus = new MediationActiveStatusBar(runtimeMediation);
+  const executionBoundedStatus = new ExecutionBoundedStatusBar(runtimeMediation);
+  const retryGovernedStatus = new RetryGovernedStatusBar(runtimeMediation);
+  const cooldownStableStatus = new CooldownStableStatusBar(runtimeMediation);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -518,6 +531,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   commandGroundedStatus.refresh();
   pytestVerifiedStatus.refresh();
   gitEvidenceSafeStatus.refresh();
+  mediationActiveStatus.refresh();
+  executionBoundedStatus.refresh();
+  retryGovernedStatus.refresh();
+  cooldownStableStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -722,6 +739,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     commandGroundedStatus,
     pytestVerifiedStatus,
     gitEvidenceSafeStatus,
+    mediationActiveStatus,
+    executionBoundedStatus,
+    retryGovernedStatus,
+    cooldownStableStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -933,6 +954,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       commandGroundedStatus,
       pytestVerifiedStatus,
       gitEvidenceSafeStatus,
+      notifications,
+    ),
+    ...registerRuntimeMediationCommands(
+      runtimeMediation,
+      mediationActiveStatus,
+      executionBoundedStatus,
+      retryGovernedStatus,
+      cooldownStableStatus,
       notifications,
     ),
   );
