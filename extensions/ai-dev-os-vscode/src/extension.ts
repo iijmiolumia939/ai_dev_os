@@ -3,6 +3,7 @@ import {registerAdaptiveProviderCommands} from './commands/adaptiveProviderComma
 import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands';
 import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
+import {registerFailureInjectionCommands} from './commands/failureInjectionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
@@ -136,6 +137,13 @@ import {
   ProviderVisibleStatusBar,
   RetryVisibleStatusBar,
 } from './continuousRuntimeAudit/continuousRuntimeAudit';
+import {
+  FailureInjectionMonitor,
+  FailureTestingStatusBar,
+  OrchestrationResilientStatusBar,
+  RecoveryStableStatusBar,
+  RetryResilientStatusBar,
+} from './failureInjection/failureInjection';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -492,6 +500,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const retryVisibleStatus = new RetryVisibleStatusBar(continuousRuntimeAudit);
   const orchestrationVisibleStatus = new OrchestrationVisibleStatusBar(continuousRuntimeAudit);
   const providerVisibleStatus = new ProviderVisibleStatusBar(continuousRuntimeAudit);
+  const failureInjection = new FailureInjectionMonitor();
+  const failureTestingStatus = new FailureTestingStatusBar(failureInjection);
+  const recoveryStableStatus = new RecoveryStableStatusBar(failureInjection);
+  const retryResilientStatus = new RetryResilientStatusBar(failureInjection);
+  const orchestrationResilientStatus = new OrchestrationResilientStatusBar(failureInjection);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -704,6 +717,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   retryVisibleStatus.refresh();
   orchestrationVisibleStatus.refresh();
   providerVisibleStatus.refresh();
+  failureTestingStatus.refresh();
+  recoveryStableStatus.refresh();
+  retryResilientStatus.refresh();
+  orchestrationResilientStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -951,6 +968,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     retryVisibleStatus,
     orchestrationVisibleStatus,
     providerVisibleStatus,
+    failureTestingStatus,
+    recoveryStableStatus,
+    retryResilientStatus,
+    orchestrationResilientStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1249,6 +1270,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       retryVisibleStatus,
       orchestrationVisibleStatus,
       providerVisibleStatus,
+      notifications,
+    ),
+    ...registerFailureInjectionCommands(
+      failureInjection,
+      failureTestingStatus,
+      recoveryStableStatus,
+      retryResilientStatus,
+      orchestrationResilientStatus,
       notifications,
     ),
   );

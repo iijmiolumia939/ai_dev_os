@@ -279,6 +279,11 @@
     "onCommand:aiDevOs.showContinuousProviderFatigue",
     "onCommand:aiDevOs.showOrchestrationPressure",
     "onCommand:aiDevOs.compactContinuousAuditSummary",
+    "onCommand:aiDevOs.showFailureInjection",
+    "onCommand:aiDevOs.showRetryInjection",
+    "onCommand:aiDevOs.showProviderInjection",
+    "onCommand:aiDevOs.showRecoveryResilience",
+    "onCommand:aiDevOs.compactFailureInjectionSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -562,7 +567,12 @@
       {"command": "aiDevOs.showRetryPressure", "title": "AI_DEV_OS: Show Retry Pressure"},
       {"command": "aiDevOs.showContinuousProviderFatigue", "title": "AI_DEV_OS: Show Provider Fatigue"},
       {"command": "aiDevOs.showOrchestrationPressure", "title": "AI_DEV_OS: Show Orchestration Pressure"},
-      {"command": "aiDevOs.compactContinuousAuditSummary", "title": "AI_DEV_OS: Compact Continuous Audit Summary"}
+      {"command": "aiDevOs.compactContinuousAuditSummary", "title": "AI_DEV_OS: Compact Continuous Audit Summary"},
+      {"command": "aiDevOs.showFailureInjection", "title": "AI_DEV_OS: Show Failure Injection"},
+      {"command": "aiDevOs.showRetryInjection", "title": "AI_DEV_OS: Show Retry Injection"},
+      {"command": "aiDevOs.showProviderInjection", "title": "AI_DEV_OS: Show Provider Injection"},
+      {"command": "aiDevOs.showRecoveryResilience", "title": "AI_DEV_OS: Show Recovery Resilience"},
+      {"command": "aiDevOs.compactFailureInjectionSummary", "title": "AI_DEV_OS: Compact Failure Injection Summary"}
     ],
     "views": {
       "explorer": [

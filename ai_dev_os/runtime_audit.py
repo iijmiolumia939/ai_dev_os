@@ -40,6 +40,7 @@ from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.execution_session import ExecutionSessionRuntime
 from ai_dev_os.execution_stability import ExecutionStabilityRuntime
+from ai_dev_os.failure_injection import FailureInjectionRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
@@ -1259,6 +1260,19 @@ class ContinuousRuntimeAuditReport:
 
 
 @dataclass(frozen=True)
+class FailureInjectionAuditReport:
+    failure_injection_active: bool
+    retry_injection_score: int
+    provider_injection_score: int
+    continuation_injection_score: int
+    orchestration_injection_score: int
+    recovery_resilience_score: int
+    estimated_avoided_runtime_collapse: int
+    estimated_avoided_frontier_recovery: int
+    estimated_avoided_hidden_instability: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1402,6 +1416,7 @@ class RuntimeEnforcementAuditReport:
     runtime_orchestrator: RuntimeOrchestratorAuditReport
     runtime_hardening: RuntimeHardeningAuditReport
     continuous_runtime_audit: ContinuousRuntimeAuditReport
+    failure_injection: FailureInjectionAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3622,6 +3637,21 @@ def audit_continuous_runtime_audit() -> ContinuousRuntimeAuditReport:
     )
 
 
+def audit_failure_injection() -> FailureInjectionAuditReport:
+    frame = FailureInjectionRuntime().evaluate()
+    return FailureInjectionAuditReport(
+        failure_injection_active=frame.failure_injection_active,
+        retry_injection_score=frame.retry_injection_score,
+        provider_injection_score=frame.provider_injection_score,
+        continuation_injection_score=frame.continuation_injection_score,
+        orchestration_injection_score=frame.orchestration_injection_score,
+        recovery_resilience_score=frame.recovery_resilience_score,
+        estimated_avoided_runtime_collapse=frame.estimated_avoided_runtime_collapse,
+        estimated_avoided_frontier_recovery=frame.estimated_avoided_frontier_recovery,
+        estimated_avoided_hidden_instability=frame.estimated_avoided_hidden_instability,
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4033,6 +4063,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         runtime_orchestrator=audit_runtime_orchestrator(),
         runtime_hardening=audit_runtime_hardening(),
         continuous_runtime_audit=audit_continuous_runtime_audit(),
+        failure_injection=audit_failure_injection(),
     )
 
 
