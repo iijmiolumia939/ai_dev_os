@@ -52,6 +52,7 @@ from ai_dev_os.governance_trends.trend_window import (
     GovernanceTrendWindowPolicy,
 )
 from ai_dev_os.incremental_context import IncrementalContextRuntime
+from ai_dev_os.intentional_planning import IntentionalPlanningRuntime
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -1200,6 +1201,18 @@ class CognitiveStateAuditReport:
 
 
 @dataclass(frozen=True)
+class IntentionalPlanningAuditReport:
+    intentional_planning_active: bool
+    active_goal_count: int
+    planning_window_pressure: str
+    planning_decay_status: str
+    planning_interruption_pressure: str
+    estimated_avoided_recursive_planning: int
+    estimated_avoided_goal_explosion: int
+    estimated_avoided_frontier_reasoning: int
+
+
+@dataclass(frozen=True)
 class RuntimeMediationAuditReport:
     runtime_mediation_active: bool
     execution_sequencer_active: bool
@@ -1273,6 +1286,7 @@ class RuntimeEnforcementAuditReport:
     verified_execution: VerifiedExecutionAuditReport
     runtime_mediation: RuntimeMediationAuditReport
     cognitive_state: CognitiveStateAuditReport
+    intentional_planning: IntentionalPlanningAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3435,6 +3449,20 @@ def audit_cognitive_state() -> CognitiveStateAuditReport:
     )
 
 
+def audit_intentional_planning() -> IntentionalPlanningAuditReport:
+    frame = IntentionalPlanningRuntime().evaluate()
+    return IntentionalPlanningAuditReport(
+        intentional_planning_active=frame.intentional_planning_active,
+        active_goal_count=frame.active_goal_count,
+        planning_window_pressure=frame.planning_window_pressure,
+        planning_decay_status=frame.planning_decay_status,
+        planning_interruption_pressure=frame.planning_interruption_pressure,
+        estimated_avoided_recursive_planning=(frame.estimated_avoided_recursive_planning),
+        estimated_avoided_goal_explosion=frame.estimated_avoided_goal_explosion,
+        estimated_avoided_frontier_reasoning=(frame.estimated_avoided_frontier_reasoning),
+    )
+
+
 def audit_runtime_mediation() -> RuntimeMediationAuditReport:
     frame = ExecutionSequencer().mediate()
     return RuntimeMediationAuditReport(
@@ -3760,6 +3788,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         verified_execution=audit_verified_execution(),
         runtime_mediation=audit_runtime_mediation(),
         cognitive_state=audit_cognitive_state(),
+        intentional_planning=audit_intentional_planning(),
     )
 
 

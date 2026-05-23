@@ -235,6 +235,11 @@
     "onCommand:aiDevOs.showAttentionFocus",
     "onCommand:aiDevOs.showCognitiveMemoryPressure",
     "onCommand:aiDevOs.compactCognitiveState",
+    "onCommand:aiDevOs.showGoalHierarchy",
+    "onCommand:aiDevOs.showPlanningWindow",
+    "onCommand:aiDevOs.showPlanningDecay",
+    "onCommand:aiDevOs.showPlanningContinuation",
+    "onCommand:aiDevOs.compactIntentionalPlanningSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -474,7 +479,12 @@
       {"command": "aiDevOs.showCognitiveState", "title": "AI_DEV_OS: Show Cognitive State"},
       {"command": "aiDevOs.showAttentionFocus", "title": "AI_DEV_OS: Show Attention Focus"},
       {"command": "aiDevOs.showCognitiveMemoryPressure", "title": "AI_DEV_OS: Show Cognitive Memory Pressure"},
-      {"command": "aiDevOs.compactCognitiveState", "title": "AI_DEV_OS: Compact Cognitive State"}
+      {"command": "aiDevOs.compactCognitiveState", "title": "AI_DEV_OS: Compact Cognitive State"},
+      {"command": "aiDevOs.showGoalHierarchy", "title": "AI_DEV_OS: Show Goal Hierarchy"},
+      {"command": "aiDevOs.showPlanningWindow", "title": "AI_DEV_OS: Show Planning Window"},
+      {"command": "aiDevOs.showPlanningDecay", "title": "AI_DEV_OS: Show Planning Decay"},
+      {"command": "aiDevOs.showPlanningContinuation", "title": "AI_DEV_OS: Show Planning Continuation"},
+      {"command": "aiDevOs.compactIntentionalPlanningSummary", "title": "AI_DEV_OS: Compact Intentional Planning Summary"}
     ],
     "views": {
       "explorer": [

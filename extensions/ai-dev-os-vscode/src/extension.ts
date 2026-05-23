@@ -16,6 +16,7 @@ import {registerGovernanceCoreCommands} from './commands/governanceCoreCommands'
 import {registerGovernanceCommands} from './commands/governanceCommands';
 import {registerGovernanceHealthCommands} from './commands/governanceHealthCommands';
 import {registerGovernanceTrendCommands} from './commands/governanceTrendCommands';
+import {registerIntentionalPlanningCommands} from './commands/intentionalPlanningCommands';
 import {registerIncrementalContextCommands} from './commands/incrementalContextCommands';
 import {registerLocalProviderCommands} from './commands/localProviderCommands';
 import {registerOutputCompressionCommands} from './commands/outputCompressionCommands';
@@ -41,6 +42,13 @@ import {
   CognitiveStateMemoryPressureStatusBar,
   CognitiveStateMonitor,
 } from './cognitiveState/cognitiveState';
+import {
+  ContinuationStableStatusBar,
+  DecayTrackedStatusBar,
+  GoalActiveStatusBar,
+  IntentionalPlanningMonitor,
+  PlanningBoundedStatusBar,
+} from './intentionalPlanning/intentionalPlanning';
 import {IncrementalContextMonitor, IncrementalContextStatusBar} from './incrementalContext/incrementalContext';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
@@ -375,6 +383,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const cognitiveStateMemoryPressureStatus = new CognitiveStateMemoryPressureStatusBar(
     cognitiveState,
   );
+  const intentionalPlanning = new IntentionalPlanningMonitor();
+  const goalActiveStatus = new GoalActiveStatusBar(intentionalPlanning);
+  const planningBoundedStatus = new PlanningBoundedStatusBar(intentionalPlanning);
+  const decayTrackedStatus = new DecayTrackedStatusBar(intentionalPlanning);
+  const continuationStableStatus = new ContinuationStableStatusBar(intentionalPlanning);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -551,6 +564,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   cognitiveLoadStatus.refresh();
   attentionFocusStatus.refresh();
   cognitiveStateMemoryPressureStatus.refresh();
+  goalActiveStatus.refresh();
+  planningBoundedStatus.refresh();
+  decayTrackedStatus.refresh();
+  continuationStableStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -762,6 +779,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     cognitiveLoadStatus,
     attentionFocusStatus,
     cognitiveStateMemoryPressureStatus,
+    goalActiveStatus,
+    planningBoundedStatus,
+    decayTrackedStatus,
+    continuationStableStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -988,6 +1009,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       cognitiveLoadStatus,
       attentionFocusStatus,
       cognitiveStateMemoryPressureStatus,
+      notifications,
+    ),
+    ...registerIntentionalPlanningCommands(
+      intentionalPlanning,
+      goalActiveStatus,
+      planningBoundedStatus,
+      decayTrackedStatus,
+      continuationStableStatus,
       notifications,
     ),
   );
