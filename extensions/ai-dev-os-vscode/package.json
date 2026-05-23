@@ -249,6 +249,11 @@
     "onCommand:aiDevOs.showProviderCost",
     "onCommand:aiDevOs.showProviderConfidence",
     "onCommand:aiDevOs.compactAdaptiveProviderSummary",
+    "onCommand:aiDevOs.showExecutionPatterns",
+    "onCommand:aiDevOs.showRetryPatterns",
+    "onCommand:aiDevOs.showExecutionReuse",
+    "onCommand:aiDevOs.showProviderExecutionMemory",
+    "onCommand:aiDevOs.compactExecutionMemorySummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -502,7 +507,12 @@
       {"command": "aiDevOs.showProviderCapability", "title": "AI_DEV_OS: Show Provider Capability"},
       {"command": "aiDevOs.showProviderCost", "title": "AI_DEV_OS: Show Provider Cost"},
       {"command": "aiDevOs.showProviderConfidence", "title": "AI_DEV_OS: Show Provider Confidence"},
-      {"command": "aiDevOs.compactAdaptiveProviderSummary", "title": "AI_DEV_OS: Compact Adaptive Provider Summary"}
+      {"command": "aiDevOs.compactAdaptiveProviderSummary", "title": "AI_DEV_OS: Compact Adaptive Provider Summary"},
+      {"command": "aiDevOs.showExecutionPatterns", "title": "AI_DEV_OS: Show Execution Patterns"},
+      {"command": "aiDevOs.showRetryPatterns", "title": "AI_DEV_OS: Show Retry Patterns"},
+      {"command": "aiDevOs.showExecutionReuse", "title": "AI_DEV_OS: Show Execution Reuse"},
+      {"command": "aiDevOs.showProviderExecutionMemory", "title": "AI_DEV_OS: Show Provider Execution Memory"},
+      {"command": "aiDevOs.compactExecutionMemorySummary", "title": "AI_DEV_OS: Compact Execution Memory Summary"}
     ],
     "views": {
       "explorer": [

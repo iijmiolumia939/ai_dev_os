@@ -33,6 +33,7 @@ from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
 from ai_dev_os.execution_coordination import ExecutionCoordinationRuntime
 from ai_dev_os.execution_intent import ExecutionIntentRuntime
+from ai_dev_os.execution_memory import ExecutionMemoryRuntime
 from ai_dev_os.execution_quality import ExecutionQualityRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
@@ -1215,6 +1216,18 @@ class IntentionalPlanningAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionMemoryAuditReport:
+    execution_memory_active: bool
+    execution_pattern_score: int
+    retry_pattern_score: int
+    execution_reuse_score: int
+    provider_execution_memory_score: int
+    estimated_avoided_retry_repetition: int
+    estimated_avoided_frontier_replanning: int
+    estimated_avoided_execution_instability: int
+
+
+@dataclass(frozen=True)
 class AdaptiveProviderAuditReport:
     adaptive_provider_active: bool
     provider_capability_score: int
@@ -1315,6 +1328,7 @@ class RuntimeEnforcementAuditReport:
     intentional_planning: IntentionalPlanningAuditReport
     reflective_evaluation: ReflectiveEvaluationAuditReport
     adaptive_provider: AdaptiveProviderAuditReport
+    execution_memory: ExecutionMemoryAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3491,6 +3505,20 @@ def audit_intentional_planning() -> IntentionalPlanningAuditReport:
     )
 
 
+def audit_execution_memory() -> ExecutionMemoryAuditReport:
+    frame = ExecutionMemoryRuntime().evaluate()
+    return ExecutionMemoryAuditReport(
+        execution_memory_active=frame.execution_memory_active,
+        execution_pattern_score=frame.execution_pattern_score,
+        retry_pattern_score=frame.retry_pattern_score,
+        execution_reuse_score=frame.execution_reuse_score,
+        provider_execution_memory_score=frame.provider_execution_memory_score,
+        estimated_avoided_retry_repetition=frame.estimated_avoided_retry_repetition,
+        estimated_avoided_frontier_replanning=frame.estimated_avoided_frontier_replanning,
+        estimated_avoided_execution_instability=(frame.estimated_avoided_execution_instability),
+    )
+
+
 def audit_adaptive_provider() -> AdaptiveProviderAuditReport:
     frame = AdaptiveProviderRuntime().evaluate()
     return AdaptiveProviderAuditReport(
@@ -3849,6 +3877,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         intentional_planning=audit_intentional_planning(),
         reflective_evaluation=audit_reflective_evaluation(),
         adaptive_provider=audit_adaptive_provider(),
+        execution_memory=audit_execution_memory(),
     )
 
 

@@ -7,6 +7,7 @@ import {registerDevStrategyCommands} from './commands/devStrategyCommands';
 import {registerDevLoopCommands} from './commands/devLoopCommands';
 import {registerExecutionCoordinationCommands} from './commands/executionCoordinationCommands';
 import {registerExecutionContinuationCommands} from './commands/executionContinuationCommands';
+import {registerExecutionMemoryCommands} from './commands/executionMemoryCommands';
 import {registerExecutionIntentCommands} from './commands/executionIntentCommands';
 import {registerExecutionQualityCommands} from './commands/executionQualityCommands';
 import {registerExecutionRecoveryCommands} from './commands/executionRecoveryCommands';
@@ -42,6 +43,13 @@ import {
   LocalFirstStatusBar,
   ProviderBoundedStatusBar,
 } from './adaptiveProvider/adaptiveProvider';
+import {
+  ExecutionMemoryMonitor,
+  ExecutionMemoryStatusBar,
+  ProviderMemoryStatusBar,
+  RetryMemoryStatusBar,
+  ReuseBoundedStatusBar,
+} from './executionMemory/executionMemory';
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
@@ -414,6 +422,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const localFirstStatus = new LocalFirstStatusBar(adaptiveProvider);
   const fatigueTrackedStatus = new FatigueTrackedStatusBar(adaptiveProvider);
   const costGuardedStatus = new CostGuardedStatusBar(adaptiveProvider);
+  const executionMemory = new ExecutionMemoryMonitor();
+  const executionMemoryStatus = new ExecutionMemoryStatusBar(executionMemory);
+  const retryMemoryStatus = new RetryMemoryStatusBar(executionMemory);
+  const reuseBoundedStatus = new ReuseBoundedStatusBar(executionMemory);
+  const providerMemoryStatus = new ProviderMemoryStatusBar(executionMemory);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -602,6 +615,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   localFirstStatus.refresh();
   fatigueTrackedStatus.refresh();
   costGuardedStatus.refresh();
+  executionMemoryStatus.refresh();
+  retryMemoryStatus.refresh();
+  reuseBoundedStatus.refresh();
+  providerMemoryStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -825,6 +842,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     localFirstStatus,
     fatigueTrackedStatus,
     costGuardedStatus,
+    executionMemoryStatus,
+    retryMemoryStatus,
+    reuseBoundedStatus,
+    providerMemoryStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1075,6 +1096,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       localFirstStatus,
       fatigueTrackedStatus,
       costGuardedStatus,
+      notifications,
+    ),
+    ...registerExecutionMemoryCommands(
+      executionMemory,
+      executionMemoryStatus,
+      retryMemoryStatus,
+      reuseBoundedStatus,
+      providerMemoryStatus,
       notifications,
     ),
   );
