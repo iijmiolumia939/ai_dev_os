@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ai_dev_os.adaptive_provider_routing import AdaptiveProviderRoutingRuntime
 from ai_dev_os.cognitive_memory_pressure import CognitiveMemoryPressureRuntime
+from ai_dev_os.cognitive_state import CognitiveStateRuntime
 from ai_dev_os.consumer_rollout import (
     CompatibilityProjectionPolicy,
     ConsumerRolloutAuditPolicy,
@@ -1191,6 +1192,14 @@ class VerifiedExecutionAuditReport:
 
 
 @dataclass(frozen=True)
+class CognitiveStateAuditReport:
+    cognitive_state_active: bool
+    attention_distribution: tuple[str, ...]
+    memory_pressure: str
+    decay_status: str
+
+
+@dataclass(frozen=True)
 class RuntimeMediationAuditReport:
     runtime_mediation_active: bool
     execution_sequencer_active: bool
@@ -1263,6 +1272,7 @@ class RuntimeEnforcementAuditReport:
     execution_quality: ExecutionQualityAuditReport
     verified_execution: VerifiedExecutionAuditReport
     runtime_mediation: RuntimeMediationAuditReport
+    cognitive_state: CognitiveStateAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3415,6 +3425,16 @@ def audit_verified_execution() -> VerifiedExecutionAuditReport:
     )
 
 
+def audit_cognitive_state() -> CognitiveStateAuditReport:
+    frame = CognitiveStateRuntime().evaluate()
+    return CognitiveStateAuditReport(
+        cognitive_state_active=frame.cognitive_state_active,
+        attention_distribution=frame.attention_distribution,
+        memory_pressure=frame.memory_pressure,
+        decay_status=frame.decay_status,
+    )
+
+
 def audit_runtime_mediation() -> RuntimeMediationAuditReport:
     frame = ExecutionSequencer().mediate()
     return RuntimeMediationAuditReport(
@@ -3739,6 +3759,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_quality=audit_execution_quality(),
         verified_execution=audit_verified_execution(),
         runtime_mediation=audit_runtime_mediation(),
+        cognitive_state=audit_cognitive_state(),
     )
 
 

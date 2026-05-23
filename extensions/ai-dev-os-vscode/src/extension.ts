@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerDevPolicyCommands} from './commands/devPolicyCommands';
 import {registerDevStrategyCommands} from './commands/devStrategyCommands';
@@ -34,6 +35,12 @@ import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCom
 import {GovernanceHealthMonitor, GovernanceStatusBar} from './governance/health';
 import {GovernanceTrendMonitor, GovernanceTrendStatusBar} from './governance/trends';
 import {GovernanceCoreMonitor, GovernanceCoreStatusBar} from './governanceCore/governanceCore';
+import {
+  AttentionFocusStatusBar,
+  CognitiveLoadStatusBar,
+  CognitiveStateMemoryPressureStatusBar,
+  CognitiveStateMonitor,
+} from './cognitiveState/cognitiveState';
 import {IncrementalContextMonitor, IncrementalContextStatusBar} from './incrementalContext/incrementalContext';
 import {RateLimitedNotifications} from './notifications/rateLimitedNotifications';
 import {CompactReportingStatusBar, OutputCompressionMonitor} from './outputCompression/outputCompression';
@@ -362,6 +369,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const executionBoundedStatus = new ExecutionBoundedStatusBar(runtimeMediation);
   const retryGovernedStatus = new RetryGovernedStatusBar(runtimeMediation);
   const cooldownStableStatus = new CooldownStableStatusBar(runtimeMediation);
+  const cognitiveState = new CognitiveStateMonitor();
+  const cognitiveLoadStatus = new CognitiveLoadStatusBar(cognitiveState);
+  const attentionFocusStatus = new AttentionFocusStatusBar(cognitiveState);
+  const cognitiveStateMemoryPressureStatus = new CognitiveStateMemoryPressureStatusBar(
+    cognitiveState,
+  );
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -535,6 +548,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   executionBoundedStatus.refresh();
   retryGovernedStatus.refresh();
   cooldownStableStatus.refresh();
+  cognitiveLoadStatus.refresh();
+  attentionFocusStatus.refresh();
+  cognitiveStateMemoryPressureStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -743,6 +759,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     executionBoundedStatus,
     retryGovernedStatus,
     cooldownStableStatus,
+    cognitiveLoadStatus,
+    attentionFocusStatus,
+    cognitiveStateMemoryPressureStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -962,6 +981,13 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       executionBoundedStatus,
       retryGovernedStatus,
       cooldownStableStatus,
+      notifications,
+    ),
+    ...registerCognitiveStateCommands(
+      cognitiveState,
+      cognitiveLoadStatus,
+      attentionFocusStatus,
+      cognitiveStateMemoryPressureStatus,
       notifications,
     ),
   );

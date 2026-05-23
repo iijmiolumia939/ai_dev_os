@@ -231,6 +231,10 @@
     "onCommand:aiDevOs.showRetryGovernance",
     "onCommand:aiDevOs.showCooldownGovernance",
     "onCommand:aiDevOs.compactRuntimeMediationSummary",
+    "onCommand:aiDevOs.showCognitiveState",
+    "onCommand:aiDevOs.showAttentionFocus",
+    "onCommand:aiDevOs.showCognitiveMemoryPressure",
+    "onCommand:aiDevOs.compactCognitiveState",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -466,7 +470,11 @@
       {"command": "aiDevOs.showExecutionQueue", "title": "AI_DEV_OS: Show Execution Queue"},
       {"command": "aiDevOs.showRetryGovernance", "title": "AI_DEV_OS: Show Retry Governance"},
       {"command": "aiDevOs.showCooldownGovernance", "title": "AI_DEV_OS: Show Cooldown Governance"},
-      {"command": "aiDevOs.compactRuntimeMediationSummary", "title": "AI_DEV_OS: Compact Runtime Mediation Summary"}
+      {"command": "aiDevOs.compactRuntimeMediationSummary", "title": "AI_DEV_OS: Compact Runtime Mediation Summary"},
+      {"command": "aiDevOs.showCognitiveState", "title": "AI_DEV_OS: Show Cognitive State"},
+      {"command": "aiDevOs.showAttentionFocus", "title": "AI_DEV_OS: Show Attention Focus"},
+      {"command": "aiDevOs.showCognitiveMemoryPressure", "title": "AI_DEV_OS: Show Cognitive Memory Pressure"},
+      {"command": "aiDevOs.compactCognitiveState", "title": "AI_DEV_OS: Compact Cognitive State"}
     ],
     "views": {
       "explorer": [
