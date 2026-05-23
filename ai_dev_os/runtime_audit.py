@@ -29,6 +29,7 @@ from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.execution_continuation import ExecutionContinuationRuntime
+from ai_dev_os.execution_coordination import ExecutionCoordinationRuntime
 from ai_dev_os.execution_recovery import ExecutionRecoveryRuntime
 from ai_dev_os.execution_saturation import ExecutionSaturationRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
@@ -1116,6 +1117,17 @@ class ExecutionRecoveryAuditReport:
 
 
 @dataclass(frozen=True)
+class ExecutionCoordinationAuditReport:
+    execution_coordination_active: bool
+    coordination_conflict_active: bool
+    coordination_priority_active: bool
+    coordination_termination_active: bool
+    estimated_avoided_runtime_conflicts: int
+    estimated_avoided_recursive_coordination: int
+    estimated_avoided_runtime_oscillation: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1169,6 +1181,7 @@ class RuntimeEnforcementAuditReport:
     execution_continuation: ExecutionContinuationAuditReport
     execution_saturation: ExecutionSaturationAuditReport
     execution_recovery: ExecutionRecoveryAuditReport
+    execution_coordination: ExecutionCoordinationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3239,6 +3252,19 @@ def audit_execution_recovery() -> ExecutionRecoveryAuditReport:
     )
 
 
+def audit_execution_coordination() -> ExecutionCoordinationAuditReport:
+    frame = ExecutionCoordinationRuntime().evaluate()
+    return ExecutionCoordinationAuditReport(
+        execution_coordination_active=frame.execution_coordination_active,
+        coordination_conflict_active=frame.coordination_conflict_active,
+        coordination_priority_active=frame.coordination_priority_active,
+        coordination_termination_active=frame.coordination_termination_active,
+        estimated_avoided_runtime_conflicts=frame.estimated_avoided_runtime_conflicts,
+        estimated_avoided_recursive_coordination=(frame.estimated_avoided_recursive_coordination),
+        estimated_avoided_runtime_oscillation=(frame.estimated_avoided_runtime_oscillation),
+    )
+
+
 def audit_local_provider() -> LocalProviderAuditReport:
     frame = LocalProviderRuntime().evaluate()
     return LocalProviderAuditReport(
@@ -3542,6 +3568,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         execution_continuation=audit_execution_continuation(),
         execution_saturation=audit_execution_saturation(),
         execution_recovery=audit_execution_recovery(),
+        execution_coordination=audit_execution_coordination(),
     )
 
 

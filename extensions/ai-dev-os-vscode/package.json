@@ -196,6 +196,11 @@
     "onCommand:aiDevOs.showCheckpointIntegrity",
     "onCommand:aiDevOs.resumeSafeRecovery",
     "onCommand:aiDevOs.compactRecoverySummary",
+    "onCommand:aiDevOs.showRuntimeCoordination",
+    "onCommand:aiDevOs.showCoordinationConflicts",
+    "onCommand:aiDevOs.showRuntimePriorities",
+    "onCommand:aiDevOs.showCoordinationCooldown",
+    "onCommand:aiDevOs.compactCoordinationSummary",
     "onView:aiDevOsGovernanceDashboard",
     "onView:aiDevOsGovernanceTrends",
     "onView:aiDevOsRuntimeGraph",
@@ -396,7 +401,12 @@
       {"command": "aiDevOs.showRecoveryCooldown", "title": "AI_DEV_OS: Show Recovery Cooldown"},
       {"command": "aiDevOs.showCheckpointIntegrity", "title": "AI_DEV_OS: Show Checkpoint Integrity"},
       {"command": "aiDevOs.resumeSafeRecovery", "title": "AI_DEV_OS: Resume Safe Recovery"},
-      {"command": "aiDevOs.compactRecoverySummary", "title": "AI_DEV_OS: Compact Recovery Summary"}
+      {"command": "aiDevOs.compactRecoverySummary", "title": "AI_DEV_OS: Compact Recovery Summary"},
+      {"command": "aiDevOs.showRuntimeCoordination", "title": "AI_DEV_OS: Show Runtime Coordination"},
+      {"command": "aiDevOs.showCoordinationConflicts", "title": "AI_DEV_OS: Show Coordination Conflicts"},
+      {"command": "aiDevOs.showRuntimePriorities", "title": "AI_DEV_OS: Show Runtime Priorities"},
+      {"command": "aiDevOs.showCoordinationCooldown", "title": "AI_DEV_OS: Show Coordination Cooldown"},
+      {"command": "aiDevOs.compactCoordinationSummary", "title": "AI_DEV_OS: Compact Coordination Summary"}
     ],
     "views": {
       "explorer": [
