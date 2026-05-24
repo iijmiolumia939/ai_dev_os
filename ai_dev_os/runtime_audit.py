@@ -58,6 +58,7 @@ from ai_dev_os.governance_trends.trend_window import (
 from ai_dev_os.incremental_context import IncrementalContextRuntime
 from ai_dev_os.intentional_planning import IntentionalPlanningRuntime
 from ai_dev_os.main_merge_qualification import MainMergeQualificationRuntime
+from ai_dev_os.main_merge_rehearsal import MainMergeRehearsalRuntime
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -1315,6 +1316,19 @@ class MainMergeQualificationAuditReport:
 
 
 @dataclass(frozen=True)
+class MainMergeRehearsalAuditReport:
+    main_merge_rehearsal_active: bool
+    protected_branch_readiness_score: int
+    merge_conflict_visibility_score: int
+    rollback_survivability_score: int
+    post_merge_runtime_score: int
+    ci_readiness_score: int
+    estimated_avoided_merge_instability: int
+    estimated_avoided_post_merge_regression: int
+    estimated_avoided_frontier_recovery: int
+
+
+@dataclass(frozen=True)
 class RuntimeOrchestratorAuditReport:
     runtime_orchestrator_active: bool
     orchestration_schedule_score: int
@@ -1462,6 +1476,7 @@ class RuntimeEnforcementAuditReport:
     soak_stability: SoakStabilityAuditReport
     provider_cost_stabilization: ProviderCostStabilizationAuditReport
     main_merge_qualification: MainMergeQualificationAuditReport
+    main_merge_rehearsal: MainMergeRehearsalAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3743,6 +3758,21 @@ def audit_main_merge_qualification() -> MainMergeQualificationAuditReport:
     )
 
 
+def audit_main_merge_rehearsal() -> MainMergeRehearsalAuditReport:
+    frame = MainMergeRehearsalRuntime().evaluate()
+    return MainMergeRehearsalAuditReport(
+        main_merge_rehearsal_active=frame.main_merge_rehearsal_active,
+        protected_branch_readiness_score=frame.protected_branch_readiness_score,
+        merge_conflict_visibility_score=frame.merge_conflict_visibility_score,
+        rollback_survivability_score=frame.rollback_survivability_score,
+        post_merge_runtime_score=frame.post_merge_runtime_score,
+        ci_readiness_score=frame.ci_readiness_score,
+        estimated_avoided_merge_instability=frame.estimated_avoided_merge_instability,
+        estimated_avoided_post_merge_regression=frame.estimated_avoided_post_merge_regression,
+        estimated_avoided_frontier_recovery=frame.estimated_avoided_frontier_recovery,
+    )
+
+
 def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     frame = RuntimeOrchestrator().evaluate()
     return RuntimeOrchestratorAuditReport(
@@ -4158,6 +4188,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         soak_stability=audit_soak_stability(),
         provider_cost_stabilization=audit_provider_cost_stabilization(),
         main_merge_qualification=audit_main_merge_qualification(),
+        main_merge_rehearsal=audit_main_merge_rehearsal(),
     )
 
 

@@ -4,6 +4,7 @@ import {registerCognitiveStateCommands} from './commands/cognitiveStateCommands'
 import {registerContinuousRuntimeAuditCommands} from './commands/continuousRuntimeAuditCommands';
 import {registerDevExecutionCommands} from './commands/devExecutionCommands';
 import {registerFailureInjectionCommands} from './commands/failureInjectionCommands';
+import {registerMainMergeRehearsalCommands} from './commands/mainMergeRehearsalCommands';
 import {registerMainMergeQualificationCommands} from './commands/mainMergeQualificationCommands';
 import {registerProviderCostStabilizationCommands} from './commands/providerCostStabilizationCommands';
 import {registerSoakStabilityCommands} from './commands/soakStabilityCommands';
@@ -168,6 +169,13 @@ import {
   QualificationValidationStableStatusBar,
   RiskBoundedStatusBar,
 } from './mainMergeQualification/mainMergeQualification';
+import {
+  CIReadyStatusBar,
+  MainMergeRehearsalMonitor,
+  MergeRehearsedStatusBar,
+  PostMergeSafeStatusBar,
+  RollbackReadyStatusBar,
+} from './mainMergeRehearsal/mainMergeRehearsal';
 import {
   EscalationGuardedStatusBar,
   GovernanceStablePolicyStatusBar,
@@ -544,6 +552,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const governanceCompleteStatus = new GovernanceCompleteStatusBar(mainMergeQualification);
   const validationStableQualificationStatus = new QualificationValidationStableStatusBar(mainMergeQualification);
   const riskBoundedStatus = new RiskBoundedStatusBar(mainMergeQualification);
+  const mainMergeRehearsal = new MainMergeRehearsalMonitor();
+  const mergeRehearsedStatus = new MergeRehearsedStatusBar(mainMergeRehearsal);
+  const rollbackReadyRehearsalStatus = new RollbackReadyStatusBar(mainMergeRehearsal);
+  const postMergeSafeStatus = new PostMergeSafeStatusBar(mainMergeRehearsal);
+  const ciReadyStatus = new CIReadyStatusBar(mainMergeRehearsal);
   await persistence.ensure();
   const restored = await persistence.read();
   const governanceState = await governance.validate();
@@ -772,6 +785,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   governanceCompleteStatus.refresh();
   validationStableQualificationStatus.refresh();
   riskBoundedStatus.refresh();
+  mergeRehearsedStatus.refresh();
+  rollbackReadyRehearsalStatus.refresh();
+  postMergeSafeStatus.refresh();
+  ciReadyStatus.refresh();
   if (rolloutState.migrationFriction === 'HIGH' || rolloutState.migrationFriction === 'BLOCKED') {
     await notifications.warn(
       'startup-rollout-friction-warning',
@@ -1035,6 +1052,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     governanceCompleteStatus,
     validationStableQualificationStatus,
     riskBoundedStatus,
+    mergeRehearsedStatus,
+    rollbackReadyRehearsalStatus,
+    postMergeSafeStatus,
+    ciReadyStatus,
     ...registerGovernanceHealthCommands(
       governanceHealth,
       governanceStatus,
@@ -1365,6 +1386,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       governanceCompleteStatus,
       validationStableQualificationStatus,
       riskBoundedStatus,
+      notifications,
+    ),
+    ...registerMainMergeRehearsalCommands(
+      mainMergeRehearsal,
+      mergeRehearsedStatus,
+      rollbackReadyRehearsalStatus,
+      postMergeSafeStatus,
+      ciReadyStatus,
       notifications,
     ),
   );
