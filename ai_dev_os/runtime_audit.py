@@ -148,6 +148,7 @@ from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, Sprint
 from ai_dev_os.soak_stability import SoakStabilityRuntime
 from ai_dev_os.sprint_loop import SprintLoopRuntime
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
+from ai_dev_os.streaming_cognition import StreamingCognitionRuntime
 from ai_dev_os.subagent_execution import SubagentExecutionRuntime
 from ai_dev_os.verified_execution import VerifiedExecutionRuntime
 from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
@@ -1402,6 +1403,19 @@ class RuntimeMediationAuditReport:
 
 
 @dataclass(frozen=True)
+class StreamingCognitionAuditReport:
+    streaming_cognition_active: bool
+    streaming_latency_score: int
+    interruption_recovery_score: int
+    provider_streaming_score: int
+    continuation_streaming_score: int
+    bounded_cognition_score: int
+    estimated_avoided_streaming_instability: int
+    estimated_avoided_provider_interruptions: int
+    estimated_avoided_frontier_streaming: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1465,6 +1479,7 @@ class RuntimeEnforcementAuditReport:
     cognitive_state: CognitiveStateAuditReport
     intentional_planning: IntentionalPlanningAuditReport
     reflective_evaluation: ReflectiveEvaluationAuditReport
+    streaming_cognition: StreamingCognitionAuditReport
     adaptive_provider: AdaptiveProviderAuditReport
     execution_memory: ExecutionMemoryAuditReport
     runtime_policy: RuntimePolicyAuditReport
@@ -3791,6 +3806,21 @@ def audit_runtime_orchestrator() -> RuntimeOrchestratorAuditReport:
     )
 
 
+def audit_streaming_cognition() -> StreamingCognitionAuditReport:
+    frame = StreamingCognitionRuntime().evaluate()
+    return StreamingCognitionAuditReport(
+        streaming_cognition_active=frame.streaming_cognition_active,
+        streaming_latency_score=frame.streaming_latency_score,
+        interruption_recovery_score=frame.interruption_recovery_score,
+        provider_streaming_score=frame.provider_streaming_score,
+        continuation_streaming_score=frame.continuation_streaming_score,
+        bounded_cognition_score=frame.bounded_cognition_score,
+        estimated_avoided_streaming_instability=frame.estimated_avoided_streaming_instability,
+        estimated_avoided_provider_interruptions=frame.estimated_avoided_provider_interruptions,
+        estimated_avoided_frontier_streaming=frame.estimated_avoided_frontier_streaming,
+    )
+
+
 def audit_runtime_policy() -> RuntimePolicyAuditReport:
     frame = RuntimePolicyEngine().evaluate()
     return RuntimePolicyAuditReport(
@@ -4177,6 +4207,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         cognitive_state=audit_cognitive_state(),
         intentional_planning=audit_intentional_planning(),
         reflective_evaluation=audit_reflective_evaluation(),
+        streaming_cognition=audit_streaming_cognition(),
         adaptive_provider=audit_adaptive_provider(),
         execution_memory=audit_execution_memory(),
         runtime_policy=audit_runtime_policy(),

@@ -45,6 +45,7 @@ import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintLoopCommands} from './commands/sprintLoopCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
 import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
+import {registerStreamingCognitionCommands} from './commands/streamingCognitionCommands';
 import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCommands';
 import {
   AdaptiveProviderMonitor,
@@ -317,6 +318,13 @@ import {
   SwarmBlockedStatusBar,
 } from './subagentExecution/subagentExecution';
 import {
+  ContinuationStreamingStatusBar,
+  InterruptionSafeStatusBar,
+  ProviderStreamingStatusBar,
+  StreamingActiveStatusBar,
+  StreamingCognitionMonitor,
+} from './streamingCognition/streamingCognition';
+import {
   CommandGroundedStatusBar,
   GitEvidenceSafeStatusBar,
   PytestVerifiedStatusBar,
@@ -471,6 +479,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const localDelegationStatus = new LocalDelegationStatusBar(subagentExecution);
   const fallbackReadyStatus = new FallbackReadyStatusBar(subagentExecution);
   const swarmBlockedStatus = new SwarmBlockedStatusBar(subagentExecution);
+  const streamingCognition = new StreamingCognitionMonitor();
+  const streamingActiveStatus = new StreamingActiveStatusBar(streamingCognition);
+  const interruptionSafeStatus = new InterruptionSafeStatusBar(streamingCognition);
+  const providerStreamingStatus = new ProviderStreamingStatusBar(streamingCognition);
+  const continuationStreamingStatus = new ContinuationStreamingStatusBar(streamingCognition);
   const verifiedExecution = new VerifiedExecutionMonitor();
   const verifiedExecutionStatus = new VerifiedExecutionStatusBar(verifiedExecution);
   const commandGroundedStatus = new CommandGroundedStatusBar(verifiedExecution);
@@ -722,6 +735,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   localDelegationStatus.refresh();
   fallbackReadyStatus.refresh();
   swarmBlockedStatus.refresh();
+  const streamingState = streamingActiveStatus.refresh();
+  interruptionSafeStatus.refresh();
+  providerStreamingStatus.refresh();
+  continuationStreamingStatus.refresh();
   verifiedExecutionStatus.refresh();
   commandGroundedStatus.refresh();
   pytestVerifiedStatus.refresh();
@@ -868,6 +885,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     await notifications.warn(
       'startup-development-execution-pressure-warning',
       'AI_DEV_OS development execution pressure is high. Compact execution summary before continuing.',
+    );
+  }
+  if (streamingState.streamingPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-streaming-cognition-pressure-warning',
+      'AI_DEV_OS streaming cognition pressure is high. Compact streaming summary before realtime continuation.',
     );
   }
   if (!subagentState.swarmBlocked || !subagentState.fallbackReady) {
@@ -1259,6 +1282,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       localDelegationStatus,
       fallbackReadyStatus,
       swarmBlockedStatus,
+      notifications,
+    ),
+    ...registerStreamingCognitionCommands(
+      streamingCognition,
+      streamingActiveStatus,
+      interruptionSafeStatus,
+      providerStreamingStatus,
+      continuationStreamingStatus,
       notifications,
     ),
     ...registerVerifiedExecutionCommands(
