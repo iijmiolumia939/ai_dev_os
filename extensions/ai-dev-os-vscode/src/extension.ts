@@ -44,6 +44,7 @@ import {registerRuntimeSimplificationCommands} from './commands/runtimeSimplific
 import {registerSessionCommands} from './commands/sessionCommands';
 import {registerSprintLoopCommands} from './commands/sprintLoopCommands';
 import {registerSprintMemoryCommands} from './commands/sprintMemoryCommands';
+import {registerSprintContinuationCommands} from './commands/sprintContinuationCommands';
 import {registerSubagentExecutionCommands} from './commands/subagentExecutionCommands';
 import {registerStreamingCognitionCommands} from './commands/streamingCognitionCommands';
 import {registerVerifiedExecutionCommands} from './commands/verifiedExecutionCommands';
@@ -311,6 +312,13 @@ import {
   SprintMemoryStatusBar,
 } from './sprintMemory/sprintMemory';
 import {
+  BacklogStableStatusBar,
+  ContinuationReadyStatusBar,
+  DependencyStableStatusBar,
+  RegressionVisibleStatusBar,
+  SprintContinuationMonitor,
+} from './sprintContinuation/sprintContinuation';
+import {
   FallbackReadyStatusBar,
   LocalDelegationStatusBar,
   SubagentActiveStatusBar,
@@ -419,6 +427,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const memoryPressureStatus = new MemoryPressureStatusBar(sprintMemory);
   const patternStableStatus = new PatternStableStatusBar(sprintMemory);
   const memoryEvictionStatus = new MemoryEvictionStatusBar(sprintMemory);
+  const sprintContinuation = new SprintContinuationMonitor();
+  const continuationReadyStatus = new ContinuationReadyStatusBar(sprintContinuation);
+  const backlogStableStatus = new BacklogStableStatusBar(sprintContinuation);
+  const dependencyStableStatus = new DependencyStableStatusBar(sprintContinuation);
+  const regressionVisibleStatus = new RegressionVisibleStatusBar(sprintContinuation);
   const devStrategy = new DevStrategyMonitor();
   const strategyStableStatus = new StrategyStableStatusBar(devStrategy);
   const costPressureStatus = new CostPressureStatusBar(devStrategy);
@@ -687,6 +700,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   memoryPressureStatus.refresh();
   patternStableStatus.refresh();
   memoryEvictionStatus.refresh();
+  const sprintContinuationState = continuationReadyStatus.refresh();
+  backlogStableStatus.refresh();
+  dependencyStableStatus.refresh();
+  regressionVisibleStatus.refresh();
   const strategyState = strategyStableStatus.refresh();
   costPressureStatus.refresh();
   providerEfficiencyStatus.refresh();
@@ -866,6 +883,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       'AI_DEV_OS sprint memory pressure is high. Cleanup stale sprint memory before continuing.',
     );
   }
+  if (sprintContinuationState.continuationPressure === 'HIGH') {
+    await notifications.warn(
+      'startup-sprint-continuation-pressure-warning',
+      'AI_DEV_OS sprint continuation pressure is high. Compact continuation summary before chaining.',
+    );
+  }
   if (strategyState.roadmapPressure === 'HIGH' || strategyState.costPressure === 'HIGH') {
     await notifications.warn(
       'startup-development-strategy-pressure-warning',
@@ -964,6 +987,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     memoryPressureStatus,
     patternStableStatus,
     memoryEvictionStatus,
+    continuationReadyStatus,
+    backlogStableStatus,
+    dependencyStableStatus,
+    regressionVisibleStatus,
     strategyStableStatus,
     costPressureStatus,
     providerEfficiencyStatus,
@@ -1186,6 +1213,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       memoryPressureStatus,
       patternStableStatus,
       memoryEvictionStatus,
+      notifications,
+    ),
+    ...registerSprintContinuationCommands(
+      sprintContinuation,
+      continuationReadyStatus,
+      backlogStableStatus,
+      dependencyStableStatus,
+      regressionVisibleStatus,
       notifications,
     ),
     ...registerDevStrategyCommands(

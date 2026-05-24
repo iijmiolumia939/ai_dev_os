@@ -146,6 +146,7 @@ from ai_dev_os.session_orchestrator.session_decision import SessionDecisionPolic
 from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, SprintClosePolicy
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
 from ai_dev_os.soak_stability import SoakStabilityRuntime
+from ai_dev_os.sprint_continuation import SprintContinuationRuntime
 from ai_dev_os.sprint_loop import SprintLoopRuntime
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.streaming_cognition import StreamingCognitionRuntime
@@ -1416,6 +1417,19 @@ class StreamingCognitionAuditReport:
 
 
 @dataclass(frozen=True)
+class SprintContinuationAuditReport:
+    sprint_continuation_active: bool
+    continuation_selection_score: int
+    backlog_continuation_score: int
+    dependency_continuation_score: int
+    regression_continuation_score: int
+    operational_carryover_score: int
+    estimated_avoided_continuation_drift: int
+    estimated_avoided_recursive_sprinting: int
+    estimated_avoided_frontier_planning: int
+
+
+@dataclass(frozen=True)
 class RuntimeEnforcementAuditReport:
     activation: RuntimeActivationReport
     routing: RoutingAuditReport
@@ -1492,6 +1506,7 @@ class RuntimeEnforcementAuditReport:
     provider_cost_stabilization: ProviderCostStabilizationAuditReport
     main_merge_qualification: MainMergeQualificationAuditReport
     main_merge_rehearsal: MainMergeRehearsalAuditReport
+    sprint_continuation: SprintContinuationAuditReport
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -3821,6 +3836,21 @@ def audit_streaming_cognition() -> StreamingCognitionAuditReport:
     )
 
 
+def audit_sprint_continuation() -> SprintContinuationAuditReport:
+    frame = SprintContinuationRuntime().evaluate()
+    return SprintContinuationAuditReport(
+        sprint_continuation_active=frame.sprint_continuation_active,
+        continuation_selection_score=frame.continuation_selection_score,
+        backlog_continuation_score=frame.backlog_continuation_score,
+        dependency_continuation_score=frame.dependency_continuation_score,
+        regression_continuation_score=frame.regression_continuation_score,
+        operational_carryover_score=frame.operational_carryover_score,
+        estimated_avoided_continuation_drift=frame.estimated_avoided_continuation_drift,
+        estimated_avoided_recursive_sprinting=frame.estimated_avoided_recursive_sprinting,
+        estimated_avoided_frontier_planning=frame.estimated_avoided_frontier_planning,
+    )
+
+
 def audit_runtime_policy() -> RuntimePolicyAuditReport:
     frame = RuntimePolicyEngine().evaluate()
     return RuntimePolicyAuditReport(
@@ -4220,6 +4250,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         provider_cost_stabilization=audit_provider_cost_stabilization(),
         main_merge_qualification=audit_main_merge_qualification(),
         main_merge_rehearsal=audit_main_merge_rehearsal(),
+        sprint_continuation=audit_sprint_continuation(),
     )
 
 
