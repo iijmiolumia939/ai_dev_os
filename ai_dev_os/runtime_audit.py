@@ -59,6 +59,7 @@ from ai_dev_os.incremental_context import IncrementalContextRuntime
 from ai_dev_os.intentional_planning import IntentionalPlanningRuntime
 from ai_dev_os.main_merge_qualification import MainMergeQualificationRuntime
 from ai_dev_os.main_merge_rehearsal import MainMergeRehearsalRuntime
+from ai_dev_os.observation_review import ObservationReviewRuntime, RuntimeReadinessFrame
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -1504,6 +1505,7 @@ class RuntimeEnforcementAuditReport:
     failure_injection: FailureInjectionAuditReport
     soak_stability: SoakStabilityAuditReport
     provider_cost_stabilization: ProviderCostStabilizationAuditReport
+    observation_review: RuntimeReadinessFrame
     main_merge_qualification: MainMergeQualificationAuditReport
     main_merge_rehearsal: MainMergeRehearsalAuditReport
     sprint_continuation: SprintContinuationAuditReport
@@ -3788,6 +3790,10 @@ def audit_main_merge_qualification() -> MainMergeQualificationAuditReport:
     )
 
 
+def audit_observation_review() -> RuntimeReadinessFrame:
+    return ObservationReviewRuntime().evaluate()
+
+
 def audit_main_merge_rehearsal() -> MainMergeRehearsalAuditReport:
     frame = MainMergeRehearsalRuntime().evaluate()
     return MainMergeRehearsalAuditReport(
@@ -4248,6 +4254,7 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         failure_injection=audit_failure_injection(),
         soak_stability=audit_soak_stability(),
         provider_cost_stabilization=audit_provider_cost_stabilization(),
+        observation_review=audit_observation_review(),
         main_merge_qualification=audit_main_merge_qualification(),
         main_merge_rehearsal=audit_main_merge_rehearsal(),
         sprint_continuation=audit_sprint_continuation(),
