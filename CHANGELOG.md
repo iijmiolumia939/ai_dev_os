@@ -2,11 +2,17 @@
 
 ## 0.1.0-alpha.3
 
+- Added canonical bounded deterministic `validation_evidence` runtime normalization for pytest, ruff, audit, and diff-check outcomes with oldest-first evidence history eviction.
+- Added canonical bounded deterministic `governance_trace` runtime aggregation with ordered root-cause resolution, bounded trace-chain projection, and oldest-first trace history eviction.
+- Added canonical bounded deterministic `GovernanceHealthRuntime` with `HEALTHY` / `DEGRADED` / `UNHEALTHY` mapping, oldest-first health history eviction, and `runtime_audit` projection.
+- Added bounded deterministic `repository_readiness` runtime aggregation with runtime audit projection and oldest-first repository history eviction.
 - Added deterministic release readiness audit for 0.1.0-alpha.3 prerelease rollout.
 - Added consumer rollout docs for AITuber, cat simulator, standalone governance repos, and experimental repos.
 - Added compatibility matrix and runtime governance freeze docs with explicit alpha boundary language.
 - Added CLI commands for `release-readiness`, `consumer-rollout-check`, `extension-readiness`, and `governance-freeze-status` with `--json` and `--copy-ready` support.
 - Added runtime audit `release_readiness` section for bounded release confirmation and rollout confusion reduction estimates.
+- Added bounded deterministic `operator_review` runtime aggregation with runtime audit projection and oldest-first review history eviction.
+- Added bounded deterministic `merge_readiness` runtime aggregation with runtime audit projection and oldest-first merge history eviction.
 - Prepared VSCode extension release docs and package metadata for prerelease VSIX verification.
 - Maintained human-confirmed rollout, local-only persistence, no hidden automation, and rollback-safe migration boundaries.
 

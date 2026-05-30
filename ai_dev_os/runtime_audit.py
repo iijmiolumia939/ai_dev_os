@@ -27,11 +27,13 @@ from ai_dev_os.dev_loop import SprintDevLoopRuntime
 from ai_dev_os.dev_policy import DevelopmentPolicyRuntime
 from ai_dev_os.dev_strategy import DevelopmentStrategyRuntime
 from ai_dev_os.governance_core import GovernanceCorePolicy
+from ai_dev_os.governance_health import GovernanceHealthRuntime, GovernanceHealthRuntimeFrame
 from ai_dev_os.governance_health.governance_dashboard import GovernanceDashboardPolicy
 from ai_dev_os.governance_health.health_score import GovernanceHealthPolicy
 from ai_dev_os.governance_health.pressure_aggregation import GovernancePressurePolicy
 from ai_dev_os.governance_health.risk_aggregation import GovernanceRiskPolicy
 from ai_dev_os.governance_health.stability_assessment import GovernanceStabilityPolicy
+from ai_dev_os.governance_trace import GovernanceTraceFrame, GovernanceTraceRuntime
 from ai_dev_os.governance_trends.dashboard_delta import GovernanceDashboardDeltaPolicy
 from ai_dev_os.governance_trends.drift_detection import GovernanceDriftPolicy
 from ai_dev_os.governance_trends.regression_detection import GovernanceRegressionPolicy
@@ -41,6 +43,9 @@ from ai_dev_os.governance_trends.trend_window import (
     GovernanceTrendWindowPolicy,
 )
 from ai_dev_os.incremental_context import IncrementalContextRuntime
+from ai_dev_os.merge_readiness import MergeReadinessFrame, MergeReadinessRuntime
+from ai_dev_os.observation_review import ObservationReviewRuntime, RuntimeReadinessFrame
+from ai_dev_os.operator_review import OperatorReviewFrame, OperatorReviewRuntime
 from ai_dev_os.output_compression import (
     CompactCompletionInput,
     CompactCompletionPolicy,
@@ -91,6 +96,10 @@ from ai_dev_os.repository_intelligence.git_collector import GitCollector
 from ai_dev_os.repository_intelligence.runtime_discovery import RuntimeDiscoveryPolicy
 from ai_dev_os.repository_intelligence.sprint_metadata import SprintMetadataPolicy
 from ai_dev_os.repository_intelligence.validation_collector import ValidationCollectorPolicy
+from ai_dev_os.repository_readiness import (
+    RepositoryReadinessFrame,
+    RepositoryReadinessRuntime,
+)
 from ai_dev_os.retrieval.memory_tree import MemoryTreeNode
 from ai_dev_os.retrieval.retrieval_scaling import RetrievalScalingFrame, scale_retrieval
 from ai_dev_os.retrieval_budget import RetrievalBudgetRuntime, RuntimeDependency
@@ -120,6 +129,7 @@ from ai_dev_os.session_orchestrator.sprint_close import SprintCloseInput, Sprint
 from ai_dev_os.session_orchestrator.sprint_start import SprintStartInput, SprintStartPolicy
 from ai_dev_os.sprint_memory import SprintMemoryRuntime
 from ai_dev_os.subagent_execution import SubagentExecutionRuntime
+from ai_dev_os.validation_evidence import ValidationEvidenceFrame, ValidationEvidenceRuntime
 from ai_dev_os.vscode_integration.clipboard_runtime import ClipboardRuntimePolicy
 from ai_dev_os.vscode_integration.handoff_notifications import HandoffNotificationPolicy
 from ai_dev_os.vscode_integration.ide_state import IDEStatePolicy
@@ -156,6 +166,16 @@ from governance.model_tiers import ModelTier, route_tier
 from integrations.observability import IntegrationUsageSample, aggregate_usage
 from retrieval.prune_context import estimate_tokens, prune
 from telemetry.dashboard import snapshot
+
+
+@dataclass(frozen=True)
+class ReleaseCheckInputs:
+    pytest_passed: bool | None = None
+    ruff_passed: bool | None = None
+    audit_passed: bool | None = None
+    diff_check_passed: bool | None = None
+    unresolved_validation_issues: int = 0
+    unresolved_audit_issues: int = 0
 
 
 @dataclass(frozen=True)
@@ -425,6 +445,7 @@ class GovernanceHealthAuditReport:
     replay_pressure: str
     reasoning_scope_active: bool
     premium_pressure: str
+    governance_health: GovernanceHealthRuntimeFrame
 
 
 @dataclass(frozen=True)
@@ -960,6 +981,12 @@ class RuntimeEnforcementAuditReport:
     sprint_memory: SprintMemoryAuditReport
     dev_strategy: DevStrategyAuditReport
     dev_policy: DevPolicyAuditReport
+    observation_review: RuntimeReadinessFrame
+    operator_review: OperatorReviewFrame
+    merge_readiness: MergeReadinessFrame
+    validation_evidence: ValidationEvidenceFrame
+    repository_readiness: RepositoryReadinessFrame
+    governance_trace: GovernanceTraceFrame
 
 
 def audit_runtime_activation() -> RuntimeActivationReport:
@@ -2012,7 +2039,55 @@ def audit_persistence_governance() -> PersistenceGovernanceAuditReport:
     )
 
 
-def audit_governance_health() -> GovernanceHealthAuditReport:
+def audit_governance_health_runtime(
+    *,
+    observation_review: RuntimeReadinessFrame | None = None,
+    operator_review: OperatorReviewFrame | None = None,
+    merge_readiness: MergeReadinessFrame | None = None,
+    release_check_inputs: ReleaseCheckInputs | None = None,
+    validation_evidence: ValidationEvidenceFrame | None = None,
+    repository_readiness: RepositoryReadinessFrame | None = None,
+    governance_trace: GovernanceTraceFrame | None = None,
+) -> GovernanceHealthRuntimeFrame:
+    source_observation = observation_review or audit_observation_review()
+    source_operator = operator_review or audit_operator_review(
+        observation_review=source_observation
+    )
+    source_merge = merge_readiness or audit_merge_readiness(
+        observation_review=source_observation,
+        operator_review=source_operator,
+    )
+    source_validation_evidence = validation_evidence or audit_validation_evidence(
+        release_check_inputs=release_check_inputs
+    )
+    source_repository = repository_readiness or audit_repository_readiness(
+        merge_readiness=source_merge,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=source_validation_evidence,
+    )
+    source_trace = governance_trace or audit_governance_trace(
+        observation_review=source_observation,
+        operator_review=source_operator,
+        merge_readiness=source_merge,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=source_validation_evidence,
+        repository_readiness=source_repository,
+    )
+    return GovernanceHealthRuntime().evaluate(
+        observation_review=source_observation,
+        operator_review=source_operator,
+        merge_readiness=source_merge,
+        validation_evidence=source_validation_evidence,
+        repository_readiness=source_repository,
+        governance_trace=source_trace,
+    )
+
+
+def audit_governance_health(
+    *,
+    governance_health_runtime: GovernanceHealthRuntimeFrame | None = None,
+) -> GovernanceHealthAuditReport:
+    source_governance_health = governance_health_runtime or audit_governance_health_runtime()
     pressure = GovernancePressurePolicy().aggregate(
         retrieval_pressure="medium",
         persistence_pressure="high",
@@ -2091,6 +2166,7 @@ def audit_governance_health() -> GovernanceHealthAuditReport:
         replay_pressure="HIGH",
         reasoning_scope_active=True,
         premium_pressure="MEDIUM",
+        governance_health=source_governance_health,
     )
 
 
@@ -3055,12 +3131,138 @@ def audit_dev_policy() -> DevPolicyAuditReport:
     )
 
 
+def audit_observation_review() -> RuntimeReadinessFrame:
+    return ObservationReviewRuntime().evaluate()
+
+
+def audit_operator_review(
+    *,
+    observation_review: RuntimeReadinessFrame | None = None,
+) -> OperatorReviewFrame:
+    source_frame = observation_review or ObservationReviewRuntime().evaluate()
+    return OperatorReviewRuntime().evaluate(observation_review=source_frame)
+
+
+def audit_merge_readiness(
+    *,
+    observation_review: RuntimeReadinessFrame | None = None,
+    operator_review: OperatorReviewFrame | None = None,
+) -> MergeReadinessFrame:
+    source_observation = observation_review or ObservationReviewRuntime().evaluate()
+    source_operator = operator_review or OperatorReviewRuntime().evaluate(
+        observation_review=source_observation
+    )
+    return MergeReadinessRuntime().evaluate(
+        observation_review=source_observation,
+        operator_review=source_operator,
+    )
+
+
+def audit_validation_evidence(
+    *,
+    release_check_inputs: ReleaseCheckInputs | None = None,
+) -> ValidationEvidenceFrame:
+    source_inputs = release_check_inputs or ReleaseCheckInputs()
+    return ValidationEvidenceRuntime().evaluate(
+        pytest_passed=source_inputs.pytest_passed,
+        ruff_passed=source_inputs.ruff_passed,
+        audit_passed=source_inputs.audit_passed,
+        diff_check_passed=source_inputs.diff_check_passed,
+        unresolved_validation_issues=source_inputs.unresolved_validation_issues,
+        unresolved_audit_issues=source_inputs.unresolved_audit_issues,
+    )
+
+
+def audit_repository_readiness(
+    *,
+    merge_readiness: MergeReadinessFrame | None = None,
+    release_check_inputs: ReleaseCheckInputs | None = None,
+    validation_evidence: ValidationEvidenceFrame | None = None,
+) -> RepositoryReadinessFrame:
+    source_merge = merge_readiness or audit_merge_readiness()
+    source_validation_evidence = validation_evidence or audit_validation_evidence(
+        release_check_inputs=release_check_inputs
+    )
+    return RepositoryReadinessRuntime().evaluate(
+        merge_readiness=source_merge,
+        validation_evidence=source_validation_evidence,
+    )
+
+
+def audit_governance_trace(
+    *,
+    observation_review: RuntimeReadinessFrame | None = None,
+    operator_review: OperatorReviewFrame | None = None,
+    merge_readiness: MergeReadinessFrame | None = None,
+    release_check_inputs: ReleaseCheckInputs | None = None,
+    validation_evidence: ValidationEvidenceFrame | None = None,
+    repository_readiness: RepositoryReadinessFrame | None = None,
+) -> GovernanceTraceFrame:
+    source_observation = observation_review or audit_observation_review()
+    source_operator = operator_review or audit_operator_review(
+        observation_review=source_observation
+    )
+    source_merge = merge_readiness or audit_merge_readiness(
+        observation_review=source_observation,
+        operator_review=source_operator,
+    )
+    source_validation_evidence = validation_evidence or audit_validation_evidence(
+        release_check_inputs=release_check_inputs
+    )
+    source_repository = repository_readiness or audit_repository_readiness(
+        merge_readiness=source_merge,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=source_validation_evidence,
+    )
+    return GovernanceTraceRuntime().evaluate(
+        observation_review=source_observation,
+        operator_review=source_operator,
+        merge_readiness=source_merge,
+        validation_evidence=source_validation_evidence,
+        repository_readiness=source_repository,
+    )
+
+
 def _default_consumer_repo() -> Path:
     sibling = Path("..") / "AITuber"
     return sibling if sibling.exists() else Path(".")
 
 
-def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
+def run_runtime_enforcement_audit(
+    *,
+    release_check_inputs: ReleaseCheckInputs | None = None,
+) -> RuntimeEnforcementAuditReport:
+    observation_review = audit_observation_review()
+    operator_review = audit_operator_review(observation_review=observation_review)
+    merge_readiness = audit_merge_readiness(
+        observation_review=observation_review,
+        operator_review=operator_review,
+    )
+    validation_evidence = audit_validation_evidence(
+        release_check_inputs=release_check_inputs
+    )
+    repository_readiness = audit_repository_readiness(
+        merge_readiness=merge_readiness,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=validation_evidence,
+    )
+    governance_trace = audit_governance_trace(
+        observation_review=observation_review,
+        operator_review=operator_review,
+        merge_readiness=merge_readiness,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=validation_evidence,
+        repository_readiness=repository_readiness,
+    )
+    governance_health_runtime = audit_governance_health_runtime(
+        observation_review=observation_review,
+        operator_review=operator_review,
+        merge_readiness=merge_readiness,
+        release_check_inputs=release_check_inputs,
+        validation_evidence=validation_evidence,
+        repository_readiness=repository_readiness,
+        governance_trace=governance_trace,
+    )
     return RuntimeEnforcementAuditReport(
         activation=audit_runtime_activation(),
         routing=audit_prompt_routing(),
@@ -3084,7 +3286,9 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         session_boundary=audit_session_boundary(),
         workspace_persistence=audit_workspace_persistence(),
         persistence_governance=audit_persistence_governance(),
-        governance_health=audit_governance_health(),
+        governance_health=audit_governance_health(
+            governance_health_runtime=governance_health_runtime
+        ),
         governance_trends=audit_governance_trends(),
         runtime_graph=audit_runtime_graph(),
         runtime_simplification=audit_runtime_simplification(),
@@ -3106,6 +3310,12 @@ def run_runtime_enforcement_audit() -> RuntimeEnforcementAuditReport:
         sprint_memory=audit_sprint_memory(),
         dev_strategy=audit_dev_strategy(),
         dev_policy=audit_dev_policy(),
+        observation_review=observation_review,
+        operator_review=operator_review,
+        merge_readiness=merge_readiness,
+        validation_evidence=validation_evidence,
+        repository_readiness=repository_readiness,
+        governance_trace=governance_trace,
     )
 
 

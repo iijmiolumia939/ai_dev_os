@@ -26,6 +26,8 @@ python -m ai_dev_os.runtime_audit
 
 Consumer rollout guidance lives in `docs/consumer-rollout/`. Compatibility and alpha governance boundaries live in `docs/releases/`.
 
+Runtime audit now projects canonical `validation_evidence`, `repository_readiness`, `governance_trace`, and `governance_health` surfaces. Validation outcomes are normalized first, repository readiness is derived from bounded merge and validation inputs, governance trace preserves the deterministic root-cause chain, and governance health exposes the top-level bounded status.
+
 ## Vision
 
 Create a sustainable software engineering operating system for autonomous AI development that keeps quality, architecture discipline, safety review, and long-term velocity while preventing unbounded context and model-cost growth.

@@ -5,6 +5,7 @@
 ## Checks
 
 - Runtime audit active.
+- Canonical validation evidence projected before repository readiness.
 - Governance core active.
 - Bounded retention active.
 - Session lifecycle active.

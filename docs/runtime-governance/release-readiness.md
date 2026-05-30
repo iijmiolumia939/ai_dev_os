@@ -5,6 +5,7 @@
 ## Guarantees
 
 - Release checks are deterministic.
+- Validation evidence is normalized through one bounded canonical runtime.
 - Consumer rollout is human-confirmed.
 - Runtime governance remains local-first.
 - Persistence remains summary-only and bounded.
